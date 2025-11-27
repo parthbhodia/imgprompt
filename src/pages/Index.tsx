@@ -2,7 +2,8 @@ import { useState } from "react";
 import { PromptCard } from "@/components/PromptCard";
 import { CategoryFilter } from "@/components/CategoryFilter";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Zap, Copy } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Sparkles, Zap, Copy, Search } from "lucide-react";
 
 // Import generated images
 import weddingSunset from "@/assets/wedding-sunset.jpg";
@@ -61,11 +62,15 @@ const categories = ["All", "Wedding", "Portrait", "Art", "Anime", "Product", "La
 
 const Index = () => {
   const [activeCategory, setActiveCategory] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredPrompts =
-    activeCategory === "All"
-      ? prompts
-      : prompts.filter((prompt) => prompt.category === activeCategory);
+  const filteredPrompts = prompts.filter((prompt) => {
+    const matchesCategory = activeCategory === "All" || prompt.category === activeCategory;
+    const matchesSearch = searchQuery === "" || 
+      prompt.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      prompt.prompt.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
@@ -104,6 +109,20 @@ const Index = () => {
             </div>
           </div>
         </header>
+
+        {/* Search Bar */}
+        <section className="container mx-auto px-4 py-4">
+          <div className="max-w-2xl mx-auto relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search prompts by title or description..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-12 h-12 glass text-base"
+            />
+          </div>
+        </section>
 
         {/* Category Filter */}
         <section className="container mx-auto px-4 py-8">
