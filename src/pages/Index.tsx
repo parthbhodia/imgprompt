@@ -16,45 +16,51 @@ import landscapeMountains from "@/assets/landscape-mountains.jpg";
 const prompts = [
   {
     id: 1,
-    image: weddingSunset,
+    images: [weddingSunset, portraitNeon, artAbstract],
     title: "Romantic Wedding Sunset",
     category: "Wedding",
     prompt: "A beautiful romantic wedding photo of a couple at sunset, bride in white dress and groom in suit, golden hour lighting, soft bokeh background, professional photography style, warm colors",
+    platforms: ["Midjourney", "DALL-E 3", "Stable Diffusion"],
   },
   {
     id: 2,
-    image: portraitNeon,
+    images: [portraitNeon, animeCharacter, artAbstract],
     title: "Cyberpunk Neon Portrait",
     category: "Portrait",
     prompt: "A creative portrait of a young person with vibrant neon lighting, cyberpunk aesthetic, cool blue and purple tones, dramatic side lighting, professional studio photography",
+    platforms: ["Midjourney", "Leonardo AI", "Stable Diffusion"],
   },
   {
     id: 3,
-    image: artAbstract,
+    images: [artAbstract, landscapeMountains, weddingSunset],
     title: "Flowing Abstract Art",
     category: "Art",
     prompt: "Abstract digital art with flowing shapes and vibrant gradients, purple pink and blue colors, modern contemporary style, ethereal atmosphere",
+    platforms: ["DALL-E 3", "Midjourney", "Adobe Firefly"],
   },
   {
     id: 4,
-    image: animeCharacter,
+    images: [animeCharacter, portraitNeon, productPhone],
     title: "Magical Anime Character",
     category: "Anime",
     prompt: "A stunning anime-style character with detailed features, colorful hair, magical effects, fantasy theme, vibrant colors, professional anime art style",
+    platforms: ["Niji Journey", "Stable Diffusion", "Leonardo AI"],
   },
   {
     id: 5,
-    image: productPhone,
+    images: [productPhone, artAbstract, landscapeMountains],
     title: "Modern Tech Product",
     category: "Product",
     prompt: "Professional product photography of a modern smartphone on a gradient background, studio lighting, sleek design, tech aesthetic, ultra clean",
+    platforms: ["Midjourney", "DALL-E 3", "Adobe Firefly"],
   },
   {
     id: 6,
-    image: landscapeMountains,
+    images: [landscapeMountains, weddingSunset, artAbstract],
     title: "Epic Mountain Sunrise",
     category: "Landscape",
     prompt: "A majestic landscape photo of mountains at sunrise, epic scale, dramatic clouds, golden light, nature photography, breathtaking vista",
+    platforms: ["Midjourney", "Stable Diffusion", "Leonardo AI"],
   },
 ];
 
@@ -144,10 +150,11 @@ const Index = () => {
                 }}
               >
                 <PromptCard
-                  image={prompt.image}
+                  images={prompt.images}
                   prompt={prompt.prompt}
                   category={prompt.category}
                   title={prompt.title}
+                  platforms={prompt.platforms}
                 />
               </div>
             ))}

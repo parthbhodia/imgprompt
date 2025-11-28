@@ -1,19 +1,32 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Copy, Check, Sparkles } from "lucide-react";
+import { Copy, Check, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 
 interface PromptCardProps {
-  image: string;
+  images: string[];
   prompt: string;
   category: string;
   title: string;
+  platforms: string[];
 }
 
-export const PromptCard = ({ image, prompt, category, title }: PromptCardProps) => {
+export const PromptCard = ({ images, prompt, category, title, platforms }: PromptCardProps) => {
   const [showPrompt, setShowPrompt] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  const nextImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentImageIndex((prev) => (prev + 1) % images.length);
+  };
+
+  const prevImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
+  };
 
   const handleCopy = () => {
     navigator.clipboard.writeText(prompt);
@@ -29,7 +42,7 @@ export const PromptCard = ({ image, prompt, category, title }: PromptCardProps) 
     >
       <div className="aspect-square overflow-hidden relative">
         <img
-          src={image}
+          src={images[currentImageIndex]}
           alt={title}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
         />
@@ -44,10 +57,51 @@ export const PromptCard = ({ image, prompt, category, title }: PromptCardProps) 
         <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
           <Sparkles className="w-5 h-5 text-primary-glow" />
         </div>
+
+        {/* Image Navigation */}
+        {images.length > 1 && (
+          <>
+            <button
+              onClick={prevImage}
+              className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full glass backdrop-blur-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button
+              onClick={nextImage}
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full glass backdrop-blur-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+              {images.map((_, idx) => (
+                <div
+                  key={idx}
+                  className={`w-1.5 h-1.5 rounded-full transition-all ${
+                    idx === currentImageIndex ? "bg-primary w-4" : "bg-white/50"
+                  }`}
+                />
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       <div className="p-4">
         <h3 className="font-semibold text-lg mb-2 line-clamp-2">{title}</h3>
+        
+        {/* Platform Badges */}
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {platforms.map((platform) => (
+            <Badge 
+              key={platform} 
+              variant="secondary" 
+              className="text-xs px-2 py-0.5 bg-primary/10 text-primary border-primary/20"
+            >
+              {platform}
+            </Badge>
+          ))}
+        </div>
         
         {showPrompt ? (
           <div className="space-y-3 animate-fade-in">
