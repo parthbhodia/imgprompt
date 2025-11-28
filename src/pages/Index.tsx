@@ -32,7 +32,26 @@ const prompts = [
     images: [weddingSunset, weddingRings, weddingDance],
     title: "Romantic Wedding Sunset",
     category: "Wedding",
-    prompt: "A beautiful romantic wedding photo of a couple at sunset, bride in white dress and groom in suit, golden hour lighting, soft bokeh background, professional photography style, warm colors",
+    prompt: `1. Capture a cinematic sunset wedding scene with molten gold horizons.
+2. Position the couple in a gentle embrace, foreheads touching softly.
+3. Dress the bride in a modern corseted gown with flowing chiffon layers.
+4. Style the groom in a tailored charcoal suit with subtle satin lapels.
+5. Place dried pampas grass and blush roses in the floral arrangements.
+6. Request backlit flares that wrap the subjects in amber light.
+7. Use a prime 85mm portrait lens aesthetic for dreamy compression.
+8. Blur the background with creamy bokeh while keeping faces razor sharp.
+9. Add a transparent veil drifting in the breeze for motion.
+10. Introduce reflective highlights on the waterline in the distance.
+11. Balance warm light with cool shadows for depth.
+12. Include delicate jewelry glints on the bride’s neckline.
+13. Allow subtle laughter expressions to keep the image candid.
+14. Grade colors toward honey, terracotta, and dusty rose.
+15. Sprinkle tiny floating dust particles for atmosphere.
+16. Emphasize handcrafted stationery props on a nearby marble table.
+17. Maintain editorial fashion vibes while feeling intimate.
+18. Finish with light film grain for authenticity.
+19. Ensure the horizon sits in the lower third for composition.
+20. Export as a high-resolution image ready for fine-art printing.`,
     platforms: ["Midjourney", "DALL-E 3", "Stable Diffusion"],
   },
   {
@@ -40,7 +59,26 @@ const prompts = [
     images: [portraitNeon, portraitFashion, portraitSmoke],
     title: "Cyberpunk Neon Portrait",
     category: "Portrait",
-    prompt: "A creative portrait of a young person with vibrant neon lighting, cyberpunk aesthetic, cool blue and purple tones, dramatic side lighting, professional studio photography",
+    prompt: `1. Build a cyberpunk portrait with neon magenta and cyan accents.
+2. Place the subject slightly off-center for magazine editorial framing.
+3. Add reflective chrome makeup on cheekbones and temples.
+4. Style hair with undercuts and luminous fiber-optic strands.
+5. Use moody side lighting with sharp rim highlights.
+6. Introduce translucent holographic UI panels floating nearby.
+7. Include subtle rain streaks on the glass foreground.
+8. Emphasize smoky atmosphere with volumetric light rays.
+9. Select a shallow depth of field to isolate the face.
+10. Add iridescent eyeshadow that shifts between teal and violet.
+11. Give the subject a confident smirk for storytelling.
+12. Incorporate glitch effects along the jacket edges.
+13. Render metallic accessories with worn textures.
+14. Color grade toward cool blues balanced by hot pink accents.
+15. Enhance skin texture while keeping pores natural.
+16. Layer faint city lights in the blurred background.
+17. Introduce micro LEDs embedded in the clothing seams.
+18. Apply a 35mm film grain overlay for grit.
+19. Keep contrast punchy but protect highlight detail.
+20. Deliver a 4K portrait ready for album art.`,
     platforms: ["Midjourney", "Leonardo AI", "Stable Diffusion"],
   },
   {
@@ -48,7 +86,26 @@ const prompts = [
     images: [artAbstract, artGeometric, artFluid],
     title: "Flowing Abstract Art",
     category: "Art",
-    prompt: "Abstract digital art with flowing shapes and vibrant gradients, purple pink and blue colors, modern contemporary style, ethereal atmosphere",
+    prompt: `1. Generate an abstract composition inspired by fluid acrylic pours.
+2. Use sweeping ribbons of violet, fuchsia, and cerulean.
+3. Blend gradients that transition like northern lights.
+4. Add delicate metallic gold veining for luxury.
+5. Introduce cellular lacing patterns reminiscent of resin art.
+6. Ensure negative space breathes around the central vortex.
+7. Overlay translucent geometric prisms for contrast.
+8. Incorporate micro speckles of stardust particles.
+9. Vary opacity layers to create depth.
+10. Apply soft bloom to the brightest highlights.
+11. Keep edges organic rather than perfectly smooth.
+12. Include hints of turquoise mist swirling outward.
+13. Add subtle motion blur to suggest movement.
+14. Use high-resolution textures for print clarity.
+15. Balance warm and cool zones harmoniously.
+16. Allow wisps of smoke-like trails to escape the core.
+17. Introduce faint shadow gradients for dimensionality.
+18. Finish with a satin sheen across the canvas.
+19. Preserve ultra-clean whites for gallery presentation.
+20. Deliver a square composition suitable for wall art.`,
     platforms: ["DALL-E 3", "Midjourney", "Adobe Firefly"],
   },
   {
@@ -56,7 +113,26 @@ const prompts = [
     images: [animeCharacter, animeMagical, animeWarrior],
     title: "Magical Anime Character",
     category: "Anime",
-    prompt: "A stunning anime-style character with detailed features, colorful hair, magical effects, fantasy theme, vibrant colors, professional anime art style",
+    prompt: `1. Design a heroic anime mage hovering above crystalline ruins.
+2. Give them pastel iridescent hair floating weightlessly.
+3. Craft expressive golden eyes with star-shaped pupils.
+4. Outfit includes layered kimono armor with holographic panels.
+5. Summon swirling spell circles etched with runes.
+6. Populate the scene with tiny spirit familiars glowing softly.
+7. Use painterly clouds tinted lavender and peach.
+8. Render fabric folds with dynamic motion and depth.
+9. Add shimmering particle trails following hand gestures.
+10. Balance cute aesthetics with powerful posture.
+11. Include ornate staff tipped with a radiant prism.
+12. Cast dramatic light from below to emphasize magic.
+13. Integrate neon gradients into shadowed areas.
+14. Highlight reflective metallic trims on accessories.
+15. Provide subtle freckles to humanize the character.
+16. Keep line art crisp while shading stays soft.
+17. Add floating petals and embers for atmosphere.
+18. Enhance background with distant floating islands.
+19. Apply chromatic aberration for anime energy.
+20. Output as vibrant key art ready for splash screens.`,
     platforms: ["Niji Journey", "Stable Diffusion", "Leonardo AI"],
   },
   {
@@ -64,7 +140,26 @@ const prompts = [
     images: [productPhone, productHeadphones, productWatch],
     title: "Modern Tech Product",
     category: "Product",
-    prompt: "Professional product photography of a modern smartphone on a gradient background, studio lighting, sleek design, tech aesthetic, ultra clean",
+    prompt: `1. Stage a minimalist studio shot of premium wearable tech.
+2. Place the device on a matte acrylic pedestal with soft edges.
+3. Use gradient lighting transitioning from deep navy to electric teal.
+4. Create a hero key light that wraps smoothly around the product.
+5. Add a faint specular highlight to emphasize curvature.
+6. Introduce a secondary rim light for separation.
+7. Keep background spotless with no banding.
+8. Position floating UI icons that hint at smart features.
+9. Use shallow depth of field so base fades gently.
+10. Ensure brand logo area is unobstructed.
+11. Apply realistic fingerprints subtly for authenticity.
+12. Include a complementary accessory blurred in the back.
+13. Balance reflections to avoid hotspots.
+14. Emulate a 70mm product lens look for compression.
+15. Add micro dust particles catching the light.
+16. Color grade toward cool, futuristic hues.
+17. Maintain perfect symmetry in composition.
+18. Export at 6000px for billboard readiness.
+19. Deliver both glossy and matte texture variants.
+20. Provide negative space for copy placement.`,
     platforms: ["Midjourney", "DALL-E 3", "Adobe Firefly"],
   },
   {
@@ -72,7 +167,26 @@ const prompts = [
     images: [landscapeMountains, landscapeLake, landscapeHills],
     title: "Epic Mountain Sunrise",
     category: "Landscape",
-    prompt: "A majestic landscape photo of mountains at sunrise, epic scale, dramatic clouds, golden light, nature photography, breathtaking vista",
+    prompt: `1. Paint a panoramic mountain sunrise above rolling mist.
+2. Layer multiple ridge lines fading into atmospheric perspective.
+3. Let warm sunlight kiss the highest peaks in molten gold.
+4. Fill valleys with low-lying clouds drifting slowly.
+5. Introduce a reflective alpine lake mirroring the sky.
+6. Add wildflower meadows in the foreground for color pops.
+7. Use leading lines from a winding trail toward the horizon.
+8. Render detailed rock textures with subtle lichen.
+9. Include distant waterfalls cascading into the fog.
+10. Balance cool blues in shadows against warm highlights.
+11. Add soaring birds for a sense of scale.
+12. Place lens flare peeking from behind a summit.
+13. Simulate long-exposure motion in the clouds.
+14. Ensure depth of field keeps entire vista sharp.
+15. Apply soft haze for atmospheric storytelling.
+16. Keep the sky dynamic with stratified cloud layers.
+17. Add faint sun rays breaking through gaps.
+18. Introduce hikers silhouetted for human scale.
+19. Grade colors toward cinematic teal and orange harmony.
+20. Deliver ultra-wide resolution suitable for immersive prints.`,
     platforms: ["Midjourney", "Stable Diffusion", "Leonardo AI"],
   },
 ];
