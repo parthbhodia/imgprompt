@@ -35,6 +35,25 @@ export const PromptCard = ({ images, prompt, category, title, platforms }: Promp
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const platformUrls: Record<string, string> = {
+    "Midjourney": "https://www.midjourney.com/",
+    "DALL-E 3": "https://chatgpt.com/",
+    "Stable Diffusion": "https://stablediffusionweb.com/",
+    "Leonardo AI": "https://leonardo.ai/",
+    "Adobe Firefly": "https://firefly.adobe.com/",
+    "Niji Journey": "https://niji.journey.com/",
+  };
+
+  const handlePlatformClick = (e: React.MouseEvent, platform: string) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(prompt);
+    const url = platformUrls[platform] || "#";
+    if (url !== "#") {
+      window.open(url, "_blank");
+      toast.success(`Prompt copied! Opening ${platform}...`);
+    }
+  };
+
   return (
     <Card
       className="group relative overflow-hidden glass hover:scale-105 transition-all duration-300 cursor-pointer animate-scale-in border-border/50"
@@ -96,7 +115,8 @@ export const PromptCard = ({ images, prompt, category, title, platforms }: Promp
             <Badge 
               key={platform} 
               variant="secondary" 
-              className="text-xs px-2 py-0.5 bg-primary/10 text-primary border-primary/20"
+              className="text-xs px-2 py-0.5 bg-primary/10 text-primary border-primary/20 cursor-pointer hover:bg-primary/20 transition-colors"
+              onClick={(e) => handlePlatformClick(e, platform)}
             >
               {platform}
             </Badge>
