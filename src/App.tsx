@@ -10,7 +10,22 @@ const queryClient = new QueryClient();
 
 // Get base path from import.meta.env.BASE_URL (set by Vite)
 // This will be '/' for local dev and '/repository-name/' for GitHub Pages
-const basename = import.meta.env.BASE_URL.replace(/\/$/, '') || '/';
+// React Router basename should not have trailing slash
+const getBasename = () => {
+  const base = import.meta.env.BASE_URL || '/';
+  // Remove trailing slash for React Router
+  const basename = base === '/' ? '/' : base.replace(/\/$/, '');
+  
+  // Debug log (remove in production if needed)
+  if (import.meta.env.DEV) {
+    console.log('Base URL:', import.meta.env.BASE_URL);
+    console.log('Basename:', basename);
+  }
+  
+  return basename;
+};
+
+const basename = getBasename();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
