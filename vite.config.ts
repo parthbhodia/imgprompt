@@ -4,12 +4,17 @@ import path from "path";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
+  // Custom domains should be served from the root
+  const hasCustomDomain = process.env.CUSTOM_DOMAIN === "true";
+
   // Get base path from environment variable or use default
   // For GitHub Pages: use repository name (e.g., /imgprompt/)
   // Set GITHUB_REPOSITORY_NAME environment variable or it will default to '/'
-  const base = process.env.GITHUB_REPOSITORY_NAME 
+  const repoBase = process.env.GITHUB_REPOSITORY_NAME 
     ? `/${process.env.GITHUB_REPOSITORY_NAME}/` 
     : '/';
+
+  const base = hasCustomDomain ? '/' : repoBase;
 
   return {
     base,

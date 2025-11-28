@@ -2,6 +2,8 @@
 
 ImgPrompt is a curated AI prompt library that pairs high-performing prompts with finished visuals, platform recommendations, and creative guidance so you can produce standout images faster.
 
+**Live site:** https://vibeimg.xyz/
+
 ## Features
 
 - Spotlight hero section with animated gradients and CTAs
@@ -37,13 +39,16 @@ The repo includes `.github/workflows/deploy.yml` which automatically deploys the
 3. The workflow sets `GITHUB_REPOSITORY_NAME` so the Vite `base` path matches your repo automatically.
 4. The site will be served from `https://<your-username>.github.io/<repo-name>/`.
 
-### Custom Domains
+### Custom Domain (`vibeimg.xyz`)
 
-- Add your custom domain under **Settings → Pages → Custom domain**.
-- Update the `canonical` URL and `og:url` in `index.html` to the new domain.
-- If you serve from the root of a custom domain, set `GITHUB_REPOSITORY_NAME` manually (or override `base` in `vite.config.ts`) so the router uses `/`.
+- `public/CNAME` locks the deployment to `vibeimg.xyz`.
+- The GitHub Actions workflow exports `CUSTOM_DOMAIN=true`, forcing the Vite base path to `/`.
+- If you change the domain, update:
+  - `public/CNAME`
+  - `canonical`, `og:url`, and social image URLs in `index.html`
+  - Any references in this README
 
 ## SEO Notes
 
-- Social preview image lives at `public/social-card.jpg`.
+- Social preview image lives at `public/social-card.jpg` and is referenced with the absolute URL `https://vibeimg.xyz/social-card.jpg`.
 - Update `index.html` meta tags whenever branding, description, or canonical URL changes.

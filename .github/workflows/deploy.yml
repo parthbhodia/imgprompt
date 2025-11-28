@@ -38,6 +38,7 @@ jobs:
       - name: Build
         env:
           GITHUB_REPOSITORY_NAME: ${{ steps.repo.outputs.name }}
+          CUSTOM_DOMAIN: true
         run: npm run build
 
       - name: Setup Pages
