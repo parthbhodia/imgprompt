@@ -193,6 +193,51 @@ const prompts = [
 
 const categories = ["All", "Wedding", "Portrait", "Art", "Anime", "Product", "Landscape"];
 
+const faqItems = [
+  {
+    question: "What makes VibeIMG different from other AI prompt libraries?",
+    answer: "VibeIMG pairs every prompt with finished visuals, detailed guidance, and platform tags so you know exactly how to recreate the look across Midjourney, DALL·E 3, Stable Diffusion, and more.",
+  },
+  {
+    question: "Can I use these prompts for commercial projects?",
+    answer: "Yes—each prompt is written to be production-ready. We recommend customizing names, colors, and brand cues before publishing to ensure unique final images.",
+  },
+  {
+    question: "How often is the VibeIMG library updated?",
+    answer: "We add fresh prompt packs weekly, focusing on trending aesthetics like cyberpunk portraits, anime splash art, luxury products, and cinematic landscapes.",
+  },
+  {
+    question: "Do I need advanced AI knowledge to start?",
+    answer: "Not at all. Each prompt includes plain-language steps that cover composition, lighting, camera choices, and color grading so beginners can follow along confidently.",
+  },
+];
+
+const websiteSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "VibeIMG",
+  url: "https://vibeimg.xyz",
+  description: "VibeIMG is a curated AI prompt library that showcases premium Midjourney, DALL·E, and Stable Diffusion prompts with visuals and creator tips.",
+  potentialAction: {
+    "@type": "SearchAction",
+    target: "https://vibeimg.xyz/?q={search_term_string}",
+    "query-input": "required name=search_term_string",
+  },
+};
+
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqItems.map((item) => ({
+    "@type": "Question",
+    name: item.question,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: item.answer,
+    },
+  })),
+};
+
 const Index = () => {
   const [activeCategory, setActiveCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
@@ -212,7 +257,8 @@ const Index = () => {
   });
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
+    <>
+      <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Animated background gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/10 animate-gradient" />
       <div className="absolute top-20 right-20 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-glow-pulse" />
@@ -302,6 +348,27 @@ const Index = () => {
           )}
         </section>
 
+        {/* FAQ Section */}
+        <section className="container mx-auto px-4 py-12">
+          <div className="space-y-6">
+            <div className="text-center space-y-3">
+              <p className="text-sm uppercase tracking-widest text-primary font-semibold">FAQ</p>
+              <h2 className="text-3xl font-bold">Answers to popular VibeIMG questions</h2>
+              <p className="text-muted-foreground max-w-3xl mx-auto">
+                These search-optimized answers help new creators—and search engines—understand how to get the most out of the vibeimg.xyz prompt library.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {faqItems.map((item) => (
+                <article key={item.question} className="rounded-2xl border border-border/60 p-6 bg-background/80 backdrop-blur">
+                  <h3 className="text-xl font-semibold mb-2">{item.question}</h3>
+                  <p className="text-muted-foreground text-sm">{item.answer}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
         {/* Footer CTA */}
         <footer className="container mx-auto px-4 py-16 text-center">
           <div className="glass rounded-3xl p-12 space-y-6">
@@ -313,6 +380,7 @@ const Index = () => {
             </p>
           </div>
         </footer>
+      </div>
       </div>
 
       {/* Help Dialog */}
@@ -373,7 +441,15 @@ const Index = () => {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+    </>
   );
 };
 
