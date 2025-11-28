@@ -4,7 +4,7 @@ import { CategoryFilter } from "@/components/CategoryFilter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Sparkles, Zap, Copy, Search, Lightbulb, Star, Palette } from "lucide-react";
+import { Sparkles, Zap, Copy, Search, Lightbulb, Star, Palette, MessageCircle } from "lucide-react";
 
 // Import generated images
 import weddingSunset from "@/assets/wedding-sunset.jpg";
@@ -577,6 +577,7 @@ const Index = () => {
   const [activeCategory, setActiveCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false);
+  const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
   const galleryRef = useRef<HTMLDivElement>(null);
 
   const scrollToGallery = () => {
@@ -592,6 +593,10 @@ const Index = () => {
       prompt.slides.some((slide) => slide.prompt.toLowerCase().includes(lowerQuery));
     return matchesCategory && matchesSearch;
   });
+
+  const feedbackFormUrl =
+    import.meta.env.VITE_FEEDBACK_FORM_URL ||
+    "https://docs.google.com/forms/d/e/1FAIpQLSc2Y-or9K-I6X-PFAHV-iLN2evZL_KqOAQzMd2FUJqwcQVgzQ/viewform?embedded=true";
 
   return (
     <>
@@ -774,6 +779,44 @@ const Index = () => {
                 </div>
               </div>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <button
+        onClick={() => setIsFeedbackDialogOpen(true)}
+        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold text-white shadow-xl bg-gradient-to-r from-primary to-accent hover:scale-105 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
+        aria-label="Send feedback about ImgPrompt"
+      >
+        <MessageCircle className="w-4 h-4" />
+        Feedback
+      </button>
+      <Dialog open={isFeedbackDialogOpen} onOpenChange={setIsFeedbackDialogOpen}>
+        <DialogContent className="sm:max-w-[720px] h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-semibold">Share Feedback</DialogTitle>
+            <DialogDescription>
+              Tell us how we can improve ImgPrompt. Your thoughts go straight to our inbox.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1">
+            <iframe
+              src={feedbackFormUrl}
+              title="ImgPrompt feedback form"
+              className="w-full h-full rounded-2xl border border-border"
+              loading="lazy"
+            />
+            <p className="mt-3 text-xs text-muted-foreground text-center">
+              Trouble with the form?{" "}
+              <a
+                href={feedbackFormUrl.replace("?embedded=true", "")}
+                target="_blank"
+                rel="noreferrer"
+                className="underline hover:text-primary"
+              >
+                Open it in a new tab
+              </a>
+              .
+            </p>
           </div>
         </DialogContent>
       </Dialog>
