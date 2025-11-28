@@ -50,7 +50,7 @@ export const PromptCard = ({ images, prompt, category, title, platforms }: Promp
     const url = platformUrls[platform] || "#";
     if (url !== "#") {
       window.open(url, "_blank");
-      toast.success(`Prompt copied! Opening ${platform}...`);
+      toast.success(`Prompt copied to clipboard! Paste it in ${platform}`);
     }
   };
 
