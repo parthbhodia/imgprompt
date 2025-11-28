@@ -5,34 +5,61 @@ import { Copy, Check, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 
-interface PromptCardProps {
-  images: string[];
+interface SlideContent {
+  image: string;
   prompt: string;
+}
+
+interface PromptCardProps {
+  slides: SlideContent[];
   category: string;
   title: string;
   platforms: string[];
 }
 
-export const PromptCard = ({ images, prompt, category, title, platforms }: PromptCardProps) => {
+export const PromptCard = ({ slides, category, title, platforms }: PromptCardProps) => {
   const [showPrompt, setShowPrompt] = useState(false);
   const [copied, setCopied] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const nextImage = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setCurrentImageIndex((prev) => (prev + 1) % images.length);
+    setCurrentImageIndex((prev) => (prev + 1) % slides.length);
   };
 
   const prevImage = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
+    setCurrentImageIndex((prev) => (prev - 1 + slides.length) % slides.length);
   };
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(prompt);
-    setCopied(true);
-    toast.success("Prompt copied to clipboard!");
-    setTimeout(() => setCopied(false), 2000);
+  const copyPromptToClipboard = async (text: string) => {
+    let fallbackTextarea: HTMLTextAreaElement | null = null;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        fallbackTextarea = document.createElement("textarea");
+        fallbackTextarea.value = text;
+        fallbackTextarea.style.position = "fixed";
+        fallbackTextarea.style.left = "-9999px";
+        document.body.appendChild(fallbackTextarea);
+        fallbackTextarea.focus();
+        fallbackTextarea.select();
+        document.execCommand("copy");
+      }
+      setCopied(true);
+      toast.success("Prompt copied to clipboard!");
+      setTimeout(() => setCopied(false), 2000);
+      return true;
+    } catch (error) {
+      console.error("Failed to copy prompt", error);
+      toast.error("Couldn't copy prompt. Please try manually.");
+      return false;
+    } finally {
+      if (fallbackTextarea && fallbackTextarea.parentNode) {
+        fallbackTextarea.parentNode.removeChild(fallbackTextarea);
+      }
+    }
   };
 
   const platformUrls: Record<string, string> = {
@@ -44,15 +71,18 @@ export const PromptCard = ({ images, prompt, category, title, platforms }: Promp
     "Niji Journey": "https://niji.journey.com/",
   };
 
-  const handlePlatformClick = (e: React.MouseEvent, platform: string) => {
+  const handlePlatformClick = async (e: React.MouseEvent, platform: string) => {
     e.stopPropagation();
-    navigator.clipboard.writeText(prompt);
+    const currentPrompt = slides[currentImageIndex].prompt;
+    await copyPromptToClipboard(currentPrompt);
     const url = platformUrls[platform] || "#";
     if (url !== "#") {
-      window.open(url, "_blank");
-      toast.success(`Prompt copied to clipboard! Paste it in ${platform}`);
+      window.open(url, "_blank", "noopener,noreferrer");
+      toast.success(`Prompt copied! Paste it in ${platform}`);
     }
   };
+
+  const currentSlide = slides[currentImageIndex];
 
   return (
     <Card
@@ -61,7 +91,7 @@ export const PromptCard = ({ images, prompt, category, title, platforms }: Promp
     >
       <div className="aspect-square overflow-hidden relative">
         <img
-          src={images[currentImageIndex]}
+          src={currentSlide.image}
           alt={title}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
         />
@@ -78,7 +108,7 @@ export const PromptCard = ({ images, prompt, category, title, platforms }: Promp
         </div>
 
         {/* Image Navigation */}
-        {images.length > 1 && (
+        {slides.length > 1 && (
           <>
             <button
               onClick={prevImage}
@@ -93,7 +123,7 @@ export const PromptCard = ({ images, prompt, category, title, platforms }: Promp
               <ChevronRight className="w-4 h-4" />
             </button>
             <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
-              {images.map((_, idx) => (
+              {slides.map((_, idx) => (
                 <div
                   key={idx}
                   className={`w-1.5 h-1.5 rounded-full transition-all ${
@@ -126,12 +156,12 @@ export const PromptCard = ({ images, prompt, category, title, platforms }: Promp
         {showPrompt ? (
           <div className="space-y-3 animate-fade-in">
             <p className="text-sm text-muted-foreground leading-relaxed">
-              {prompt}
+              {currentSlide.prompt}
             </p>
             <Button
               onClick={(e) => {
                 e.stopPropagation();
-                handleCopy();
+                copyPromptToClipboard(currentSlide.prompt);
               }}
               variant="secondary"
               size="sm"
