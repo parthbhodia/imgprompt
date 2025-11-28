@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { PromptCard } from "@/components/PromptCard";
 import { CategoryFilter } from "@/components/CategoryFilter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Sparkles, Zap, Copy, Search } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Sparkles, Zap, Copy, Search, Lightbulb, Star, Palette } from "lucide-react";
 
 // Import generated images
 import weddingSunset from "@/assets/wedding-sunset.jpg";
@@ -81,6 +82,12 @@ const categories = ["All", "Wedding", "Portrait", "Art", "Anime", "Product", "La
 const Index = () => {
   const [activeCategory, setActiveCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+  const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false);
+  const galleryRef = useRef<HTMLDivElement>(null);
+
+  const scrollToGallery = () => {
+    galleryRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   const filteredPrompts = prompts.filter((prompt) => {
     const matchesCategory = activeCategory === "All" || prompt.category === activeCategory;
@@ -116,11 +123,11 @@ const Index = () => {
             </p>
 
             <div className="flex flex-wrap gap-4 justify-center pt-4">
-              <Button className="gradient-primary neon-glow font-semibold px-8">
+              <Button onClick={scrollToGallery} className="gradient-primary neon-glow font-semibold px-8">
                 <Zap className="w-5 h-5 mr-2" />
                 Explore Prompts
               </Button>
-              <Button variant="outline" className="glass font-semibold px-8">
+              <Button onClick={() => setIsHelpDialogOpen(true)} variant="outline" className="glass font-semibold px-8">
                 <Copy className="w-5 h-5 mr-2" />
                 Learn More
               </Button>
@@ -152,7 +159,7 @@ const Index = () => {
         </section>
 
         {/* Prompt Gallery */}
-        <section className="container mx-auto px-4 pb-20">
+        <section ref={galleryRef} className="container mx-auto px-4 pb-20">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredPrompts.map((prompt, index) => (
               <div
@@ -193,6 +200,65 @@ const Index = () => {
           </div>
         </footer>
       </div>
+
+      {/* Help Dialog */}
+      <Dialog open={isHelpDialogOpen} onOpenChange={setIsHelpDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-2xl">
+              <Lightbulb className="w-6 h-6 text-primary" />
+              How to Use AI Prompts
+            </DialogTitle>
+            <DialogDescription className="text-base pt-2">
+              Master the art of creating stunning AI images with these tips
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6 py-4">
+            <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <Copy className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+                <div>
+                  <h4 className="font-semibold mb-1">Copy & Customize</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Click any prompt card to reveal and copy the full prompt. Modify details like colors, style, or subject to make it unique.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3">
+                <Star className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+                <div>
+                  <h4 className="font-semibold mb-1">Be Specific</h4>
+                  <p className="text-sm text-muted-foreground">
+                    The more details you provide (lighting, mood, style, colors), the better your results. Don't be afraid to be descriptive!
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3">
+                <Palette className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+                <div>
+                  <h4 className="font-semibold mb-1">Try Different Platforms</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Each prompt shows compatible AI platforms. Experiment across Midjourney, DALL-E, Stable Diffusion, and others for varied results.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <Sparkles className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+                <div>
+                  <h4 className="font-semibold mb-1">Iterate & Experiment</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Your first generation might not be perfect. Try variations, adjust parameters, and refine your prompt until you get the results you want.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
