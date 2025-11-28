@@ -7,16 +7,28 @@ import { Sparkles, Zap, Copy, Search } from "lucide-react";
 
 // Import generated images
 import weddingSunset from "@/assets/wedding-sunset.jpg";
+import weddingRings from "@/assets/wedding-rings.jpg";
+import weddingDance from "@/assets/wedding-dance.jpg";
 import portraitNeon from "@/assets/portrait-neon.jpg";
+import portraitFashion from "@/assets/portrait-fashion.jpg";
+import portraitSmoke from "@/assets/portrait-smoke.jpg";
 import artAbstract from "@/assets/art-abstract.jpg";
+import artGeometric from "@/assets/art-geometric.jpg";
+import artFluid from "@/assets/art-fluid.jpg";
 import animeCharacter from "@/assets/anime-character.jpg";
+import animeMagical from "@/assets/anime-magical.jpg";
+import animeWarrior from "@/assets/anime-warrior.jpg";
 import productPhone from "@/assets/product-phone.jpg";
+import productHeadphones from "@/assets/product-headphones.jpg";
+import productWatch from "@/assets/product-watch.jpg";
 import landscapeMountains from "@/assets/landscape-mountains.jpg";
+import landscapeLake from "@/assets/landscape-lake.jpg";
+import landscapeHills from "@/assets/landscape-hills.jpg";
 
 const prompts = [
   {
     id: 1,
-    images: [weddingSunset, portraitNeon, artAbstract],
+    images: [weddingSunset, weddingRings, weddingDance],
     title: "Romantic Wedding Sunset",
     category: "Wedding",
     prompt: "A beautiful romantic wedding photo of a couple at sunset, bride in white dress and groom in suit, golden hour lighting, soft bokeh background, professional photography style, warm colors",
@@ -24,7 +36,7 @@ const prompts = [
   },
   {
     id: 2,
-    images: [portraitNeon, animeCharacter, artAbstract],
+    images: [portraitNeon, portraitFashion, portraitSmoke],
     title: "Cyberpunk Neon Portrait",
     category: "Portrait",
     prompt: "A creative portrait of a young person with vibrant neon lighting, cyberpunk aesthetic, cool blue and purple tones, dramatic side lighting, professional studio photography",
@@ -32,7 +44,7 @@ const prompts = [
   },
   {
     id: 3,
-    images: [artAbstract, landscapeMountains, weddingSunset],
+    images: [artAbstract, artGeometric, artFluid],
     title: "Flowing Abstract Art",
     category: "Art",
     prompt: "Abstract digital art with flowing shapes and vibrant gradients, purple pink and blue colors, modern contemporary style, ethereal atmosphere",
@@ -40,7 +52,7 @@ const prompts = [
   },
   {
     id: 4,
-    images: [animeCharacter, portraitNeon, productPhone],
+    images: [animeCharacter, animeMagical, animeWarrior],
     title: "Magical Anime Character",
     category: "Anime",
     prompt: "A stunning anime-style character with detailed features, colorful hair, magical effects, fantasy theme, vibrant colors, professional anime art style",
@@ -48,7 +60,7 @@ const prompts = [
   },
   {
     id: 5,
-    images: [productPhone, artAbstract, landscapeMountains],
+    images: [productPhone, productHeadphones, productWatch],
     title: "Modern Tech Product",
     category: "Product",
     prompt: "Professional product photography of a modern smartphone on a gradient background, studio lighting, sleek design, tech aesthetic, ultra clean",
@@ -56,7 +68,7 @@ const prompts = [
   },
   {
     id: 6,
-    images: [landscapeMountains, weddingSunset, artAbstract],
+    images: [landscapeMountains, landscapeLake, landscapeHills],
     title: "Epic Mountain Sunrise",
     category: "Landscape",
     prompt: "A majestic landscape photo of mountains at sunrise, epic scale, dramatic clouds, golden light, nature photography, breathtaking vista",
