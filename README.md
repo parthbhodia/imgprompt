@@ -1,101 +1,49 @@
-# Welcome to your Lovable project
+# ImgPrompt
 
-## Project info
+ImgPrompt is a curated AI prompt library that pairs high-performing prompts with finished visuals, platform recommendations, and creative guidance so you can produce standout images faster.
 
-**URL**: https://lovable.dev/projects/e2fa6a74-69b7-42a7-ab2f-f03b60e65c37
+## Features
 
-## How can I edit this code?
+- Spotlight hero section with animated gradients and CTAs
+- Search + category filters for instant discovery
+- Interactive prompt cards showing images, copyable prompts, and supported AI tools
+- Tips dialog that teaches newcomers how to iterate effectively
+- Fully responsive layout with glassmorphism styling
 
-There are several ways of editing your application.
+## Tech Stack
 
-**Use Lovable**
+- Vite + React + TypeScript
+- React Router
+- shadcn/ui + Tailwind CSS
+- TanStack Query
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/e2fa6a74-69b7-42a7-ab2f-f03b60e65c37) and start prompting.
+## Local Development
 
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```bash
+git clone <REPO_URL>
+cd <REPO_DIR>
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+> Requires Node.js 16+. For the smoothest experience, use Node 18+ via [nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Deployment (GitHub Pages)
 
-**Use GitHub Codespaces**
+The repo includes `.github/workflows/deploy.yml` which automatically deploys the `main` branch to GitHub Pages.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+1. In GitHub, open **Settings → Pages** and choose **GitHub Actions** as the source.
+2. Push commits to `main` (or trigger the workflow manually from the **Actions** tab).
+3. The workflow sets `GITHUB_REPOSITORY_NAME` so the Vite `base` path matches your repo automatically.
+4. The site will be served from `https://<your-username>.github.io/<repo-name>/`.
 
-## What technologies are used for this project?
+### Custom Domains
 
-This project is built with:
+- Add your custom domain under **Settings → Pages → Custom domain**.
+- Update the `canonical` URL and `og:url` in `index.html` to the new domain.
+- If you serve from the root of a custom domain, set `GITHUB_REPOSITORY_NAME` manually (or override `base` in `vite.config.ts`) so the router uses `/`.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## SEO Notes
 
-## How can I deploy this project?
-
-### Deploy to GitHub Pages
-
-This project is configured for automatic deployment to GitHub Pages using GitHub Actions.
-
-**Initial Setup:**
-
-1. Go to your repository on GitHub
-2. Navigate to **Settings** → **Pages**
-3. Under **Source**, select **GitHub Actions** (not "Deploy from a branch")
-4. Save the settings
-
-**Automatic Deployment:**
-
-- Every push to the `main` branch will automatically trigger a build and deploy
-- The workflow will build your app and deploy it to GitHub Pages
-- Your site will be available at: `https://<your-username>.github.io/<repository-name>/`
-
-**Manual Deployment:**
-
-You can also trigger a manual deployment:
-1. Go to **Actions** tab in your repository
-2. Select **Deploy to GitHub Pages** workflow
-3. Click **Run workflow**
-
-**Note:** The base path is automatically configured based on your repository name. If you're using a custom domain, you may need to adjust the `base` setting in `vite.config.ts`.
-
-### Other Deployment Options
-
-You can also deploy using [Lovable](https://lovable.dev/projects/e2fa6a74-69b7-42a7-ab2f-f03b60e65c37) by clicking Share → Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+- Social preview image lives at `public/social-card.jpg`.
+- Update `index.html` meta tags whenever branding, description, or canonical URL changes.
