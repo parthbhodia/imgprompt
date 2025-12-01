@@ -201,6 +201,32 @@ const landscapeSharedLines = [
 
 const prompts = [
   {
+    id: 15,
+    title: "IG Trend: Ghibli Art Studio Time Capsule",
+    category: "Instagram",
+    slides: [
+      {
+        image: ghibliArtWorkshop,
+        prompt: `Universal Ghibli Transformation Prompt
+
+Transform this photo into a Studio Ghibli–style illustration. Preserve the person's facial features, hair, and overall likeness while gently stylizing them with classic Ghibli traits: rounded face, expressive large eyes, soft shading, subtle blush, and clean anime line-art. Render clothing with simplified folds and warm colors. Recreate the background in a painterly Ghibli style with watercolor skies, soft light bloom, and rich environmental details. Use warm cinematic lighting, gentle gradients, and a nostalgic atmosphere. Maintain the emotional tone of the original photo while giving it the charm and magic of a Ghibli film.`,
+      },
+      {
+        image: instagramGhibliFamily,
+        prompt: `Transform this photo into a Studio Ghibli–style family portrait captured outdoors in soft golden sunlight. A joyful family sits close on a wooden bench, smiling with eyes curved into gentle crescents. Rounded faces, expressive eyes, subtle blush, and softly textured hair match classic Ghibli character styling. Breezy clothing features earthy colors and light fabric shading. Palm trees, lush greenery, and watercolor-like lighting fill the background, creating a wholesome, nostalgic scene brimming with emotional warmth.`,
+      },
+      {
+        image: instagramGhibliForest,
+        prompt: `Transform this photo into a Studio Ghibli forest vista bathed in golden-hour light. A massive ancient tree dominates the frame with textured bark, twisting roots, and leaves painted in warm browns and ambers. A Totoro-like forest spirit peeks from a hollow at the base of the tree, rounded and charming. Nearby, a traveler sits quietly on a mossy rock, basking in the stillness. God rays, drifting dust particles, and soft shadows create a whimsical cel-animation feel that evokes calm wonder.`,
+      },
+      {
+        image: instagramGhibli,
+        prompt: `Transform this photo into a Studio Ghibli scene: a cozy art studio glowing with golden window light and a softly flickering fireplace. Wooden shelves overflow with books, scrolls, brushes, and pottery, while loose sketches and papers scatter across the tatami floor. A young artist in a kimono-inspired outfit sits serenely on the ground, rounded face, expressive eyes, softly curled hair, and gentle blush. Warm ambient tones, painterly textures, and a tiny floating spirit create a nostalgic, magical atmosphere—perfect for a calm, hand-painted carousel opener.`,
+      },
+    ],
+    platforms: ["Midjourney", "DALL-E 3", "Stable Diffusion"],
+  },
+  {
     id: 1,
     title: "Romantic Wedding Sunset",
     category: "Wedding",
@@ -288,7 +314,7 @@ const prompts = [
     category: "Portrait",
     slides: [
       {
-        image: portraitHeadshotModern,
+        image: portraitCreativeCitrus,
         prompt: buildPrompt(
           [
             "1. Capture a confident fintech executive in a navy suit with white pocket square.",
@@ -299,7 +325,7 @@ const prompts = [
         ),
       },
       {
-        image: portraitHeadshotBlonde,
+        image: portraitCreativeGraphite,
         prompt: buildPrompt(
           [
             "1. Photograph a marketing leader with sleek blonde hair and minimalist studs.",
@@ -310,7 +336,7 @@ const prompts = [
         ),
       },
       {
-        image: portraitHeadshotNeutral,
+        image: portraitCreativeGradient,
         prompt: buildPrompt(
           [
             "1. Spotlight a rising analyst wearing a charcoal blazer and ivory blouse.",
@@ -329,7 +355,7 @@ const prompts = [
     category: "Portrait",
     slides: [
       {
-        image: portraitCreativeCitrus,
+        image: portraitHeadshotModern,
         prompt: buildPrompt(
           [
             "1. Craft a citrus-inspired headshot with apricot and teal color blocking.",
@@ -340,7 +366,7 @@ const prompts = [
         ),
       },
       {
-        image: portraitCreativeGraphite,
+        image: portraitHeadshotBlonde,
         prompt: buildPrompt(
           [
             "1. Produce a graphite-toned portrait with diagonal neon strokes.",
@@ -351,7 +377,7 @@ const prompts = [
         ),
       },
       {
-        image: portraitCreativeGradient,
+        image: portraitHeadshotNeutral,
         prompt: buildPrompt(
           [
             "1. Blend lilac-to-turquoise gradients behind a designer in structured wardrobe.",
@@ -528,35 +554,9 @@ const prompts = [
     ],
     platforms: ["Midjourney", "Stable Diffusion", "Leonardo AI"],
   },
-  {
-    id: 15,
-    title: "IG Trend: Ghibli Art Studio Time Capsule",
-    category: "Instagram",
-    slides: [
-      {
-        image: ghibliArtWorkshop,
-        prompt: `Universal Ghibli Transformation Prompt
-
-Transform this photo into a Studio Ghibli–style illustration. Preserve the person's facial features, hair, and overall likeness while gently stylizing them with classic Ghibli traits: rounded face, expressive large eyes, soft shading, subtle blush, and clean anime line-art. Render clothing with simplified folds and warm colors. Recreate the background in a painterly Ghibli style with watercolor skies, soft light bloom, and rich environmental details. Use warm cinematic lighting, gentle gradients, and a nostalgic atmosphere. Maintain the emotional tone of the original photo while giving it the charm and magic of a Ghibli film.`,
-      },
-      {
-        image: instagramGhibliFamily,
-        prompt: `Transform this photo into a Studio Ghibli–style family portrait captured outdoors in soft golden sunlight. A joyful family sits close on a wooden bench, smiling with eyes curved into gentle crescents. Rounded faces, expressive eyes, subtle blush, and softly textured hair match classic Ghibli character styling. Breezy clothing features earthy colors and light fabric shading. Palm trees, lush greenery, and watercolor-like lighting fill the background, creating a wholesome, nostalgic scene brimming with emotional warmth.`,
-      },
-      {
-        image: instagramGhibliForest,
-        prompt: `Transform this photo into a Studio Ghibli forest vista bathed in golden-hour light. A massive ancient tree dominates the frame with textured bark, twisting roots, and leaves painted in warm browns and ambers. A Totoro-like forest spirit peeks from a hollow at the base of the tree, rounded and charming. Nearby, a traveler sits quietly on a mossy rock, basking in the stillness. God rays, drifting dust particles, and soft shadows create a whimsical cel-animation feel that evokes calm wonder.`,
-      },
-      {
-        image: instagramGhibli,
-        prompt: `Transform this photo into a Studio Ghibli scene: a cozy art studio glowing with golden window light and a softly flickering fireplace. Wooden shelves overflow with books, scrolls, brushes, and pottery, while loose sketches and papers scatter across the tatami floor. A young artist in a kimono-inspired outfit sits serenely on the ground, rounded face, expressive eyes, softly curled hair, and gentle blush. Warm ambient tones, painterly textures, and a tiny floating spirit create a nostalgic, magical atmosphere—perfect for a calm, hand-painted carousel opener.`,
-      },
-    ],
-    platforms: ["Midjourney", "DALL-E 3", "Stable Diffusion"],
-  },
 ];
 
-const categories = ["All", "Wedding", "Portrait", "Art", "Anime", "Product", "Landscape", "Instagram"];
+const categories = ["All", "Instagram", "Wedding", "Portrait", "Art", "Anime", "Product", "Landscape"];
 
 const faqItems = [
   {
