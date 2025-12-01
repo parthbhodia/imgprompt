@@ -47,14 +47,14 @@
           "prompt": "Transform the uploaded group photo into a Studio Ghibli–style outdoor family portrait. Preserve the exact number of people, their poses, positions, outfits, and accessories from the original image. Restyle each person with rounded features, gentle blush, glossy eyes, and softly textured hair while maintaining their individual facial characteristics and expressions. Reimagine the background as a golden-hour park scene with watercolor foliage, glowing rim light, drifting pollen, and painterly lens bloom. Keep the original spatial relationships between subjects, emphasize closeness and warmth, and preserve each person's unique likeness while adding Ghibli's signature gentle aesthetic."
         },
         {
-          "imageKey": "instagramGhibliForest",
+          "imageKey": "instagramGhibli",
           "styleName": "Ghibli Forest Adventure",
           "userFacingDescription": "Transform outdoor and nature photos into mystical Ghibli forest scenes",
           "beforeAfterHint": "Your outdoor photo → Enchanted Ghibli forest with ancient trees, forest spirits, and magical lighting",
           "prompt": "Transform the uploaded outdoor photo into a Ghibli forest vista while preserving its subject placement, poses, and camera angle from the original. Restyle people, animals, or objects from the original image with clean anime line-art, rounded proportions, and soft shading while maintaining their recognizable features. Surround them with towering ancient trees, mossy roots, painterly leaves, and amber god rays streaming through the canopy. Add Totoro-inspired forest spirits or floating soot sprites for whimsy, keep lighting golden and diffused with lens flares, and retain the scene's original mood of calm wonder while enhancing it with magical realism and gentle atmospheric depth."
         },
         {
-          "imageKey": "instagramGhibli",
+          "imageKey": "instagramGhibliForest",
           "styleName": "Ghibli Indoor Cozy",
           "userFacingDescription": "Perfect for indoor photos - creates warm, artistic studio atmosphere",
           "beforeAfterHint": "Your indoor photo → Cozy Ghibli art studio with warm lighting, wooden shelves, and friendly spirits",
