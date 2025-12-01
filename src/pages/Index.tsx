@@ -622,8 +622,24 @@ const Index = () => {
   const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
   const galleryRef = useRef<HTMLDivElement>(null);
 
+  const featuredPromptIds = [15, 1];
+  const featuredPrompts = featuredPromptIds
+    .map((id) => prompts.find((prompt) => prompt.id === id))
+    .filter((prompt): prompt is (typeof prompts)[number] => Boolean(prompt));
+
   const scrollToGallery = () => {
     galleryRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const scrollToPromptCard = (promptId: number) => {
+    const element = document.getElementById(`prompt-${promptId}`);
+    element?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
+  const handleFeaturedPromptClick = (promptId: number, promptCategory: string) => {
+    setSearchQuery("");
+    setActiveCategory(promptCategory);
+    setTimeout(() => scrollToPromptCard(promptId), 200);
   };
 
   const filteredPrompts = prompts.filter((prompt) => {
@@ -635,8 +651,6 @@ const Index = () => {
       prompt.slides.some((slide) => slide.prompt.toLowerCase().includes(lowerQuery));
     return matchesCategory && matchesSearch;
   });
-
-  const instagramPrompts = prompts.filter((prompt) => prompt.category === "Instagram");
 
   const feedbackFormUrl =
     import.meta.env.VITE_FEEDBACK_FORM_URL ||
@@ -681,28 +695,36 @@ const Index = () => {
           </div>
         </header>
 
-        {instagramPrompts.length > 0 && (
+        {featuredPrompts.length > 0 && (
           <section className="container mx-auto px-4 pb-6">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <p className="text-sm uppercase tracking-widest text-primary font-semibold">Instagram drops</p>
-                <h2 className="text-2xl font-bold">Trending Ghibli prompts</h2>
+                <h2 className="text-2xl font-bold">Trending prompt highlights</h2>
               </div>
               <Button
                 variant="outline"
                 className="hidden md:flex"
-                onClick={() => setActiveCategory("Instagram")}
+                onClick={() => {
+                  const firstFeatured = featuredPrompts[0];
+                  if (firstFeatured) {
+                    handleFeaturedPromptClick(firstFeatured.id, firstFeatured.category);
+                  } else {
+                    scrollToGallery();
+                  }
+                }}
               >
                 View all
               </Button>
             </div>
             <div className="flex gap-4 overflow-x-auto scrollbar-thin pb-4">
-              {instagramPrompts.map((prompt) => {
+              {featuredPrompts.map((prompt) => {
                 const firstSlide = prompt.slides[0];
                 return (
                   <article
                     key={prompt.id}
                     className="min-w-[260px] max-w-[260px] rounded-3xl border border-border/60 bg-card/80 backdrop-blur p-4 shrink-0"
+                    onClick={() => handleFeaturedPromptClick(prompt.id, prompt.category)}
                   >
                     <div className="aspect-[4/5] overflow-hidden rounded-2xl mb-3">
                       <img
@@ -711,7 +733,9 @@ const Index = () => {
                         className="w-full h-full object-cover"
                       />
                     </div>
-                    <p className="text-xs uppercase tracking-wide text-primary font-semibold mb-1">Instagram</p>
+                    <p className="text-xs uppercase tracking-wide text-primary font-semibold mb-1">
+                      {prompt.category}
+                    </p>
                     <h3 className="text-lg font-semibold mb-2">{prompt.title}</h3>
                     <p className="text-sm text-muted-foreground line-clamp-3">{firstSlide.prompt}</p>
                   </article>
@@ -750,6 +774,7 @@ const Index = () => {
             {filteredPrompts.map((prompt, index) => (
               <div
                 key={prompt.id}
+                id={`prompt-${prompt.id}`}
                 style={{
                   animationDelay: `${index * 100}ms`,
                 }}
