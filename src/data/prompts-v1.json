@@ -1,7 +1,7 @@
 {
   "categories": [
     "All",
-    "Instagram",
+    "Social Media",
     "Wedding",
     "Portrait",
     "Art",
@@ -13,7 +13,7 @@
     {
       "id": 15,
       "title": "IG Trend: Ghibli Art Studio Time Capsule",
-      "category": "Instagram",
+      "category": "Social Media",
       "platforms": [
         "Midjourney",
         "DALL-E 3",

@@ -241,7 +241,7 @@ const Index = () => {
           <section className="container mx-auto px-4 pb-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="text-sm uppercase tracking-widest text-primary font-semibold">Instagram drops</p>
+                <p className="text-sm uppercase tracking-widest text-primary font-semibold">Social media drops</p>
                 <h2 className="text-2xl font-bold">Trending prompt highlights</h2>
               </div>
               <Button

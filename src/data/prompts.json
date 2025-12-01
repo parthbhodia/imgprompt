@@ -1,19 +1,19 @@
 {
-    "categories": [
-      "All",
-      "Instagram",
-      "Wedding",
-      "Portrait",
-      "Art",
-      "Anime",
-      "Product",
-      "Landscape"
-    ],
+  "categories": [
+    "All",
+    "Social Media",
+    "Wedding",
+    "Portrait",
+    "Art",
+    "Anime",
+    "Product",
+    "Landscape"
+  ],
     "prompts": [
       {
         "id": 15,
         "title": "IG Trend: Ghibli Art Studio Time Capsule",
-        "category": "Instagram",
+      "category": "Social Media",
         "platforms": [
           "Midjourney",
           "DALL-E 3",
@@ -233,7 +233,7 @@
       {
         "id": 9,
         "title": "Photo With Your Younger Self",
-        "category": "Instagram",
+      "category": "Social Media",
         "platforms": [
           "Google Gemini",
           "Createimg.com",
