@@ -209,19 +209,19 @@ const prompts = [
         image: ghibliArtWorkshop,
         prompt: `Universal Ghibli Transformation Prompt
 
-Transform this photo into a Studio Ghibli–style illustration. Preserve the person's facial features, hair, and overall likeness while gently stylizing them with classic Ghibli traits: rounded face, expressive large eyes, soft shading, subtle blush, and clean anime line-art. Render clothing with simplified folds and warm colors. Recreate the background in a painterly Ghibli style with watercolor skies, soft light bloom, and rich environmental details. Use warm cinematic lighting, gentle gradients, and a nostalgic atmosphere. Maintain the emotional tone of the original photo while giving it the charm and magic of a Ghibli film.`,
+Transform any photo into a Studio Ghibli–style illustration. Preserve every subject’s facial structure, hairstyle, wardrobe silhouette, and overall mood while gently stylizing them with rounded faces, expressive large eyes, soft blush, and tidy anime line-art. Simplify clothing folds, keep original color cues, and harmonize tones with warm gradients. Recreate the photographed environment in painterly watercolor textures with soft light bloom, drifting particles, and nostalgic cinematic lighting. Maintain the emotional tone of the source image while infusing it with handcrafted Ghibli charm.`,
       },
       {
         image: instagramGhibliFamily,
-        prompt: `Transform this photo into a Studio Ghibli–style family portrait captured outdoors in soft golden sunlight. A joyful family sits close on a wooden bench, smiling with eyes curved into gentle crescents. Rounded faces, expressive eyes, subtle blush, and softly textured hair match classic Ghibli character styling. Breezy clothing features earthy colors and light fabric shading. Palm trees, lush greenery, and watercolor-like lighting fill the background, creating a wholesome, nostalgic scene brimming with emotional warmth.`,
+        prompt: `Transform any group photo into a Studio Ghibli–style outdoor family portrait. Keep the number of people, their poses, outfits, and accessories from the original image, then restyle them with rounded features, gentle blush, glossy eyes, and softly textured hair. Reimagine the background as a golden-hour park scene with watercolor foliage, glowing rim light, drifting pollen, and painterly lens bloom. Emphasize closeness and warmth while preserving each person’s likeness.`,
       },
       {
         image: instagramGhibliForest,
-        prompt: `Transform this photo into a Studio Ghibli forest vista bathed in golden-hour light. A massive ancient tree dominates the frame with textured bark, twisting roots, and leaves painted in warm browns and ambers. A Totoro-like forest spirit peeks from a hollow at the base of the tree, rounded and charming. Nearby, a traveler sits quietly on a mossy rock, basking in the stillness. God rays, drifting dust particles, and soft shadows create a whimsical cel-animation feel that evokes calm wonder.`,
+        prompt: `Transform the uploaded photo into a Ghibli forest vista while preserving its subject placement and camera angle. Restyle people, animals, or objects from the original image with clean anime line-art, rounded proportions, and soft shading, then surround them with towering ancient trees, mossy roots, painterly leaves, and amber god rays. Add Totoro-inspired forest spirits or floating soot sprites for whimsy, keep lighting golden and diffused, and retain the scene’s original mood of calm wonder.`,
       },
       {
         image: instagramGhibli,
-        prompt: `Transform this photo into a Studio Ghibli scene: a cozy art studio glowing with golden window light and a softly flickering fireplace. Wooden shelves overflow with books, scrolls, brushes, and pottery, while loose sketches and papers scatter across the tatami floor. A young artist in a kimono-inspired outfit sits serenely on the ground, rounded face, expressive eyes, softly curled hair, and gentle blush. Warm ambient tones, painterly textures, and a tiny floating spirit create a nostalgic, magical atmosphere—perfect for a calm, hand-painted carousel opener.`,
+        prompt: `Transform any indoor photo into a Studio Ghibli art-studio moment. Keep the subject count, poses, and props from the original image, then reinterpret them with rounded faces, expressive eyes, subtle blush, and soft cel shading. Replace the setting with tatami floors, wooden shelves packed with sketchbooks and pottery, floating dust motes, and golden window light from a hearth-lit atelier. Add tiny friendly spirits or glowing paint orbs, maintain the original emotional tone, and finish with warm nostalgic color grading.`,
       },
     ],
     platforms: ["Midjourney", "DALL-E 3", "Stable Diffusion"],
@@ -314,23 +314,35 @@ Transform this photo into a Studio Ghibli–style illustration. Preserve the per
     category: "Portrait",
     slides: [
       {
+        image: portraitCreativeGraphite,
+        prompt: `1. Capture a confident fintech executive in a navy suit with white pocket square.
+2. Angle the shoulders slightly toward camera for authority without stiffness.
+3. Keep the background a soft gray gradient for universal LinkedIn appeal.
+4. Style wardrobe with a tailored blazer and crisp shirt for timeless polish.
+5. Add pocket square or minimal jewelry for subtle sophistication.
+6. Employ large softbox lighting at 45 degrees for flattering shadows.
+7. Introduce a gentle hair light to separate subject from background.
+8. Retouch skin lightly while keeping pores realistic.
+9. Brighten eyes with controlled catchlights for engagement.
+10. Smooth stray flyaway hairs without looking artificial.
+11. Keep accessories minimal to avoid distraction.
+12. Encourage a confident, approachable smile.
+13. Apply a shallow depth of field to blur backdrop just enough.
+14. Add calibrated contrast to hold detail in darker suits.
+15. Emphasize posture with relaxed shoulders and lifted chin.
+16. Ensure color balance leans slightly warm to feel inviting.
+17. Retain high resolution for LinkedIn and press usage.
+18. Include optional crop guides for 1:1 and 4:5 formats.
+19. Export in both sRGB JPEG and transparent PNG.
+20. Provide a monochrome variant for resumes and bios.`,
+      },
+      {
         image: portraitCreativeCitrus,
         prompt: buildPrompt(
           [
             "1. Capture a confident fintech executive in a navy suit with white pocket square.",
             "2. Angle the shoulders slightly toward camera for authority without stiffness.",
             "3. Keep the background a soft gray gradient for universal LinkedIn appeal.",
-          ],
-          linkedInSharedLines,
-        ),
-      },
-      {
-        image: portraitCreativeGraphite,
-        prompt: buildPrompt(
-          [
-            "1. Photograph a marketing leader with sleek blonde hair and minimalist studs.",
-            "2. Encourage a relaxed smile that feels friendly yet decisive.",
-            "3. Let the blazer lapel catch subtle highlights to separate it from backdrop.",
           ],
           linkedInSharedLines,
         ),
