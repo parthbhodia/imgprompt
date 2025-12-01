@@ -69,6 +69,8 @@ export const PromptCard = ({ slides, category, title, platforms }: PromptCardPro
     "Leonardo AI": "https://leonardo.ai/",
     "Adobe Firefly": "https://firefly.adobe.com/",
     "Niji Journey": "https://niji.journey.com/",
+    "Google Gemini": "https://gemini.google.com/app",
+    "Createimg.com": "https://createimg.com/",
   };
 
   const handlePlatformClick = async (e: React.MouseEvent, platform: string) => {

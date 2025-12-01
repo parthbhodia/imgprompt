@@ -36,6 +36,7 @@ import productWatch from "@/assets/product-watch.jpg";
 import landscapeMountains from "@/assets/landscape-mountains.jpg";
 import landscapeLake from "@/assets/landscape-lake.jpg";
 import landscapeHills from "@/assets/landscape-hills.jpg";
+import youngerSelfPolaroid from "@/assets/younger-self-polaroid.webp";
 
 type PromptSlideConfig = {
   imageKey: string;
@@ -86,6 +87,7 @@ const imageMap = {
   landscapeMountains,
   landscapeLake,
   landscapeHills,
+  youngerSelfPolaroid,
 } as const;
 
 type ImageKey = keyof typeof imageMap;
@@ -162,7 +164,7 @@ const Index = () => {
   const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
   const galleryRef = useRef<HTMLDivElement>(null);
 
-  const featuredPromptIds = [15, 1];
+  const featuredPromptIds = [15, 9, 1];
   const featuredPrompts = featuredPromptIds
     .map((id) => prompts.find((prompt) => prompt.id === id))
     .filter((prompt): prompt is (typeof prompts)[number] => Boolean(prompt));
