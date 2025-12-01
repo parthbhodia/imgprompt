@@ -19,6 +19,10 @@ import portraitHeadshotBlonde from "@/assets/portrait-headshot-blonde.jpg";
 import portraitCreativeCitrus from "@/assets/portrait-creative-citrus.jpg";
 import portraitCreativeGraphite from "@/assets/portrait-creative-graphite.jpg";
 import portraitCreativeGradient from "@/assets/portrait-creative-gradient.jpg";
+import instagramGhibli from "@/assets/instagram-ghibli.png";
+import instagramGhibliForest from "@/assets/instagram-ghibli-forest.png";
+import instagramGhibliFamily from "@/assets/instagram-ghibli-family.png";
+import ghibliArtWorkshop from "@/assets/Creating-Ghibli-Art-with-ChatGPT.jpg";
 import artAbstract from "@/assets/art-abstract.jpg";
 import artGeometric from "@/assets/art-geometric.jpg";
 import artFluid from "@/assets/art-fluid.jpg";
@@ -524,9 +528,35 @@ const prompts = [
     ],
     platforms: ["Midjourney", "Stable Diffusion", "Leonardo AI"],
   },
+  {
+    id: 15,
+    title: "IG Trend: Ghibli Art Studio Time Capsule",
+    category: "Instagram",
+    slides: [
+      {
+        image: ghibliArtWorkshop,
+        prompt: `Universal Ghibli Transformation Prompt
+
+Transform this photo into a Studio Ghibli–style illustration. Preserve the person's facial features, hair, and overall likeness while gently stylizing them with classic Ghibli traits: rounded face, expressive large eyes, soft shading, subtle blush, and clean anime line-art. Render clothing with simplified folds and warm colors. Recreate the background in a painterly Ghibli style with watercolor skies, soft light bloom, and rich environmental details. Use warm cinematic lighting, gentle gradients, and a nostalgic atmosphere. Maintain the emotional tone of the original photo while giving it the charm and magic of a Ghibli film.`,
+      },
+      {
+        image: instagramGhibliFamily,
+        prompt: `Transform this photo into a Studio Ghibli–style family portrait captured outdoors in soft golden sunlight. A joyful family sits close on a wooden bench, smiling with eyes curved into gentle crescents. Rounded faces, expressive eyes, subtle blush, and softly textured hair match classic Ghibli character styling. Breezy clothing features earthy colors and light fabric shading. Palm trees, lush greenery, and watercolor-like lighting fill the background, creating a wholesome, nostalgic scene brimming with emotional warmth.`,
+      },
+      {
+        image: instagramGhibliForest,
+        prompt: `Transform this photo into a Studio Ghibli forest vista bathed in golden-hour light. A massive ancient tree dominates the frame with textured bark, twisting roots, and leaves painted in warm browns and ambers. A Totoro-like forest spirit peeks from a hollow at the base of the tree, rounded and charming. Nearby, a traveler sits quietly on a mossy rock, basking in the stillness. God rays, drifting dust particles, and soft shadows create a whimsical cel-animation feel that evokes calm wonder.`,
+      },
+      {
+        image: instagramGhibli,
+        prompt: `Transform this photo into a Studio Ghibli scene: a cozy art studio glowing with golden window light and a softly flickering fireplace. Wooden shelves overflow with books, scrolls, brushes, and pottery, while loose sketches and papers scatter across the tatami floor. A young artist in a kimono-inspired outfit sits serenely on the ground, rounded face, expressive eyes, softly curled hair, and gentle blush. Warm ambient tones, painterly textures, and a tiny floating spirit create a nostalgic, magical atmosphere—perfect for a calm, hand-painted carousel opener.`,
+      },
+    ],
+    platforms: ["Midjourney", "DALL-E 3", "Stable Diffusion"],
+  },
 ];
 
-const categories = ["All", "Wedding", "Portrait", "Art", "Anime", "Product", "Landscape"];
+const categories = ["All", "Wedding", "Portrait", "Art", "Anime", "Product", "Landscape", "Instagram"];
 
 const faqItems = [
   {
@@ -594,13 +624,15 @@ const Index = () => {
     return matchesCategory && matchesSearch;
   });
 
+  const instagramPrompts = prompts.filter((prompt) => prompt.category === "Instagram");
+
   const feedbackFormUrl =
     import.meta.env.VITE_FEEDBACK_FORM_URL ||
     "https://docs.google.com/forms/d/e/1FAIpQLSc2Y-or9K-I6X-PFAHV-iLN2evZL_KqOAQzMd2FUJqwcQVgzQ/viewform?embedded=true";
 
   return (
     <>
-      <div className="min-h-screen bg-background relative overflow-hidden">
+    <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Animated background gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/10 animate-gradient" />
       <div className="absolute top-20 right-20 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-glow-pulse" />
@@ -636,6 +668,46 @@ const Index = () => {
             </div>
           </div>
         </header>
+
+        {instagramPrompts.length > 0 && (
+          <section className="container mx-auto px-4 pb-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-sm uppercase tracking-widest text-primary font-semibold">Instagram drops</p>
+                <h2 className="text-2xl font-bold">Trending Ghibli prompts</h2>
+              </div>
+              <Button
+                variant="outline"
+                className="hidden md:flex"
+                onClick={() => setActiveCategory("Instagram")}
+              >
+                View all
+              </Button>
+            </div>
+            <div className="flex gap-4 overflow-x-auto scrollbar-thin pb-4">
+              {instagramPrompts.map((prompt) => {
+                const firstSlide = prompt.slides[0];
+                return (
+                  <article
+                    key={prompt.id}
+                    className="min-w-[260px] max-w-[260px] rounded-3xl border border-border/60 bg-card/80 backdrop-blur p-4 shrink-0"
+                  >
+                    <div className="aspect-[4/5] overflow-hidden rounded-2xl mb-3">
+                      <img
+                        src={firstSlide.image}
+                        alt={prompt.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <p className="text-xs uppercase tracking-wide text-primary font-semibold mb-1">Instagram</p>
+                    <h3 className="text-lg font-semibold mb-2">{prompt.title}</h3>
+                    <p className="text-sm text-muted-foreground line-clamp-3">{firstSlide.prompt}</p>
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* Search Bar */}
         <section className="container mx-auto px-4 py-4">
@@ -817,7 +889,7 @@ const Index = () => {
               </a>
               .
             </p>
-          </div>
+    </div>
         </DialogContent>
       </Dialog>
       <script
