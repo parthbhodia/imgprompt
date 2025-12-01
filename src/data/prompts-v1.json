@@ -1,0 +1,234 @@
+{
+  "categories": [
+    "All",
+    "Instagram",
+    "Wedding",
+    "Portrait",
+    "Art",
+    "Anime",
+    "Product",
+    "Landscape"
+  ],
+  "prompts": [
+    {
+      "id": 15,
+      "title": "IG Trend: Ghibli Art Studio Time Capsule",
+      "category": "Instagram",
+      "platforms": [
+        "Midjourney",
+        "DALL-E 3",
+        "Stable Diffusion"
+      ],
+      "slides": [
+        {
+          "imageKey": "ghibliArtWorkshop",
+          "prompt": "A cozy art studio in Studio Ghibli style with tatami floors and wooden shelves packed with sketchbooks and pottery. Soft golden window light streams in illuminating floating dust motes. A character sits working at a low table, surrounded by tiny glowing spirits and paint orbs drifting through the air. Watercolor textures throughout, painterly brushstrokes, warm nostalgic color grading with honey and amber tones, gentle lens bloom, handcrafted aesthetic with rounded features, expressive large eyes, soft blush, and soft cel shading. Dreamy peaceful atmosphere with rich environmental storytelling."
+        },
+        {
+          "imageKey": "instagramGhibliFamily",
+          "prompt": "A group of people in a Studio Ghibli outdoor park scene during golden hour. Characters with rounded features, gentle blush, glossy expressive eyes, and softly textured hair standing close together. Watercolor foliage surrounding them, glowing rim light from the setting sun, drifting pollen particles catching the light, painterly lens bloom creating dreamy atmosphere. Warm color palette with peachy skies and emerald grass, soft shadows, emphasis on closeness and family warmth. Hand-painted aesthetic with nostalgic lighting and Miyazaki-inspired character design showing connection and togetherness."
+        },
+        {
+          "imageKey": "instagramGhibliForest",
+          "prompt": "An enchanted forest vista in Studio Ghibli style with a character standing among towering ancient trees. Mossy roots covering the ground, painterly leaves filtering amber god rays streaming through the canopy. Clean anime line-art on the character with rounded proportions and soft shading. Totoro-inspired forest spirits and floating soot sprites adding whimsy throughout the scene. Golden diffused lighting with lens flares, calm wonder atmosphere, watercolor textures on foliage and environment. Rich greens and warm earth tones, magical realism, peaceful exploration mood with handcrafted Ghibli charm."
+        },
+        {
+          "imageKey": "instagramGhibli",
+          "prompt": "A character in a magical art studio with Studio Ghibli aesthetics. Traditional Japanese tatami floors, wooden shelves overflowing with art supplies, sketchbooks, and handmade pottery. Golden hearth-lit glow from windows creating warm pools of light, dust motes floating visibly in the beams. Tiny friendly spirits or glowing paint orbs drifting around the room. Rounded character face with expressive eyes and subtle blush, soft cel shading technique. Watercolor textures throughout the environment, warm nostalgic color grading emphasizing comfort and creativity. Peaceful artistic atmosphere with handcrafted details and cozy interior warmth."
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "title": "Romantic Wedding Sunset",
+      "category": "Wedding",
+      "platforms": [
+        "Midjourney",
+        "DALL-E 3",
+        "Stable Diffusion"
+      ],
+      "slides": [
+        {
+          "imageKey": "weddingSunset",
+          "prompt": "A cinematic wedding couple at sunset with molten gold horizons, bride and groom in gentle embrace with foreheads touching softly. Bride in modern corseted gown with flowing chiffon layers, groom in tailored charcoal suit with satin lapels. Dried pampas grass and blush roses in floral arrangements nearby. Backlit with amber flares wrapping the subjects in golden light. Shot with 85mm portrait lens aesthetic creating dreamy compression and creamy bokeh background while keeping faces razor sharp. Transparent veil drifting in the breeze adding motion. Reflective highlights on distant waterline. Warm light balanced with cool shadows for depth. Delicate jewelry glints on bride's neckline. Candid laughter expressions showing genuine joy. Honey, terracotta, and dusty rose color grading. Floating dust particles catching light for atmosphere. Handcrafted stationery on nearby marble table. Editorial fashion vibes while feeling intimate. Light film grain for authenticity. Horizon positioned in lower third for strong composition."
+        },
+        {
+          "imageKey": "weddingRings",
+          "prompt": "Intimate macro composition of intertwined wedding rings resting on deep velvet fabric. Handwritten vows and dried rose petals scattered artfully around the jewelry creating romantic context. Focus-stacked for razor-sharp metal edges with dreamy bokeh blur in background. Soft directional lighting creating gentle highlights on gold and diamond surfaces. Warm golden hour color palette with honey and blush tones. Delicate shadows adding depth and dimension to the scene. Fine art photography aesthetic with shallow depth of field drawing eye to rings. Luxury editorial styling with handcrafted calligraphy details visible. Subtle lens flare adding warmth. Light film grain texture for organic feel. Rich color saturation emphasizing precious metals. Museum-quality detail on ring engravings and gemstone facets. Romantic and elegant mood with intimate scale."
+        },
+        {
+          "imageKey": "weddingDance",
+          "prompt": "First dance moment frozen mid-twirl beneath canopy of warm string lights. Motion blur trailing from bride's gown hem showing graceful spinning movement. Rim light highlighting groom's lapel to outline silhouettes against warm ambient background. Bride in flowing wedding dress with layers catching and reflecting light, groom in tailored formal suit. Blurred guests and reception venue creating soft bokeh background ambiance. String lights creating glowing bokeh orbs throughout the frame. Warm amber and gold color grading with cool shadow accents for depth. Floating particles and dust catching the light. Subtle lens flares from overhead lighting. Joyful expressions showing intimate connection between the couple. Cinematic depth created through layered lighting zones. Editorial fashion aesthetic meets authentic candid moment. Light film grain for photographic authenticity. Dynamic composition emphasizing movement and romantic energy. Professional wedding photography look with celebration atmosphere."
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Cyberpunk Neon Portrait",
+      "category": "Portrait",
+      "platforms": [
+        "Midjourney",
+        "Leonardo AI",
+        "Stable Diffusion"
+      ],
+      "slides": [
+        {
+          "imageKey": "portraitNeon",
+          "prompt": "Cyberpunk portrait of a person soaked in magenta and cyan neon lighting from surrounding signage. Reflective panels bouncing neon streaks across face and cheekbones creating dramatic light patterns. Chrome and metallic makeup highlights along cheekbones creating sheen and futuristic aesthetic. Hair styled with undercuts and luminous fiber-optic strands woven throughout. Moody side lighting with sharp rim highlights separating subject from background. Translucent holographic UI panels floating nearby in mid-ground. Subtle rain streaks on foreground glass surface adding atmospheric depth. Smoky atmosphere with volumetric light rays cutting through the haze. Shallow depth of field isolating the face as focal point. Iridescent eyeshadow shifting between teal and violet. Confident smirk expression showing attitude. Glitch effects distorting edges along jacket and silhouette. Metallic accessories with worn futuristic textures. Cool blue and hot pink color grading throughout. Enhanced skin texture keeping pores natural. Faint city lights layered in blurred background. Micro LEDs embedded in clothing seams. 35mm film grain overlay for grit. Punchy contrast protecting highlight detail. Professional 4K portrait quality ready for album art or editorial use."
+        },
+        {
+          "imageKey": "portraitFashion",
+          "prompt": "Fashion-forward cyberpunk portrait against glitching billboard backgrounds. Subject wearing translucent visor and angular shoulder pads creating dramatic silhouette. Framed off-center following editorial magazine composition rules. Hair styled with undercuts and glowing fiber-optic accent strands. Moody side lighting with sharp rim highlights creating separation. Translucent holographic UI panels floating in scene. Subtle rain streaks on glass in foreground adding atmosphere. Smoky environment with volumetric light rays visible. Shallow depth of field isolating subject from busy background. Iridescent eyeshadow and makeup with teal-violet color shifts. Confident expression showing personality. Glitch effects fragmenting edges of jacket and accessories. Metallic textures with worn sci-fi details on clothing. Cool cyberpunk blues balanced with hot magenta accents. Natural enhanced skin texture with visible pores. Layered city lights creating depth in blurred background. Micro LED details embedded in outfit seams. 35mm film grain for authentic gritty feel. Punchy contrast maintaining detail in shadows and highlights. 4K quality suitable for fashion editorial or album artwork."
+        },
+        {
+          "imageKey": "portraitSmoke",
+          "prompt": "Moody cyberpunk portrait of a person emerging through neon-tinted steam and smoke. Animated smoke tendrils wrapping around jawline and shoulders creating mystery. Profile rim-lit so vapor catches ultraviolet glow creating atmospheric separation. Hair styled with undercuts and subtle luminous fiber accents. Moody dramatic side lighting with sharp edge highlights defining form. Translucent holographic interface elements floating in smoky background. Subtle rain streaks visible on foreground glass adding layers. Emphasized smoky atmosphere with thick volumetric light rays. Shallow depth of field keeping face sharp while smoke softens naturally. Iridescent makeup with color shifts between teal, magenta, and violet. Confident mysterious expression. Glitch effects distorting silhouette edges subtly. Metallic accessories and piercings with worn textures. Cool cyberpunk blue tones with warm accent lighting. Authentic skin texture with natural pore detail maintained. Faint city lights creating ambiance in blurred background. Micro tech details like embedded LEDs or circuitry. Fine 35mm film grain for cinematic mood. Balanced contrast protecting both shadow and highlight information. 4K portrait quality ready for professional use in music or gaming."
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Executive LinkedIn Headshot",
+      "category": "Portrait",
+      "platforms": [
+        "Midjourney",
+        "DALL-E 3",
+        "Stable Diffusion"
+      ],
+      "slides": [
+        {
+          "imageKey": "portraitCreativeGraphite",
+          "prompt": "Professional executive portrait of a confident businessperson in navy suit with white pocket square. Shoulders angled slightly toward camera projecting authority without stiffness. Soft gray gradient background for universal professional appeal. Tailored blazer and crisp dress shirt creating polished timeless look. Subtle pocket square adding sophistication without distraction. Large softbox lighting at 45 degrees creating flattering shadows on face. Gentle hair light separating subject from background with subtle rim. Light skin retouching keeping pores and texture realistic. Eyes brightened with controlled catchlights for engagement and approachability. Stray flyaway hairs smoothed naturally without artificial appearance. Minimal jewelry keeping focus on face. Confident approachable smile showing professionalism and warmth. Shallow depth of field subtly blurring backdrop. Calibrated contrast holding detail in darker suit fabric. Good posture with relaxed shoulders and lifted chin. Color balance leaning slightly warm for inviting feel. High resolution suitable for LinkedIn profiles and press materials. Optional crop guides for 1:1 and 4:5 social media formats. Available in both color sRGB JPEG and monochrome variant for resumes."
+        },
+        {
+          "imageKey": "portraitCreativeCitrus",
+          "prompt": "Professional executive portrait of a confident businessperson in navy suit with white pocket square. Shoulders positioned at slight angle toward camera showing authority with approachability. Soft gray gradient background providing universal professional context. Tailored blazer and crisp dress shirt for timeless polished appearance. Subtle pocket square or minimal jewelry for sophistication. Large softbox lighting at 45-degree angle creating flattering facial shadows. Gentle hair light providing separation from background. Light skin retouching preserving realistic pores and texture. Eyes brightened with controlled catchlights for connection and engagement. Flyaway hairs smoothed naturally maintaining authentic look. Accessories kept minimal to avoid distraction from face. Confident approachable smile conveying professionalism and warmth. Shallow depth of field subtly softening backdrop while keeping face sharp. Calibrated contrast preserving detail in dark suit fabric. Strong posture with relaxed shoulders and lifted confident chin. Color balance slightly warm for inviting approachable feel. High resolution output for LinkedIn and professional press usage. Multiple crop guides for 1:1 and 4:5 aspect ratios. Exported in both sRGB JPEG and transparent PNG formats. Monochrome variant included for resume and bio materials."
+        },
+        {
+          "imageKey": "portraitCreativeGradient",
+          "prompt": "Professional portrait of a rising analyst wearing charcoal blazer and ivory blouse. Chin tilted slightly upward projecting optimism and capability. Balanced key and fill lights for even flattering skin tone across frame. Tailored blazer and crisp professional shirt creating timeless polished look. Subtle pocket square or minimal professional jewelry for sophistication. Large softbox lighting at 45 degrees for flattering shadow structure. Gentle hair light separating subject from background with dimension. Light skin retouching keeping pores realistic and natural. Eyes brightened with controlled catchlights for engagement and warmth. Stray flyaway hairs smoothed naturally without artificial look. Accessories minimal to maintain focus on expression and face. Confident approachable smile showing professionalism and optimism. Shallow depth of field subtly blurring backdrop just enough. Calibrated contrast holding detail in darker blazer fabric. Strong posture with relaxed shoulders and lifted confident chin. Color balance leaning slightly warm for inviting professional feel. High resolution suitable for LinkedIn and corporate website usage. Multiple crop guides for 1:1 and 4:5 social media formats. Exported in both sRGB JPEG and transparent PNG. Monochrome variant provided for resume and biography materials."
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Creative Resume Portrait",
+      "category": "Portrait",
+      "platforms": [
+        "Midjourney",
+        "Leonardo AI",
+        "Adobe Firefly"
+      ],
+      "slides": [
+        {
+          "imageKey": "portraitHeadshotModern",
+          "prompt": "Creative headshot with citrus-inspired color blocking using apricot and teal tones. Subject captured mid-laugh for authentic energetic expression. Clamshell lighting setup keeping skin luminous against bold colorful background tones. Smart-casual wardrobe in complementary hues coordinating with background palette. Subtle textured elements like linen or boucle fabrics adding visual depth. Translucent geometric shapes layered behind subject creating modern design aesthetic. Natural hair styling with intentional waves or textured curls showing personality. Expressive genuine pose showing character—gentle laugh or thoughtful engaged gaze. Thin contour line overlays echoing motion graphics and contemporary design motifs. Faint typography elements or grid references suggesting creative design sensibility. Natural freckles or beauty marks retained for authentic human character. Selective color grading harmonizing skin tones with vibrant background colors. High micro-contrast retained in eyes and lips for definition. 50mm lens aesthetic for balanced natural perspective. Subtle vignette focusing attention on facial features and expression. Generous negative space suitable for adding resume headline text overlay. Multiple export variations in vertical, square, and landscape crop formats. Both color and desaturated versions for versatile brand kit usage. Layered editing passes for future customization tweaks. Ready-to-print 300 DPI files for portfolio booklets and presentations."
+        },
+        {
+          "imageKey": "portraitHeadshotBlonde",
+          "prompt": "Creative portrait with graphite-toned background and diagonal neon accent strokes. Subject looking slightly past camera for cinematic editorial intrigue. Metallic eyeliner accents echoing UI-inspired graphic design elements. Smart-casual wardrobe pieces in complementary modern hues. Subtle textured fabric elements like linen or boucle adding tactile depth. Translucent geometric shapes incorporated behind subject for design-forward look. Natural hair styling with professional polish and intentional texture. Expressive thoughtful pose—gentle laugh or confident contemplative gaze. Thin contour line overlays following motion graphics aesthetic principles. Faint typography elements or layout grid references in composition. Authentic details like freckles or beauty marks humanizing the portrait. Selective color grading harmonizing neutral skin tones with neon accents. High micro-contrast in eyes and lips for facial definition. 50mm lens aesthetic providing balanced natural perspective. Subtle vignette drawing focus to face and expression. Negative space provided suitable for portfolio text or project names. Export variations in vertical, square, and landscape aspect ratios. Both full-color and creative high-contrast monochrome variants. Layered PSD-style editing passes for maximum future flexibility. Ready-to-print 300 DPI files for portfolio booklets and professional materials."
+        },
+        {
+          "imageKey": "portraitHeadshotNeutral",
+          "prompt": "Creative portrait with flowing lilac-to-turquoise gradient background. Subject captured in thoughtful pose with hands visible creating balanced composition. Translucent geometric shapes echoing portfolio layout grids and design systems. Smart-casual structured wardrobe pieces complementing gradient color palette. Textured fabric elements like knit, linen, or modern weaves adding interest. Geometric shapes layered behind subject for contemporary graphic look. Natural hair styling with creative professional polish and intention. Genuine expression—thoughtful gaze or subtle confident warm smile. Thin line overlays suggesting design grids and layout guide principles. Subtle typography or creative tool references integrated into composition. Authentic skin details like freckles or natural texture maintained. Color grading harmonizing skin tones seamlessly with gradient background. Strong micro-contrast in facial features for clarity and definition. 50mm lens aesthetic for balanced perspective and natural proportions. Subtle vignette keeping attention focused on face and expression. Generous negative space for resume headlines and portfolio title overlays. Multiple aspect ratio exports suitable for different platforms and uses. Both full-color and creative monochrome variants for brand flexibility. Layered editing passes included for customization options. Ready-to-print 300 DPI files for resumes, portfolios, and booklets."
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Flowing Abstract Art",
+      "category": "Art",
+      "platforms": [
+        "DALL-E 3",
+        "Midjourney",
+        "Adobe Firefly"
+      ],
+      "slides": [
+        {
+          "imageKey": "artAbstract",
+          "prompt": "Abstract composition inspired by fluid acrylic pour techniques. Sweeping ribbons of violet, fuchsia, and cerulean flowing across canvas. Gradients blending and transitioning like aurora borealis creating organic movement. Delicate metallic gold veining adding luxury and visual interest throughout. Cellular lacing patterns reminiscent of resin art and natural formations. Generous negative space breathing around the central vortex focal point. Translucent geometric prisms overlaid for modern contrast and depth. Micro speckles of stardust particles scattered throughout catching light. Varied opacity layers creating dimensional depth and atmospheric perspective. Soft bloom applied to brightest highlights for luminous quality. Organic flowing edges rather than perfectly smooth geometric boundaries. Hints of turquoise mist swirling outward from the composition center. Subtle motion blur suggesting fluid movement and flow. High-resolution textures suitable for large format fine art printing. Warm and cool color zones balanced harmoniously throughout. Wisps of smoke-like trails escaping from the energetic core. Faint shadow gradients providing three-dimensional depth perception. Satin sheen finish across the canvas surface. Ultra-clean preserved whites for professional gallery presentation standards. Square composition format ideal for contemporary wall art and interior design."
+        },
+        {
+          "imageKey": "artGeometric",
+          "prompt": "Geometric abstract composition with interlocking prismatic shapes. Alternating matte and glossy surface treatments creating depth and dimension. Diagonal energy and dynamic angles guiding viewer's eye through composition. Delicate metallic gold or copper veining highlighting key intersections. Cellular patterns and subtle organic textures within geometric forms. Generous negative space balancing complex geometric elements and breathing room. Translucent overlapping layers creating dimensional depth and visual intrigue. Micro details like speckles or subtle gradient transitions within shapes. Soft highlight bloom on glossy geometric surfaces for luminosity. Sharp edges on some forms contrasting with softened organic edges on others. Warm and cool geometric zones balanced throughout composition. Subtle shadow gradients suggesting three-dimensional sculptural forms. Contemporary satin or semi-gloss sheen across surface. Color harmony with modern palette and sophisticated tonal relationships. High-resolution textures for clarity in large format printing. Clean architectural quality with precision and balance. Modern minimalist aesthetic with maximum visual impact. Square composition format suitable for contemporary interiors and wall art. Gallery-quality presentation with museum-standard color reproduction. Ready for fine art printing and professional exhibition display."
+        },
+        {
+          "imageKey": "artFluid",
+          "prompt": "Fluid resin-style art echoing ocean currents and wave formations. Turquoise, teal, and aqua colors dissolving into blush, cream, and foam tones. Organic swirls mimicking natural ocean and beach sand interfaces. Macro-scale bubbles suspended within translucent resin-like layers adding depth. Delicate gold or copper metallic leaf veining following natural flow patterns. Cellular lacing and organic textures characteristic of epoxy resin art. Multiple translucent layers suggesting depth beneath glossy resin surface. Tiny suspended particles or glitter catching and reflecting light throughout. Soft bloom effect on brightest areas creating luminous glowing quality. Organic flowing edges avoiding rigid geometric boundaries and structure. Hints of turquoise mist transitioning into warmer coral and cream tones. Subtle motion blur enhancing sense of fluid movement and flow. Color palette inspired by coastal scenes—turquoise, aqua, coral, cream, metallic gold. Faint shadow gradients creating three-dimensional depth perception and volume. High-gloss resin-like sheen across entire surface for luxury feel. Natural organic movement and energy flowing through composition. Contemporary coastal aesthetic suitable for modern interiors. Square format ideal for wall art and gallery presentation. Museum-quality color accuracy and reproduction standards. Ready for large format fine art printing and luxury interior decoration."
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Magical Anime Character",
+      "category": "Anime",
+      "platforms": [
+        "Niji Journey",
+        "Stable Diffusion",
+        "Leonardo AI"
+      ],
+      "slides": [
+        {
+          "imageKey": "animeCharacter",
+          "prompt": "Heroic anime mage character hovering above crystalline magical ruins. Pastel iridescent hair flowing weightlessly with magical energy. Large expressive golden eyes with star-shaped pupils showing determination. Layered kimono-inspired armor with holographic iridescent panels and flowing fabric. Swirling magical spell circles etched with glowing runes floating around hands. Tiny spirit familiars glowing softly scattered throughout the scene. Painterly clouds tinted in lavender and soft peach creating dreamy atmosphere. Fabric rendered with dynamic motion folds and dimensional depth. Shimmering particle trails following hand gestures and magical movements. Balanced cute anime aesthetics with powerful confident heroic posture. Ornate magical staff topped with radiant crystal prism as focal point. Dramatic lighting from below emphasizing magical power and energy. Soft neon gradients integrated into shadowed areas for anime energy. Reflective metallic trims on armor accessories catching environmental light. Subtle freckles humanizing the character with authentic detail. Crisp clean anime line art with soft gradient cel shading technique. Floating sakura petals and magical embers for atmospheric depth. Distant floating islands in background creating fantasy world setting. Subtle chromatic aberration adding anime visual energy and style. Vibrant saturated colors ready for splash screens and key art presentation."
+        },
+        {
+          "imageKey": "animeMagical",
+          "prompt": "Celestial anime sorceress conjuring nebula fire and cosmic magic. Aurora ribbon lights wrapping gracefully around character's flowing silhouette. Flowing elaborate sleeves echoing cosmic tides and stellar movements. Layered celestial kimono armor with cosmic pattern details and star motifs. Swirling magical spell circles featuring constellation patterns and runes. Tiny glowing spirit familiars floating nearby providing magical support. Painterly cosmic sky with clouds tinted in purples, magentas, and deep blues. Fabric and clothing rendered with dynamic flowing motion and depth. Shimmering stardust particle trails following magical gestures and movements. Balanced graceful elegant pose with powerful magical presence and energy. Ornate cosmic staff topped with radiant prism or nebula crystal. Dramatic magical lighting emphasizing celestial power from multiple sources. Integrated neon purple and blue gradients in magical effects and shadows. Reflective cosmic metallic trims on clothing catching starlight. Subtle authentic freckles humanizing the powerful celestial character. Clean anime line art with soft gradient cel shading for depth. Floating magical elements and atmosphere throughout entire scene. Distant cosmic phenomena and celestial bodies in background. Gentle chromatic aberration for mystical anime energy and style. Vibrant key art quality ready for game splash screens and promotional materials."
+        },
+        {
+          "imageKey": "animeWarrior",
+          "prompt": "Armored anime guardian warrior captured mid-leap over floating sky islands. Sword angled toward camera using foreshortening for dramatic impact and energy. Glowing ember particles scattered throughout scene heightening battle intensity. Layered kimono-inspired armor with protective panels and flowing cape elements. Swirling elemental magic circles and combat auras surrounding the character. Small spirit creatures providing support and magical enhancement effects. Painterly dramatic clouds and sky tinted in sunset battle colors. Armor and fabric with motion blur suggesting speed, action, and movement. Glowing energy particle trails following weapon arc and body motion. Balanced action-packed composition with clear readable heroic silhouette. Ornate weapon design with glowing runes and magical energy effects. Dramatic lighting from multiple angles emphasizing dynamic motion and power. Energy gradients in magical combat effects and atmospheric elements. Reflective surfaces on armor catching environmental light and magical glow. Determined anime eyes with intense focused battle expression and resolve. Sharp anime line art with dynamic action-oriented shading techniques. Floating petals, embers, and atmospheric particles throughout. Enhanced background with floating island terrain and epic dramatic sky. Motion-enhancing chromatic aberration for high-energy anime action feel. Vibrant saturated colors ready for action game key art and promotional splash screens."
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Modern Tech Product",
+      "category": "Product",
+      "platforms": [
+        "Midjourney",
+        "DALL-E 3",
+        "Adobe Firefly"
+      ],
+      "slides": [
+        {
+          "imageKey": "productPhone",
+          "prompt": "Minimalist hero shot of a flagship smartphone elevated above glowing futuristic plinth. Gradient lighting transitioning smoothly from deep navy to electric teal creating premium atmosphere. Hero key light wrapping beautifully around product curves and edges emphasizing form. Subtle specular highlight emphasizing the phone's dimensional curvature and premium quality. Gentle rim light separating product from background for professional depth and clarity. Spotless gradient background without any banding or texture artifacts. Minimal floating UI icons suggesting smart features without overwhelming the product focus. Shallow depth of field where platform base gently fades keeping phone razor sharp. Brand logo and identifying marks clearly visible and perfectly lit. Subtle realistic fingerprints adding authentic handling details for believability. Complementary accessory like earbuds softly blurred in background for context. Balanced reflections avoiding blown-out hotspots and overexposed areas. 70mm product lens aesthetic with beautiful depth compression and bokeh. Micro atmospheric dust particles delicately catching studio lighting. Color grading toward premium cool futuristic tones—navy, teal, silver. Perfect product symmetry and professional commercial presentation standards. Ultra-high 6000px resolution suitable for billboard and large format advertising. Both glossy and matte surface texture variants for flexibility. Generous negative space for marketing copy placement and branding. Professional studio product photography look ready for launch campaigns."
+        },
+        {
+          "imageKey": "productHeadphones",
+          "prompt": "Premium noise-canceling headphones hovering elegantly mid-air suggesting engineering excellence. Concentric subtle audio visualization waves emanating from ear cups. Brushed metal and matte textures highlighted with precise cross lighting techniques. Hero key light wrapping smoothly around product curves and dimensional surfaces. Controlled specular highlights emphasizing premium build quality and materials. Secondary rim light separating product from background creating professional depth. Spotless gradient background without texture noise, banding, or artifacts. Minimal floating UI elements suggesting audio features—bass, treble, noise-cancellation. Selective shallow depth of field where background gently fades while product stays sharp. Brand logos and product identifying marks clearly visible and well-lit. Subtle realistic wear marks and texture details for authentic product feel. Complementary elements like charging case or cable tastefully blurred in background. Balanced reflections and highlights avoiding overexposed hotspot areas. Premium 70mm product lens aesthetic with beautiful depth compression. Micro atmospheric particles catching professional studio lighting setup. Color grading toward sophisticated cool tones or premium deep blacks. Perfect product composition and commercial presentation quality standards. 6000px resolution suitable for print advertising and digital billboard display. Both glossy and matte texture surface variants provided. Negative space for headline copy and marketing message placement. Professional commercial product photography ready for premium launch campaigns."
+        },
+        {
+          "imageKey": "productWatch",
+          "prompt": "Luxury smartwatch resting elegantly on transparent acrylic risers suggesting premium engineering. Watch angled toward camera revealing dial complications and refined design details. Subtle motion blur trails suggesting animated digital displays and smart features. Hero key light wrapping flawlessly around watch highlighting curves and premium surfaces. Precise specular highlights on metal, sapphire glass, and polished surfaces showing luxury materials. Perfectly calibrated rim light separating product from background with elegant separation. Flawless gradient background transitioning through sophisticated premium colors without artifacts. Minimal floating UI elements hinting at smart features without overwhelming luxury aesthetic. Shallow depth of field where product base gently blurs while watch detail stays razor-sharp. Brand name, logo, and identifying marks clearly legible and beautifully illuminated. Authentic subtle details like fine metal scratches or leather grain texture for realism. Complementary accessories like box, strap, or charger tastefully softened in background. Balanced reflections and highlights protecting against blown-out overexposed areas. Premium macro product photography using 100mm lens aesthetic and perspective. Micro dust particles and atmospheric details catching studio light beautifully. Color grading toward sophisticated luxury tones—deep blacks, warm metals, refined colors. Perfect symmetry and luxury presentation meeting high-end commercial standards. Maximum resolution export for fine art printing and premium advertising materials. Both glossy and matte surface finish variants for marketing flexibility. Generous negative space suitable for luxury brand messaging and copy. Professional luxury product photography ready for high-end campaign launch."
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Epic Mountain Sunrise",
+      "category": "Landscape",
+      "platforms": [
+        "Midjourney",
+        "Stable Diffusion",
+        "Leonardo AI"
+      ],
+      "slides": [
+        {
+          "imageKey": "landscapeMountains",
+          "prompt": "Panoramic mountain sunrise scene above rolling low-lying mist and fog. Multiple layered ridge lines fading through atmospheric perspective from dark foreground to hazy distant peaks. Warm golden sunlight kissing the highest mountain peaks in molten amber glow. Valleys filled with ethereal low-lying clouds drifting slowly through the terrain. Reflective alpine lake in middle ground perfectly mirroring the dramatic sunrise sky. Wildflower meadows in vibrant foreground providing color pops and visual interest. Winding mountain trail creating leading lines drawing eye toward distant horizon. Detailed rock textures with subtle lichen growth and natural weathering patterns. Distant waterfalls cascading into the fog and valley mist below. Cool blues in shadowed valley areas contrasting against warm sunrise highlights. Soaring eagles or hawks for sense of massive scale and grandeur. Subtle lens flare peeking from behind a mountain summit following sun position. Long-exposure effect in clouds creating smooth flowing ethereal motion. Entire vista kept in sharp focus from foreground to distant peaks. Soft atmospheric haze for depth and cinematic environmental storytelling. Dynamic sky with stratified realistic cloud layers at various altitudes. Faint volumetric sun rays breaking through gaps in cloud cover. Tiny silhouetted hikers providing human scale against massive landscape. Cinematic color grading toward teal shadows and orange highlights harmony. Ultra-wide resolution suitable for immersive large format fine art prints."
+        },
+        {
+          "imageKey": "landscapeLake",
+          "prompt": "Serene alpine lake with glassy mirror-like surface reflecting sherbet-toned sky perfectly. Smooth weathered boulders in immediate foreground providing scale and compositional anchor. Gentle ripples on water surface catching first hints of golden daylight. Low-lying mist or fog filling distant valleys creating atmospheric depth layers. Crystal-clear reflective alpine lake perfectly mirroring enhanced dramatic sky above. Wildflower meadows along shoreline using complementary natural color palette. Winding shoreline trail acting as leading compositional line into the scene. Foreground rocks rendered with detailed realistic water-worn smooth textures and subtle moss. Distant waterfalls visible if terrain supports, cascading into the misty valleys. Cool blue water tones balanced against warm pink, orange, lavender sky colors. Birds flying or reflected in water providing life, scale, and movement. Positioned subtle lens flare if sun visible in composition and lighting direction. Slight long-exposure smoothing effect on any gentle water movement for serenity. Perfect sharpness maintained throughout scene from immediate foreground to distant mountains. Soft atmospheric haze layers adding depth perception and three-dimensional space. Reflected sky in water maintaining same cloud formations, colors, and patterns. Delicate volumetric light rays if atmospheric conditions support magical quality. Tiny human figures if appropriate for conveying grand scale and contemplation. Cinematic color grading balancing teal and orange tones with peaceful mood. High resolution suitable for contemplative wall art and large format gallery printing."
+        },
+        {
+          "imageKey": "landscapeHills",
+          "prompt": "Rolling hills bathed in blue-hour gradient lighting transitioning from deep blues to warm golds. Wild grasses in foreground catching rim light creating glowing luminous edges. Winding trail naturally guiding viewer's eye from foreground into the peaceful valley. Low-lying mist or fog filling distant valleys creating atmospheric layer separation. Gently rolling hillscapes with multiple overlapping layers creating dimensional depth. Wildflower meadows using color palette inspired by natural blue-hour tones. Sculptural lone trees or vegetation elements on hilltops as compositional anchors. Foreground grasses rendered with detailed texture catching magical hour light beautifully. Distant features like small farms, tree clusters, or rock formations adding interest. Cool atmospheric blues in distance balanced against warm foreground lighting glow. Birds in flight scaled appropriately for conveying scene vastness and scale. Gentle lens flare if light source visible in composition and natural direction. Subtle motion blur on grasses suggesting gentle breeze and natural movement. Layered depth of field keeping foreground sharp with gentle atmospheric softening in distance. Soft volumetric haze between hill layers enhancing three-dimensional depth perception. Sky with dynamic gradient transitioning through blue-hour colors with subtle cloud formations. Delicate sun rays breaking through cloud gaps if composition naturally supports. Tiny human or animal figures if scale appropriate for emotional connection. Cinematic color grading toward blue and warm gold harmony with contemplative mood. Ultra-wide resolution suitable for immersive landscape printing and contemplative wall art display."
+        }
+      ]
+    }
+  ]
+}

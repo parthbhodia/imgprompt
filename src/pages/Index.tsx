@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sparkles, Zap, Copy, Search, Lightbulb, Star, Palette, MessageCircle } from "lucide-react";
+import promptsData from "@/data/prompts.json";
 
 // Import generated images
 import weddingSunset from "@/assets/wedding-sunset.jpg";
@@ -36,539 +37,77 @@ import landscapeMountains from "@/assets/landscape-mountains.jpg";
 import landscapeLake from "@/assets/landscape-lake.jpg";
 import landscapeHills from "@/assets/landscape-hills.jpg";
 
-const buildPrompt = (introLines: string[], sharedLines: string[]) =>
-  [...introLines, ...sharedLines].join("\n");
+type PromptSlideConfig = {
+  imageKey: string;
+  prompt: string;
+};
 
-const weddingSharedLines = [
-  "4. Style the groom in a tailored charcoal suit with subtle satin lapels.",
-  "5. Place dried pampas grass and blush roses in the floral arrangements.",
-  "6. Request backlit flares that wrap the subjects in amber light.",
-  "7. Use a prime 85mm portrait lens aesthetic for dreamy compression.",
-  "8. Blur the background with creamy bokeh while keeping faces razor sharp.",
-  "9. Add a transparent veil drifting in the breeze for motion.",
-  "10. Introduce reflective highlights on the waterline in the distance.",
-  "11. Balance warm light with cool shadows for depth.",
-  "12. Include delicate jewelry glints on the bride’s neckline.",
-  "13. Allow subtle laughter expressions to keep the image candid.",
-  "14. Grade colors toward honey, terracotta, and dusty rose.",
-  "15. Sprinkle tiny floating dust particles for atmosphere.",
-  "16. Emphasize handcrafted stationery props on a nearby marble table.",
-  "17. Maintain editorial fashion vibes while feeling intimate.",
-  "18. Finish with light film grain for authenticity.",
-  "19. Ensure the horizon sits in the lower third for composition.",
-  "20. Export as a high-resolution image ready for fine-art printing.",
-];
+type PromptConfig = {
+  id: number;
+  title: string;
+  category: string;
+  platforms: string[];
+  slides: PromptSlideConfig[];
+};
 
-const cyberpunkSharedLines = [
-  "4. Style hair with undercuts and luminous fiber-optic strands.",
-  "5. Use moody side lighting with sharp rim highlights.",
-  "6. Introduce translucent holographic UI panels floating nearby.",
-  "7. Include subtle rain streaks on the glass foreground.",
-  "8. Emphasize smoky atmosphere with volumetric light rays.",
-  "9. Select a shallow depth of field to isolate the face.",
-  "10. Add iridescent eyeshadow that shifts between teal and violet.",
-  "11. Give the subject a confident smirk for storytelling.",
-  "12. Incorporate glitch effects along the jacket edges.",
-  "13. Render metallic accessories with worn textures.",
-  "14. Color grade toward cool blues balanced by hot pink accents.",
-  "15. Enhance skin texture while keeping pores natural.",
-  "16. Layer faint city lights in the blurred background.",
-  "17. Introduce micro LEDs embedded in the clothing seams.",
-  "18. Apply a 35mm film grain overlay for grit.",
-  "19. Keep contrast punchy but protect highlight detail.",
-  "20. Deliver a 4K portrait ready for album art.",
-];
+type PromptData = {
+  categories: string[];
+  prompts: PromptConfig[];
+};
 
-const linkedInSharedLines = [
-  "4. Style wardrobe with a tailored blazer and crisp shirt for timeless polish.",
-  "5. Add pocket square or minimal jewelry for subtle sophistication.",
-  "6. Employ large softbox lighting at 45 degrees for flattering shadows.",
-  "7. Introduce a gentle hair light to separate subject from background.",
-  "8. Retouch skin lightly while keeping pores realistic.",
-  "9. Brighten eyes with controlled catchlights for engagement.",
-  "10. Smooth stray flyaway hairs without looking artificial.",
-  "11. Keep accessories minimal to avoid distraction.",
-  "12. Encourage a confident, approachable smile.",
-  "13. Apply a shallow depth of field to blur backdrop just enough.",
-  "14. Add calibrated contrast to hold detail in darker suits.",
-  "15. Emphasize posture with relaxed shoulders and lifted chin.",
-  "16. Ensure color balance leans slightly warm to feel inviting.",
-  "17. Retain high resolution for LinkedIn and press usage.",
-  "18. Include optional crop guides for 1:1 and 4:5 formats.",
-  "19. Export in both sRGB JPEG and transparent PNG.",
-  "20. Provide a monochrome variant for resumes and bios.",
-];
+const promptData = promptsData as PromptData;
 
-const creativeHeadshotSharedLines = [
-  "4. Style wardrobe with smart-casual pieces in complementary hues.",
-  "5. Add subtle textured elements like linen or boucle for depth.",
-  "6. Incorporate translucent geometric shapes behind the subject.",
-  "7. Keep hair styling natural with intentional waves or curls.",
-  "8. Encourage an expressive pose—gentle laugh or thoughtful gaze.",
-  "9. Overlay thin contour lines that echo motion graphics motifs.",
-  "10. Include faint typography elements referencing design layouts.",
-  "11. Add freckles or beauty marks to humanize the portrait.",
-  "12. Apply selective color grading to harmonize skin and background.",
-  "13. Retain high micro-contrast in eyes and lips.",
-  "14. Use a 50mm lens aesthetic for balanced perspective.",
-  "15. Add a subtle vignette to focus attention on the face.",
-  "16. Provide negative space suitable for resume headline text.",
-  "17. Export variations in vertical, square, and landscape crops.",
-  "18. Create both color and desaturated versions for brand kits.",
-  "19. Include layered PSD-style passes for future tweaks.",
-  "20. Deliver ready-to-print 300 DPI files for portfolio booklets.",
-];
+const imageMap = {
+  ghibliArtWorkshop,
+  instagramGhibliFamily,
+  instagramGhibliForest,
+  instagramGhibli,
+  weddingSunset,
+  weddingRings,
+  weddingDance,
+  portraitNeon,
+  portraitFashion,
+  portraitSmoke,
+  portraitCreativeGraphite,
+  portraitCreativeCitrus,
+  portraitCreativeGradient,
+  portraitHeadshotModern,
+  portraitHeadshotBlonde,
+  portraitHeadshotNeutral,
+  artAbstract,
+  artGeometric,
+  artFluid,
+  animeCharacter,
+  animeMagical,
+  animeWarrior,
+  productPhone,
+  productHeadphones,
+  productWatch,
+  landscapeMountains,
+  landscapeLake,
+  landscapeHills,
+} as const;
 
-const abstractSharedLines = [
-  "4. Add delicate metallic gold veining for luxury.",
-  "5. Introduce cellular lacing patterns reminiscent of resin art.",
-  "6. Ensure negative space breathes around the central vortex.",
-  "7. Overlay translucent geometric prisms for contrast.",
-  "8. Incorporate micro speckles of stardust particles.",
-  "9. Vary opacity layers to create depth.",
-  "10. Apply soft bloom to the brightest highlights.",
-  "11. Keep edges organic rather than perfectly smooth.",
-  "12. Include hints of turquoise mist swirling outward.",
-  "13. Add subtle motion blur to suggest movement.",
-  "14. Use high-resolution textures for print clarity.",
-  "15. Balance warm and cool zones harmoniously.",
-  "16. Allow wisps of smoke-like trails to escape the core.",
-  "17. Introduce faint shadow gradients for dimensionality.",
-  "18. Finish with a satin sheen across the canvas.",
-  "19. Preserve ultra-clean whites for gallery presentation.",
-  "20. Deliver a square composition suitable for wall art.",
-];
+type ImageKey = keyof typeof imageMap;
 
-const animeSharedLines = [
-  "4. Outfit includes layered kimono armor with holographic panels.",
-  "5. Summon swirling spell circles etched with runes.",
-  "6. Populate the scene with tiny spirit familiars glowing softly.",
-  "7. Use painterly clouds tinted lavender and peach.",
-  "8. Render fabric folds with dynamic motion and depth.",
-  "9. Add shimmering particle trails following hand gestures.",
-  "10. Balance cute aesthetics with powerful posture.",
-  "11. Include ornate staff tipped with a radiant prism.",
-  "12. Cast dramatic light from below to emphasize magic.",
-  "13. Integrate neon gradients into shadowed areas.",
-  "14. Highlight reflective metallic trims on accessories.",
-  "15. Provide subtle freckles to humanize the character.",
-  "16. Keep line art crisp while shading stays soft.",
-  "17. Add floating petals and embers for atmosphere.",
-  "18. Enhance background with distant floating islands.",
-  "19. Apply chromatic aberration for anime energy.",
-  "20. Output as vibrant key art ready for splash screens.",
-];
+const getImageByKey = (key: string) => {
+  const image = imageMap[key as ImageKey];
+  if (!image) {
+    console.warn(`Missing image for key: ${key}`);
+    return "";
+  }
+  return image;
+};
 
-const productSharedLines = [
-  "4. Create a hero key light that wraps smoothly around the product.",
-  "5. Add a faint specular highlight to emphasize curvature.",
-  "6. Introduce a secondary rim light for separation.",
-  "7. Keep background spotless with no banding.",
-  "8. Position floating UI icons that hint at smart features.",
-  "9. Use shallow depth of field so base fades gently.",
-  "10. Ensure brand logo area is unobstructed.",
-  "11. Apply realistic fingerprints subtly for authenticity.",
-  "12. Include a complementary accessory blurred in the back.",
-  "13. Balance reflections to avoid hotspots.",
-  "14. Emulate a 70mm product lens look for compression.",
-  "15. Add micro dust particles catching the light.",
-  "16. Color grade toward cool, futuristic hues.",
-  "17. Maintain perfect symmetry in composition.",
-  "18. Export at 6000px for billboard readiness.",
-  "19. Deliver both glossy and matte texture variants.",
-  "20. Provide negative space for copy placement.",
-];
+const prompts = promptData.prompts.map((prompt) => ({
+  ...prompt,
+  slides: prompt.slides.map((slide) => ({
+    image: getImageByKey(slide.imageKey),
+    prompt: slide.prompt,
+  })),
+}));
 
-const landscapeSharedLines = [
-  "4. Fill valleys with low-lying clouds drifting slowly.",
-  "5. Introduce a reflective alpine lake mirroring the sky.",
-  "6. Add wildflower meadows in the foreground for color pops.",
-  "7. Use leading lines from a winding trail toward the horizon.",
-  "8. Render detailed rock textures with subtle lichen.",
-  "9. Include distant waterfalls cascading into the fog.",
-  "10. Balance cool blues in shadows against warm highlights.",
-  "11. Add soaring birds for a sense of scale.",
-  "12. Place lens flare peeking from behind a summit.",
-  "13. Simulate long-exposure motion in the clouds.",
-  "14. Ensure depth of field keeps entire vista sharp.",
-  "15. Apply soft haze for atmospheric storytelling.",
-  "16. Keep the sky dynamic with stratified cloud layers.",
-  "17. Add faint sun rays breaking through gaps.",
-  "18. Introduce hikers silhouetted for human scale.",
-  "19. Grade colors toward cinematic teal and orange harmony.",
-  "20. Deliver ultra-wide resolution suitable for immersive prints.",
-];
-
-const prompts = [
-  {
-    id: 15,
-    title: "IG Trend: Ghibli Art Studio Time Capsule",
-    category: "Instagram",
-    slides: [
-      {
-        image: ghibliArtWorkshop,
-        prompt: `Universal Ghibli Transformation Prompt
-
-Transform any photo into a Studio Ghibli–style illustration. Preserve every subject’s facial structure, hairstyle, wardrobe silhouette, and overall mood while gently stylizing them with rounded faces, expressive large eyes, soft blush, and tidy anime line-art. Simplify clothing folds, keep original color cues, and harmonize tones with warm gradients. Recreate the photographed environment in painterly watercolor textures with soft light bloom, drifting particles, and nostalgic cinematic lighting. Maintain the emotional tone of the source image while infusing it with handcrafted Ghibli charm.`,
-      },
-      {
-        image: instagramGhibliFamily,
-        prompt: `Transform any group photo into a Studio Ghibli–style outdoor family portrait. Keep the number of people, their poses, outfits, and accessories from the original image, then restyle them with rounded features, gentle blush, glossy eyes, and softly textured hair. Reimagine the background as a golden-hour park scene with watercolor foliage, glowing rim light, drifting pollen, and painterly lens bloom. Emphasize closeness and warmth while preserving each person’s likeness.`,
-      },
-      {
-        image: instagramGhibliForest,
-        prompt: `Transform the uploaded photo into a Ghibli forest vista while preserving its subject placement and camera angle. Restyle people, animals, or objects from the original image with clean anime line-art, rounded proportions, and soft shading, then surround them with towering ancient trees, mossy roots, painterly leaves, and amber god rays. Add Totoro-inspired forest spirits or floating soot sprites for whimsy, keep lighting golden and diffused, and retain the scene’s original mood of calm wonder.`,
-      },
-      {
-        image: instagramGhibli,
-        prompt: `Transform any indoor photo into a Studio Ghibli art-studio moment. Keep the subject count, poses, and props from the original image, then reinterpret them with rounded faces, expressive eyes, subtle blush, and soft cel shading. Replace the setting with tatami floors, wooden shelves packed with sketchbooks and pottery, floating dust motes, and golden window light from a hearth-lit atelier. Add tiny friendly spirits or glowing paint orbs, maintain the original emotional tone, and finish with warm nostalgic color grading.`,
-      },
-    ],
-    platforms: ["Midjourney", "DALL-E 3", "Stable Diffusion"],
-  },
-  {
-    id: 1,
-    title: "Romantic Wedding Sunset",
-    category: "Wedding",
-    slides: [
-      {
-        image: weddingSunset,
-        prompt: buildPrompt(
-          [
-            "1. Capture a cinematic sunset wedding scene with molten gold horizons.",
-            "2. Position the couple in a gentle embrace, foreheads touching softly.",
-            "3. Dress the bride in a modern corseted gown with flowing chiffon layers.",
-          ],
-          weddingSharedLines,
-        ),
-      },
-      {
-        image: weddingRings,
-        prompt: buildPrompt(
-          [
-            "1. Compose an intimate macro of intertwined rings laid on velvet.",
-            "2. Scatter handwritten vows and dried petals around the jewelry.",
-            "3. Focus stack the shot for razor-sharp metal edges and dreamy bokeh.",
-          ],
-          weddingSharedLines,
-        ),
-      },
-      {
-        image: weddingDance,
-        prompt: buildPrompt(
-          [
-            "1. Freeze a first-dance twirl beneath canopy string lights.",
-            "2. Let motion blur trail from the gown hem to imply movement.",
-            "3. Highlight the groom’s lapel with rim light to outline silhouettes.",
-          ],
-          weddingSharedLines,
-        ),
-      },
-    ],
-    platforms: ["Midjourney", "DALL-E 3", "Stable Diffusion"],
-  },
-  {
-    id: 2,
-    title: "Cyberpunk Neon Portrait",
-    category: "Portrait",
-    slides: [
-      {
-        image: portraitNeon,
-        prompt: buildPrompt(
-          [
-            "1. Build a cyberpunk portrait soaked in magenta and cyan signage.",
-            "2. Position reflective panels to bounce neon streaks across the face.",
-            "3. Sculpt chrome makeup highlights along cheekbones for a metallic sheen.",
-          ],
-          cyberpunkSharedLines,
-        ),
-      },
-      {
-        image: portraitFashion,
-        prompt: buildPrompt(
-          [
-            "1. Shoot a fashion-forward android muse against glitching billboards.",
-            "2. Layer translucent visors and angular shoulder pads for silhouette drama.",
-            "3. Frame the subject off-center to mimic magazine editorial spreads.",
-          ],
-          cyberpunkSharedLines,
-        ),
-      },
-      {
-        image: portraitSmoke,
-        prompt: buildPrompt(
-          [
-            "1. Capture a moody hacker emerging through neon-tinted steam.",
-            "2. Add animated smoke tendrils that wrap around the jawline.",
-            "3. Rim-light the profile so vapor catches the ultraviolet glow.",
-          ],
-          cyberpunkSharedLines,
-        ),
-      },
-    ],
-    platforms: ["Midjourney", "Leonardo AI", "Stable Diffusion"],
-  },
-  {
-    id: 3,
-    title: "Executive LinkedIn Headshot",
-    category: "Portrait",
-    slides: [
-      {
-        image: portraitCreativeGraphite,
-        prompt: `1. Capture a confident fintech executive in a navy suit with white pocket square.
-2. Angle the shoulders slightly toward camera for authority without stiffness.
-3. Keep the background a soft gray gradient for universal LinkedIn appeal.
-4. Style wardrobe with a tailored blazer and crisp shirt for timeless polish.
-5. Add pocket square or minimal jewelry for subtle sophistication.
-6. Employ large softbox lighting at 45 degrees for flattering shadows.
-7. Introduce a gentle hair light to separate subject from background.
-8. Retouch skin lightly while keeping pores realistic.
-9. Brighten eyes with controlled catchlights for engagement.
-10. Smooth stray flyaway hairs without looking artificial.
-11. Keep accessories minimal to avoid distraction.
-12. Encourage a confident, approachable smile.
-13. Apply a shallow depth of field to blur backdrop just enough.
-14. Add calibrated contrast to hold detail in darker suits.
-15. Emphasize posture with relaxed shoulders and lifted chin.
-16. Ensure color balance leans slightly warm to feel inviting.
-17. Retain high resolution for LinkedIn and press usage.
-18. Include optional crop guides for 1:1 and 4:5 formats.
-19. Export in both sRGB JPEG and transparent PNG.
-20. Provide a monochrome variant for resumes and bios.`,
-      },
-      {
-        image: portraitCreativeCitrus,
-        prompt: buildPrompt(
-          [
-            "1. Capture a confident fintech executive in a navy suit with white pocket square.",
-            "2. Angle the shoulders slightly toward camera for authority without stiffness.",
-            "3. Keep the background a soft gray gradient for universal LinkedIn appeal.",
-          ],
-          linkedInSharedLines,
-        ),
-      },
-      {
-        image: portraitCreativeGradient,
-        prompt: buildPrompt(
-          [
-            "1. Spotlight a rising analyst wearing a charcoal blazer and ivory blouse.",
-            "2. Tilt the chin slightly upward to project optimism.",
-            "3. Balance key and fill lights for even skin tone across the frame.",
-          ],
-          linkedInSharedLines,
-        ),
-      },
-    ],
-    platforms: ["Midjourney", "DALL-E 3", "Stable Diffusion"],
-  },
-  {
-    id: 4,
-    title: "Creative Resume Portrait",
-    category: "Portrait",
-    slides: [
-      {
-        image: portraitHeadshotModern,
-        prompt: buildPrompt(
-          [
-            "1. Craft a citrus-inspired headshot with apricot and teal color blocking.",
-            "2. Have the subject laugh mid-sentence for authentic energy.",
-            "3. Use clamshell lighting to keep skin luminous against bold tones.",
-          ],
-          creativeHeadshotSharedLines,
-        ),
-      },
-      {
-        image: portraitHeadshotBlonde,
-        prompt: buildPrompt(
-          [
-            "1. Produce a graphite-toned portrait with diagonal neon strokes.",
-            "2. Ask the subject to look past camera for cinematic intrigue.",
-            "3. Add metallic eyeliner accents to echo UI-inspired graphics.",
-          ],
-          creativeHeadshotSharedLines,
-        ),
-      },
-      {
-        image: portraitHeadshotNeutral,
-        prompt: buildPrompt(
-          [
-            "1. Blend lilac-to-turquoise gradients behind a designer in structured wardrobe.",
-            "2. Capture a thoughtful gaze while hands rest mid-frame for balance.",
-            "3. Layer translucent shapes that mirror portfolio layout grids.",
-          ],
-          creativeHeadshotSharedLines,
-        ),
-      },
-    ],
-    platforms: ["Midjourney", "Leonardo AI", "Adobe Firefly"],
-  },
-  {
-    id: 5,
-    title: "Flowing Abstract Art",
-    category: "Art",
-    slides: [
-      {
-        image: artAbstract,
-        prompt: buildPrompt(
-          [
-            "1. Generate an abstract composition inspired by fluid acrylic pours.",
-            "2. Use sweeping ribbons of violet, fuchsia, and cerulean.",
-            "3. Blend gradients that transition like northern lights across the canvas.",
-          ],
-          abstractSharedLines,
-        ),
-      },
-      {
-        image: artGeometric,
-        prompt: buildPrompt(
-          [
-            "1. Create a geometric abstraction with interlocking prisms.",
-            "2. Alternate matte and glossy surfaces for depth.",
-            "3. Introduce diagonal energy that guides the viewer’s eye.",
-          ],
-          abstractSharedLines,
-        ),
-      },
-      {
-        image: artFluid,
-        prompt: buildPrompt(
-          [
-            "1. Pour fluid resin swirls that echo ocean currents.",
-            "2. Let turquoise mist dissolve into blush foam.",
-            "3. Capture macro bubbles suspended beneath translucent layers.",
-          ],
-          abstractSharedLines,
-        ),
-      },
-    ],
-    platforms: ["DALL-E 3", "Midjourney", "Adobe Firefly"],
-  },
-  {
-    id: 6,
-    title: "Magical Anime Character",
-    category: "Anime",
-    slides: [
-      {
-        image: animeCharacter,
-        prompt: buildPrompt(
-          [
-            "1. Design a heroic anime mage hovering above crystalline ruins.",
-            "2. Give them pastel iridescent hair floating weightlessly.",
-            "3. Craft expressive golden eyes with star-shaped pupils.",
-          ],
-          animeSharedLines,
-        ),
-      },
-      {
-        image: animeMagical,
-        prompt: buildPrompt(
-          [
-            "1. Illustrate a celestial sorceress conjuring nebula fire.",
-            "2. Add aurora ribbons that wrap around her silhouette.",
-            "3. Emphasize flowing sleeves that echo cosmic tides.",
-          ],
-          animeSharedLines,
-        ),
-      },
-      {
-        image: animeWarrior,
-        prompt: buildPrompt(
-          [
-            "1. Depict an armored guardian mid-leap over floating islands.",
-            "2. Angle the blade toward camera for foreshortened drama.",
-            "3. Scatter ember particles to heighten battle stakes.",
-          ],
-          animeSharedLines,
-        ),
-      },
-    ],
-    platforms: ["Niji Journey", "Stable Diffusion", "Leonardo AI"],
-  },
-  {
-    id: 7,
-    title: "Modern Tech Product",
-    category: "Product",
-    slides: [
-      {
-        image: productPhone,
-        prompt: buildPrompt(
-          [
-            "1. Stage a minimalist hero shot of a flagship smartphone.",
-            "2. Elevate it above a glowing plinth to feel futuristic.",
-            "3. Use gradient lighting transitioning from deep navy to electric teal.",
-          ],
-          productSharedLines,
-        ),
-      },
-      {
-        image: productHeadphones,
-        prompt: buildPrompt(
-          [
-            "1. Showcase noise-canceling headphones hovering mid-air.",
-            "2. Add concentric audio waves behind the ear cups.",
-            "3. Highlight brushed metal textures with cross lighting.",
-          ],
-          productSharedLines,
-        ),
-      },
-      {
-        image: productWatch,
-        prompt: buildPrompt(
-          [
-            "1. Photograph a luxury smartwatch resting on acrylic risers.",
-            "2. Angle the bezel toward camera to reveal complications.",
-            "3. Introduce subtle motion trails to suggest animated widgets.",
-          ],
-          productSharedLines,
-        ),
-      },
-    ],
-    platforms: ["Midjourney", "DALL-E 3", "Adobe Firefly"],
-  },
-  {
-    id: 8,
-    title: "Epic Mountain Sunrise",
-    category: "Landscape",
-    slides: [
-      {
-        image: landscapeMountains,
-        prompt: buildPrompt(
-          [
-            "1. Paint a panoramic mountain sunrise above rolling mist.",
-            "2. Layer multiple ridge lines fading into atmospheric perspective.",
-            "3. Let warm sunlight kiss the highest peaks in molten gold.",
-          ],
-          landscapeSharedLines,
-        ),
-      },
-      {
-        image: landscapeLake,
-        prompt: buildPrompt(
-          [
-            "1. Focus on a glassy alpine lake mirroring a sherbet sky.",
-            "2. Place smooth boulders in the foreground for scale.",
-            "3. Allow ripples to catch the first hints of daylight.",
-          ],
-          landscapeSharedLines,
-        ),
-      },
-      {
-        image: landscapeHills,
-        prompt: buildPrompt(
-          [
-            "1. Capture rolling hills bathed in blue-hour gradients.",
-            "2. Let wild grasses in the foreground glow with rim light.",
-            "3. Add a winding trail that guides viewers into the valley.",
-          ],
-          landscapeSharedLines,
-        ),
-      },
-    ],
-    platforms: ["Midjourney", "Stable Diffusion", "Leonardo AI"],
-  },
-];
-
-const categories = ["All", "Instagram", "Wedding", "Portrait", "Art", "Anime", "Product", "Landscape"];
+const categories = promptData.categories;
 
 const faqItems = [
   {
@@ -616,7 +155,8 @@ const faqSchema = {
 };
 
 const Index = () => {
-  const [activeCategory, setActiveCategory] = useState("All");
+  const defaultCategory = categories[0] ?? "All";
+  const [activeCategory, setActiveCategory] = useState(defaultCategory);
   const [searchQuery, setSearchQuery] = useState("");
   const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false);
   const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
