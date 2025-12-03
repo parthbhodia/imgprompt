@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { PromptCard } from "@/components/PromptCard";
 import { CategoryFilter } from "@/components/CategoryFilter";
 import { Button } from "@/components/ui/button";
@@ -111,6 +111,8 @@ const prompts = promptData.prompts.map((prompt) => ({
 
 const categories = promptData.categories;
 
+const ADSENSE_CLIENT = "ca-pub-1175059421524576";
+
 const faqItems = [
   {
     question: "What makes VibeIMG different from other AI prompt libraries?",
@@ -163,6 +165,28 @@ const Index = () => {
   const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false);
   const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
   const galleryRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (typeof document === "undefined" || prompts.length === 0) {
+      return;
+    }
+
+    const existingScript = document.querySelector<HTMLScriptElement>("script[data-adsense]");
+    if (existingScript) {
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.async = true;
+    script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`;
+    script.crossOrigin = "anonymous";
+    script.dataset.adsense = "true";
+    document.head.appendChild(script);
+
+    return () => {
+      script.remove();
+    };
+  }, []);
 
   const featuredPromptIds = [15, 9, 1];
   const featuredPrompts = featuredPromptIds
