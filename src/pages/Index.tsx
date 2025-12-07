@@ -195,24 +195,41 @@ const DEFAULT_DOCUMENT_TITLE = "ImgPrompt — Curated AI Prompt Library & Inspir
 const DEFAULT_META_DESCRIPTION =
   "ImgPrompt is a curated library of high-performing AI prompts with visuals, tips, and platform guidance so you can create stunning images faster.";
 
-const getPromptIdFromUrl = () => {
+const getInitialRouteState = () => {
   if (typeof window === "undefined") {
-    return null;
+    return { promptId: null as number | null, slideIndex: 0 };
   }
   const params = new URLSearchParams(window.location.search);
   const promptSlug = params.get("prompt");
-  if (!promptSlug) {
-    return null;
+  const slideParam = params.get("slide");
+  let promptId: number | null = null;
+  let promptRecord: PromptWithAssets | undefined;
+  if (promptSlug) {
+    promptRecord = prompts.find((prompt) => prompt.slug === promptSlug);
+    if (promptRecord) {
+      promptId = promptRecord.id;
+    } else {
+      const fallbackId = Number(promptSlug);
+      if (Number.isFinite(fallbackId)) {
+        promptRecord = prompts.find((prompt) => prompt.id === fallbackId);
+        if (promptRecord) {
+          promptId = promptRecord.id;
+        }
+      }
+    }
   }
-  const matchedPrompt = prompts.find((prompt) => prompt.slug === promptSlug);
-  if (matchedPrompt) {
-    return matchedPrompt.id;
+  let slideIndex = 0;
+  if (promptRecord && slideParam) {
+    const parsedSlide = Number(slideParam);
+    if (
+      Number.isFinite(parsedSlide) &&
+      parsedSlide >= 0 &&
+      parsedSlide < promptRecord.slides.length
+    ) {
+      slideIndex = parsedSlide;
+    }
   }
-  const fallbackId = Number(promptSlug);
-  if (!Number.isFinite(fallbackId)) {
-    return null;
-  }
-  return prompts.some((prompt) => prompt.id === fallbackId) ? fallbackId : null;
+  return { promptId, slideIndex };
 };
 
 const getPromptSlugById = (promptId: number) => {
@@ -220,13 +237,14 @@ const getPromptSlugById = (promptId: number) => {
   return prompt?.slug ?? null;
 };
 
-const getPromptShareUrl = (promptId: number) => {
+const getPromptShareUrl = (promptId: number, slideIndex = 0) => {
   if (typeof window === "undefined") {
     return "";
   }
   const url = new URL(window.location.href);
   const promptSlug = getPromptSlugById(promptId);
   url.searchParams.set("prompt", promptSlug ?? String(promptId));
+  url.searchParams.set("slide", String(slideIndex));
   return url.toString();
 };
 
@@ -236,18 +254,14 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false);
   const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
-  const initialPromptIdRef = useRef<number | null>(getPromptIdFromUrl());
-  const [isPromptDialogOpen, setIsPromptDialogOpen] = useState(Boolean(initialPromptIdRef.current));
-  const [selectedPromptId, setSelectedPromptId] = useState<number | null>(initialPromptIdRef.current);
-  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+  const initialRouteRef = useRef(getInitialRouteState());
+  const [isPromptDialogOpen, setIsPromptDialogOpen] = useState(Boolean(initialRouteRef.current.promptId));
+  const [selectedPromptId, setSelectedPromptId] = useState<number | null>(initialRouteRef.current.promptId);
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(initialRouteRef.current.slideIndex ?? 0);
   const galleryRef = useRef<HTMLDivElement>(null);
   const adsenseScriptRef = useRef<HTMLScriptElement | null>(null);
   const selectedPrompt = selectedPromptId ? prompts.find((prompt) => prompt.id === selectedPromptId) ?? null : null;
   const selectedSlide = selectedPrompt ? selectedPrompt.slides[currentSlideIndex] : null;
-
-  useEffect(() => {
-    setCurrentSlideIndex(0);
-  }, [selectedPromptId]);
 
   useEffect(() => {
     if (typeof document === "undefined") {
@@ -267,7 +281,11 @@ const Index = () => {
     metaDescription?.setAttribute("content", DEFAULT_META_DESCRIPTION);
   }, [selectedPrompt, selectedPromptId]);
 
-  const updatePromptParam = (promptId?: number | null) => {
+  useEffect(() => {
+    updatePromptParam(selectedPromptId, currentSlideIndex);
+  }, [selectedPromptId, currentSlideIndex]);
+
+  const updatePromptParam = (promptId?: number | null, slideIndex = 0) => {
     if (typeof window === "undefined") {
       return;
     }
@@ -275,22 +293,24 @@ const Index = () => {
     if (promptId) {
       const promptSlug = getPromptSlugById(promptId);
       url.searchParams.set("prompt", promptSlug ?? String(promptId));
+      url.searchParams.set("slide", String(slideIndex));
     } else {
       url.searchParams.delete("prompt");
+      url.searchParams.delete("slide");
     }
     window.history.replaceState({}, "", url);
   };
 
-  const openPromptModal = (promptId: number) => {
+  const openPromptModal = (promptId: number, slideIndex = 0) => {
     setSelectedPromptId(promptId);
+    setCurrentSlideIndex(slideIndex);
     setIsPromptDialogOpen(true);
-    updatePromptParam(promptId);
   };
 
   const closePromptModal = () => {
     setIsPromptDialogOpen(false);
     setSelectedPromptId(null);
-    updatePromptParam(null);
+    setCurrentSlideIndex(0);
   };
 
   const copyTextToClipboard = async (text: string, successMessage = "Copied to clipboard!") => {
@@ -323,7 +343,7 @@ const Index = () => {
     if (!selectedPromptId) {
       return;
     }
-    const shareUrl = getPromptShareUrl(selectedPromptId);
+    const shareUrl = getPromptShareUrl(selectedPromptId, currentSlideIndex);
     if (!shareUrl) {
       return;
     }
@@ -353,7 +373,7 @@ const Index = () => {
     if (!selectedPromptId) {
       return;
     }
-    const shareUrl = getPromptShareUrl(selectedPromptId);
+    const shareUrl = getPromptShareUrl(selectedPromptId, currentSlideIndex);
     if (!shareUrl) {
       return;
     }
@@ -755,7 +775,7 @@ const Index = () => {
       {selectedPrompt && selectedSlide && (
         <Dialog
           open={isPromptDialogOpen}
-          onOpenChange={(open) => (open ? openPromptModal(selectedPrompt.id) : closePromptModal())}
+          onOpenChange={(open) => (open ? openPromptModal(selectedPrompt.id, currentSlideIndex) : closePromptModal())}
         >
           <DialogContent className="sm:max-w-[900px]">
             <DialogHeader>

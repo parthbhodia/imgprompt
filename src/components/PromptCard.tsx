@@ -30,7 +30,7 @@ export const PromptCard = ({ slides, category, title, platforms, onOpen }: Promp
     setCurrentImageIndex((prev) => (prev - 1 + slides.length) % slides.length);
   };
 
-  const copyPromptToClipboard = async (text: string) => {
+  const copyPromptToClipboard = async (text: string, successMessage: string | null = "Prompt copied to clipboard!") => {
     let fallbackTextarea: HTMLTextAreaElement | null = null;
     try {
       if (navigator.clipboard?.writeText) {
@@ -45,7 +45,9 @@ export const PromptCard = ({ slides, category, title, platforms, onOpen }: Promp
         fallbackTextarea.select();
         document.execCommand("copy");
       }
-      toast.success("Prompt copied to clipboard!");
+      if (successMessage) {
+        toast.success(successMessage);
+      }
       return true;
     } catch (error) {
       console.error("Failed to copy prompt", error);
@@ -72,8 +74,8 @@ export const PromptCard = ({ slides, category, title, platforms, onOpen }: Promp
   const handlePlatformClick = async (e: React.MouseEvent, platform: string) => {
     e.stopPropagation();
     const currentPrompt = slides[currentImageIndex].prompt;
-    const copyPromise = copyPromptToClipboard(currentPrompt);
     const url = platformUrls[platform] || "#";
+    const copyPromise = copyPromptToClipboard(currentPrompt, url === "#" ? "Prompt copied to clipboard!" : null);
     if (url !== "#") {
       window.open(url, "_blank", "noopener,noreferrer");
     }
