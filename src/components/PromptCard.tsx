@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Copy, Check, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
+import { Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 
@@ -15,11 +14,10 @@ interface PromptCardProps {
   category: string;
   title: string;
   platforms: string[];
+  onOpen: () => void;
 }
 
-export const PromptCard = ({ slides, category, title, platforms }: PromptCardProps) => {
-  const [showPrompt, setShowPrompt] = useState(false);
-  const [copied, setCopied] = useState(false);
+export const PromptCard = ({ slides, category, title, platforms, onOpen }: PromptCardProps) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const nextImage = (e: React.MouseEvent) => {
@@ -47,9 +45,7 @@ export const PromptCard = ({ slides, category, title, platforms }: PromptCardPro
         fallbackTextarea.select();
         document.execCommand("copy");
       }
-      setCopied(true);
       toast.success("Prompt copied to clipboard!");
-      setTimeout(() => setCopied(false), 2000);
       return true;
     } catch (error) {
       console.error("Failed to copy prompt", error);
@@ -76,10 +72,13 @@ export const PromptCard = ({ slides, category, title, platforms }: PromptCardPro
   const handlePlatformClick = async (e: React.MouseEvent, platform: string) => {
     e.stopPropagation();
     const currentPrompt = slides[currentImageIndex].prompt;
-    await copyPromptToClipboard(currentPrompt);
+    const copyPromise = copyPromptToClipboard(currentPrompt);
     const url = platformUrls[platform] || "#";
     if (url !== "#") {
       window.open(url, "_blank", "noopener,noreferrer");
+    }
+    const wasCopied = await copyPromise;
+    if (wasCopied && url !== "#") {
       toast.success(`Prompt copied! Paste it in ${platform}`);
     }
   };
@@ -89,7 +88,7 @@ export const PromptCard = ({ slides, category, title, platforms }: PromptCardPro
   return (
     <Card
       className="group relative overflow-hidden glass hover:scale-105 transition-all duration-300 cursor-pointer animate-scale-in border-border/50"
-      onClick={() => setShowPrompt(!showPrompt)}
+      onClick={onOpen}
     >
       <div className="aspect-square overflow-hidden relative">
         <img
@@ -154,39 +153,9 @@ export const PromptCard = ({ slides, category, title, platforms }: PromptCardPro
             </Badge>
           ))}
         </div>
-        
-        {showPrompt ? (
-          <div className="space-y-3 animate-fade-in">
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {currentSlide.prompt}
-            </p>
-            <Button
-              onClick={(e) => {
-                e.stopPropagation();
-                copyPromptToClipboard(currentSlide.prompt);
-              }}
-              variant="secondary"
-              size="sm"
-              className="w-full gradient-secondary"
-            >
-              {copied ? (
-                <>
-                  <Check className="w-4 h-4 mr-2" />
-                  Copied!
-                </>
-              ) : (
-                <>
-                  <Copy className="w-4 h-4 mr-2" />
-                  Copy Prompt
-                </>
-              )}
-            </Button>
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            Click to reveal prompt ✨
-          </p>
-        )}
+        <p className="text-sm text-muted-foreground">
+          Click to open prompt ✨
+        </p>
       </div>
     </Card>
   );

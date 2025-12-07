@@ -4,7 +4,8 @@ import { CategoryFilter } from "@/components/CategoryFilter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Sparkles, Zap, Copy, Search, Lightbulb, Star, Palette, MessageCircle } from "lucide-react";
+import { Sparkles, Zap, Copy, Search, Lightbulb, Star, Palette, MessageCircle, Share2, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
+import { toast } from "sonner";
 import promptsData from "@/data/prompts.json";
 
 // Import generated images
@@ -51,12 +52,29 @@ type PromptConfig = {
   slides: PromptSlideConfig[];
 };
 
+type PromptWithAssets = Omit<PromptConfig, "slides"> & {
+  slug: string;
+  slides: {
+    image: string;
+    prompt: string;
+  }[];
+};
+
 type PromptData = {
   categories: string[];
   prompts: PromptConfig[];
 };
 
 const promptData = promptsData as PromptData;
+
+const slugify = (value: string) => {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+};
 
 const imageMap = {
   ghibliArtWorkshop,
@@ -101,17 +119,32 @@ const getImageByKey = (key: string) => {
   return image;
 };
 
-const prompts = promptData.prompts.map((prompt) => ({
-  ...prompt,
-  slides: prompt.slides.map((slide) => ({
-    image: getImageByKey(slide.imageKey),
-    prompt: slide.prompt,
-  })),
-}));
+const prompts: PromptWithAssets[] = promptData.prompts.map((prompt) => {
+  const baseSlug = slugify(prompt.title);
+  const slug = baseSlug || `prompt-${prompt.id}`;
+  return {
+    ...prompt,
+    slug,
+    slides: prompt.slides.map((slide) => ({
+      image: getImageByKey(slide.imageKey),
+      prompt: slide.prompt,
+    })),
+  };
+});
 
 const categories = promptData.categories;
 
 const ADSENSE_CLIENT = "ca-pub-1175059421524576";
+const platformUrls: Record<string, string> = {
+  "Midjourney": "https://www.midjourney.com/",
+  "DALL-E 3": "https://chatgpt.com/",
+  "Stable Diffusion": "https://stablediffusionweb.com/",
+  "Leonardo AI": "https://leonardo.ai/",
+  "Adobe Firefly": "https://firefly.adobe.com/",
+  "Niji Journey": "https://niji.journey.com/",
+  "Google Gemini": "https://gemini.google.com/app",
+  "Createimg.com": "https://createimg.com/",
+};
 
 const faqItems = [
   {
@@ -158,35 +191,209 @@ const faqSchema = {
   })),
 };
 
+const DEFAULT_DOCUMENT_TITLE = "ImgPrompt — Curated AI Prompt Library & Inspiration";
+const DEFAULT_META_DESCRIPTION =
+  "ImgPrompt is a curated library of high-performing AI prompts with visuals, tips, and platform guidance so you can create stunning images faster.";
+
+const getPromptIdFromUrl = () => {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  const params = new URLSearchParams(window.location.search);
+  const promptSlug = params.get("prompt");
+  if (!promptSlug) {
+    return null;
+  }
+  const matchedPrompt = prompts.find((prompt) => prompt.slug === promptSlug);
+  if (matchedPrompt) {
+    return matchedPrompt.id;
+  }
+  const fallbackId = Number(promptSlug);
+  if (!Number.isFinite(fallbackId)) {
+    return null;
+  }
+  return prompts.some((prompt) => prompt.id === fallbackId) ? fallbackId : null;
+};
+
+const getPromptSlugById = (promptId: number) => {
+  const prompt = prompts.find((item) => item.id === promptId);
+  return prompt?.slug ?? null;
+};
+
+const getPromptShareUrl = (promptId: number) => {
+  if (typeof window === "undefined") {
+    return "";
+  }
+  const url = new URL(window.location.href);
+  const promptSlug = getPromptSlugById(promptId);
+  url.searchParams.set("prompt", promptSlug ?? String(promptId));
+  return url.toString();
+};
+
 const Index = () => {
   const defaultCategory = categories[0] ?? "All";
   const [activeCategory, setActiveCategory] = useState(defaultCategory);
   const [searchQuery, setSearchQuery] = useState("");
   const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false);
   const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
+  const initialPromptIdRef = useRef<number | null>(getPromptIdFromUrl());
+  const [isPromptDialogOpen, setIsPromptDialogOpen] = useState(Boolean(initialPromptIdRef.current));
+  const [selectedPromptId, setSelectedPromptId] = useState<number | null>(initialPromptIdRef.current);
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const galleryRef = useRef<HTMLDivElement>(null);
+  const adsenseScriptRef = useRef<HTMLScriptElement | null>(null);
+  const selectedPrompt = selectedPromptId ? prompts.find((prompt) => prompt.id === selectedPromptId) ?? null : null;
+  const selectedSlide = selectedPrompt ? selectedPrompt.slides[currentSlideIndex] : null;
 
   useEffect(() => {
-    if (typeof document === "undefined" || prompts.length === 0) {
+    setCurrentSlideIndex(0);
+  }, [selectedPromptId]);
+
+  useEffect(() => {
+    if (typeof document === "undefined") {
       return;
     }
-
-    const existingScript = document.querySelector<HTMLScriptElement>("script[data-adsense]");
-    if (existingScript) {
+    const metaDescription = document.querySelector<HTMLMetaElement>('meta[name="description"]');
+    if (selectedPrompt && selectedPromptId) {
+      const promptIdentifier = `Prompt ${selectedPromptId}`;
+      document.title = `${promptIdentifier} · ${selectedPrompt.title} | ImgPrompt`;
+      const dynamicDescription = `${promptIdentifier} from our ${selectedPrompt.category} collection. Optimized for ${selectedPrompt.platforms.join(
+        ", "
+      )} with visuals that show exactly what you'll create.`;
+      metaDescription?.setAttribute("content", dynamicDescription);
       return;
     }
+    document.title = DEFAULT_DOCUMENT_TITLE;
+    metaDescription?.setAttribute("content", DEFAULT_META_DESCRIPTION);
+  }, [selectedPrompt, selectedPromptId]);
 
-    const script = document.createElement("script");
-    script.async = true;
-    script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`;
-    script.crossOrigin = "anonymous";
-    script.dataset.adsense = "true";
-    document.head.appendChild(script);
+  const updatePromptParam = (promptId?: number | null) => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const url = new URL(window.location.href);
+    if (promptId) {
+      const promptSlug = getPromptSlugById(promptId);
+      url.searchParams.set("prompt", promptSlug ?? String(promptId));
+    } else {
+      url.searchParams.delete("prompt");
+    }
+    window.history.replaceState({}, "", url);
+  };
 
-    return () => {
-      script.remove();
-    };
-  }, []);
+  const openPromptModal = (promptId: number) => {
+    setSelectedPromptId(promptId);
+    setIsPromptDialogOpen(true);
+    updatePromptParam(promptId);
+  };
+
+  const closePromptModal = () => {
+    setIsPromptDialogOpen(false);
+    setSelectedPromptId(null);
+    updatePromptParam(null);
+  };
+
+  const copyTextToClipboard = async (text: string, successMessage = "Copied to clipboard!") => {
+    let fallbackTextarea: HTMLTextAreaElement | null = null;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        fallbackTextarea = document.createElement("textarea");
+        fallbackTextarea.value = text;
+        fallbackTextarea.style.position = "fixed";
+        fallbackTextarea.style.left = "-9999px";
+        document.body.appendChild(fallbackTextarea);
+        fallbackTextarea.focus();
+        fallbackTextarea.select();
+        document.execCommand("copy");
+      }
+      toast.success(successMessage);
+    } catch (error) {
+      console.error("Clipboard copy failed", error);
+      toast.error("Couldn't copy. Please try manually.");
+    } finally {
+      if (fallbackTextarea && fallbackTextarea.parentNode) {
+        fallbackTextarea.parentNode.removeChild(fallbackTextarea);
+      }
+    }
+  };
+
+  const handleSharePrompt = async () => {
+    if (!selectedPromptId) {
+      return;
+    }
+    const shareUrl = getPromptShareUrl(selectedPromptId);
+    if (!shareUrl) {
+      return;
+    }
+    const shareTitle = selectedPrompt ? `Prompt ${selectedPrompt.id}` : "AI Prompt";
+    const shareText = selectedPrompt
+      ? `${selectedPrompt.title} • ${selectedPrompt.category} prompt`
+      : "Check out this AI prompt!";
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: shareUrl,
+        });
+        return;
+      }
+    } catch (error) {
+      console.warn("Native share interrupted, falling back to clipboard", error);
+    }
+    await copyTextToClipboard(
+      shareUrl,
+      selectedPromptId ? `Prompt #${selectedPromptId} link copied!` : "Prompt link copied!"
+    );
+  };
+
+  const copyPromptShareUrl = async () => {
+    if (!selectedPromptId) {
+      return;
+    }
+    const shareUrl = getPromptShareUrl(selectedPromptId);
+    if (!shareUrl) {
+      return;
+    }
+    await copyTextToClipboard(
+      shareUrl,
+      selectedPrompt ? `${selectedPrompt.title} link copied!` : "Prompt link copied!"
+    );
+  };
+
+  const handlePlatformLaunch = async (platform: string) => {
+    if (!selectedSlide) {
+      return;
+    }
+    const copyPromise = copyTextToClipboard(
+      selectedSlide.prompt,
+      `Prompt ready for ${platform}. Paste it in your ${platform} workspace!`,
+    );
+    const url = platformUrls[platform] || "#";
+    if (url !== "#") {
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
+    await copyPromise;
+  };
+
+  const copySelectedPrompt = async () => {
+    if (!selectedSlide) {
+      return;
+    }
+    await copyTextToClipboard(selectedSlide.prompt, "Prompt copied!");
+  };
+
+  const goToSlide = (direction: "prev" | "next") => {
+    if (!selectedPrompt) return;
+    setCurrentSlideIndex((prev) => {
+      if (direction === "prev") {
+        return (prev - 1 + selectedPrompt.slides.length) % selectedPrompt.slides.length;
+      }
+      return (prev + 1) % selectedPrompt.slides.length;
+    });
+  };
 
   const featuredPromptIds = [15, 9, 1];
   const featuredPrompts = featuredPromptIds
@@ -217,6 +424,40 @@ const Index = () => {
       prompt.slides.some((slide) => slide.prompt.toLowerCase().includes(lowerQuery));
     return matchesCategory && matchesSearch;
   });
+  const hasPromptContent = filteredPrompts.length > 0;
+
+  useEffect(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+    if (hasPromptContent) {
+      if (adsenseScriptRef.current) {
+        return;
+      }
+      const script = document.createElement("script");
+      script.async = true;
+      script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`;
+      script.crossOrigin = "anonymous";
+      script.dataset.adsense = "true";
+      document.head.appendChild(script);
+      adsenseScriptRef.current = script;
+
+      return () => {
+        script.remove();
+        adsenseScriptRef.current = null;
+      };
+    }
+    if (adsenseScriptRef.current) {
+      adsenseScriptRef.current.remove();
+      adsenseScriptRef.current = null;
+    }
+  }, [hasPromptContent]);
+
+  const resetFilters = () => {
+    setSearchQuery("");
+    setActiveCategory(defaultCategory);
+    galleryRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   const feedbackFormUrl =
     import.meta.env.VITE_FEEDBACK_FORM_URL ||
@@ -224,7 +465,11 @@ const Index = () => {
 
   return (
     <>
-    <div className="min-h-screen bg-background relative overflow-hidden">
+    <main
+      className="min-h-screen bg-background relative overflow-hidden"
+      role="main"
+      aria-label="AI prompt inspiration library"
+    >
       {/* Animated background gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/10 animate-gradient" />
       <div className="absolute top-20 right-20 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-glow-pulse" />
@@ -350,16 +595,28 @@ const Index = () => {
                   category={prompt.category}
                   title={prompt.title}
                   platforms={prompt.platforms}
+                  onOpen={() => openPromptModal(prompt.id)}
                 />
               </div>
             ))}
           </div>
 
           {filteredPrompts.length === 0 && (
-            <div className="text-center py-20">
-              <p className="text-muted-foreground text-lg">
-                No prompts found in this category. Try selecting a different one!
-              </p>
+            <div className="text-center py-20 max-w-2xl mx-auto space-y-6 glass rounded-3xl p-10">
+              <div className="space-y-3">
+                <h3 className="text-2xl font-semibold">No prompts match your filters yet</h3>
+                <p className="text-muted-foreground text-base">
+                  ImgPrompt always keeps at least one hero section live, but ads stay paused until real prompt cards are visible. Clear your filters or explore a different category to load fresh inspiration.
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Button onClick={resetFilters} className="flex-1 min-w-[180px]">
+                  Reset filters
+                </Button>
+                <Button variant="outline" onClick={() => setIsHelpDialogOpen(true)} className="flex-1 min-w-[180px]">
+                  Learn how ImgPrompt works
+                </Button>
+              </div>
             </div>
           )}
         </section>
@@ -397,7 +654,7 @@ const Index = () => {
           </div>
         </footer>
       </div>
-      </div>
+      </main>
 
       {/* Help Dialog */}
       <Dialog open={isHelpDialogOpen} onOpenChange={setIsHelpDialogOpen}>
@@ -495,6 +752,104 @@ const Index = () => {
     </div>
         </DialogContent>
       </Dialog>
+      {selectedPrompt && selectedSlide && (
+        <Dialog
+          open={isPromptDialogOpen}
+          onOpenChange={(open) => (open ? openPromptModal(selectedPrompt.id) : closePromptModal())}
+        >
+          <DialogContent className="sm:max-w-[900px]">
+            <DialogHeader>
+              <DialogTitle className="flex flex-wrap items-center justify-between gap-4 text-2xl">
+                <span>{selectedPrompt.title}</span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="gap-2"
+                    onClick={copyPromptShareUrl}
+                  >
+                    <Copy className="w-4 h-4" />
+                    Copy link
+                  </Button>
+                  <button
+                    type="button"
+                    onClick={handleSharePrompt}
+                    className="rounded-full p-2 hover:bg-muted transition-colors"
+                    aria-label="Share prompt link"
+                  >
+                    <Share2 className="w-5 h-5" />
+                  </button>
+                </div>
+              </DialogTitle>
+              <DialogDescription className="text-sm">
+                {selectedPrompt.category} prompt • Platforms: {selectedPrompt.platforms.join(", ")}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="relative rounded-2xl overflow-hidden border border-border/60">
+                <img
+                  src={selectedSlide.image}
+                  alt={selectedPrompt.title}
+                  className="w-full h-full object-cover"
+                />
+
+                {selectedPrompt.slides.length > 1 && (
+                  <>
+                    <button
+                      className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full glass flex items-center justify-center"
+                      onClick={() => goToSlide("prev")}
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <button
+                      className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full glass flex items-center justify-center"
+                      onClick={() => goToSlide("next")}
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                      {selectedPrompt.slides.map((_, idx) => (
+                        <span
+                          key={idx}
+                          className={`w-2 h-2 rounded-full ${idx === currentSlideIndex ? "bg-primary" : "bg-white/50"}`}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-wrap gap-2">
+                  {selectedPrompt.platforms.map((platform) => (
+                    <Button
+                      key={platform}
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="gap-2 text-xs uppercase tracking-wide"
+                      onClick={() => handlePlatformLaunch(platform)}
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      {platform}
+                    </Button>
+                  ))}
+                </div>
+                <div className="rounded-2xl border border-border/70 bg-background/80 p-4 overflow-y-auto max-h-[320px]">
+                  <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed">{selectedSlide.prompt}</p>
+                </div>
+                <Button onClick={copySelectedPrompt} className="w-full">
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copy Prompt
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
