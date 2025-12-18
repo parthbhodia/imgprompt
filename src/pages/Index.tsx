@@ -486,7 +486,7 @@ const Index = () => {
   return (
     <>
     <main
-      className="min-h-screen bg-background relative overflow-hidden"
+      className="min-h-screen bg-background relative overflow-x-hidden"
       role="main"
       aria-label="AI prompt inspiration library"
     >
