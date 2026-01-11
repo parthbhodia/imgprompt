@@ -726,7 +726,7 @@ const Index = () => {
           open={isPromptDialogOpen}
           onOpenChange={(open) => (open ? openPromptModal(selectedPrompt.id, currentSlideIndex) : closePromptModal())}
         >
-          <DialogContent className="sm:max-w-[900px]">
+          <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex flex-wrap items-center justify-between gap-4 text-2xl">
                 <span>{selectedPrompt.title}</span>
@@ -757,7 +757,7 @@ const Index = () => {
             </DialogHeader>
 
             <div className="grid gap-6 md:grid-cols-2">
-              <div className="relative rounded-2xl overflow-hidden border border-border/60">
+              <div className="relative rounded-2xl overflow-hidden border border-border/60 max-h-[360px] md:max-h-full">
                 <img
                   src={selectedSlide.image}
                   alt={selectedPrompt.title}
