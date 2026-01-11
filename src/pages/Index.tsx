@@ -7,132 +7,20 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sparkles, Zap, Copy, Search, Lightbulb, Star, Palette, MessageCircle, Share2, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
-import promptsData from "@/data/prompts.json";
 import { fetchPromptsFromStrapi, type NormalizedPrompt } from "@/lib/strapi";
 
-// Import generated images
-import weddingSunset from "@/assets/wedding-sunset.jpg";
-import weddingRings from "@/assets/wedding-rings.jpg";
-import weddingDance from "@/assets/wedding-dance.jpg";
-import portraitNeon from "@/assets/portrait-neon.jpg";
-import portraitFashion from "@/assets/portrait-fashion.jpg";
-import portraitSmoke from "@/assets/portrait-smoke.jpg";
-import portraitHeadshotModern from "@/assets/portrait-headshot-modern.jpg";
-import portraitHeadshotNeutral from "@/assets/portrait-headshot-neutral.jpg";
-import portraitHeadshotBlonde from "@/assets/portrait-headshot-blonde.jpg";
-import portraitCreativeCitrus from "@/assets/portrait-creative-citrus.jpg";
-import portraitCreativeGraphite from "@/assets/portrait-creative-graphite.jpg";
-import portraitCreativeGradient from "@/assets/portrait-creative-gradient.jpg";
-import instagramGhibli from "@/assets/instagram-ghibli.png";
-import instagramGhibliForest from "@/assets/instagram-ghibli-forest.png";
-import instagramGhibliFamily from "@/assets/instagram-ghibli-family.png";
-import ghibliArtWorkshop from "@/assets/Creating-Ghibli-Art-with-ChatGPT.jpg";
-import artAbstract from "@/assets/art-abstract.jpg";
-import artGeometric from "@/assets/art-geometric.jpg";
-import artFluid from "@/assets/art-fluid.jpg";
-import animeCharacter from "@/assets/anime-character.jpg";
-import animeMagical from "@/assets/anime-magical.jpg";
-import animeWarrior from "@/assets/anime-warrior.jpg";
-import productPhone from "@/assets/product-phone.jpg";
-import productHeadphones from "@/assets/product-headphones.jpg";
-import productWatch from "@/assets/product-watch.jpg";
-import landscapeMountains from "@/assets/landscape-mountains.jpg";
-import landscapeLake from "@/assets/landscape-lake.jpg";
-import landscapeHills from "@/assets/landscape-hills.jpg";
-import youngerSelfPolaroid from "@/assets/younger-self-polaroid.webp";
-
-type PromptSlideConfig = {
-  imageKey: string;
-  prompt: string;
-};
-
-type PromptConfig = {
+type PromptWithAssets = {
   id: number;
   title: string;
   category: string;
   platforms: string[];
-  slides: PromptSlideConfig[];
-};
-
-type PromptWithAssets = Omit<PromptConfig, "slides"> & {
   slug: string;
   slides: {
     image: string;
     prompt: string;
   }[];
+  featured?: boolean;
 };
-
-type PromptData = {
-  categories: string[];
-  prompts: PromptConfig[];
-};
-
-const localPromptData = promptsData as PromptData;
-
-const slugify = (value: string) => {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-");
-};
-
-const imageMap = {
-  ghibliArtWorkshop,
-  instagramGhibliFamily,
-  instagramGhibliForest,
-  instagramGhibli,
-  weddingSunset,
-  weddingRings,
-  weddingDance,
-  portraitNeon,
-  portraitFashion,
-  portraitSmoke,
-  portraitCreativeGraphite,
-  portraitCreativeCitrus,
-  portraitCreativeGradient,
-  portraitHeadshotModern,
-  portraitHeadshotBlonde,
-  portraitHeadshotNeutral,
-  artAbstract,
-  artGeometric,
-  artFluid,
-  animeCharacter,
-  animeMagical,
-  animeWarrior,
-  productPhone,
-  productHeadphones,
-  productWatch,
-  landscapeMountains,
-  landscapeLake,
-  landscapeHills,
-  youngerSelfPolaroid,
-} as const;
-
-type ImageKey = keyof typeof imageMap;
-
-const getImageByKey = (key: string) => {
-  const image = imageMap[key as ImageKey];
-  if (!image) {
-    console.warn(`Missing image for key: ${key}`);
-    return "";
-  }
-  return image;
-};
-
-const localPrompts: PromptWithAssets[] = localPromptData.prompts.map((prompt) => {
-  const baseSlug = slugify(prompt.title);
-  const slug = baseSlug || `prompt-${prompt.id}`;
-  return {
-    ...prompt,
-    slug,
-    slides: prompt.slides.map((slide) => ({
-      image: getImageByKey(slide.imageKey),
-      prompt: slide.prompt,
-    })),
-  };
-});
 
 const normalizeStrapiPrompts = (data?: NormalizedPrompt[]): PromptWithAssets[] => {
   if (!data) return [];
@@ -146,15 +34,16 @@ const normalizeStrapiPrompts = (data?: NormalizedPrompt[]): PromptWithAssets[] =
       image: slide.image || "",
       prompt: slide.prompt,
     })) ?? [],
+    featured: item.featured,
   }));
 };
 
-const buildCategories = (promptList: PromptWithAssets[], fallback: string[]) => {
+const buildCategories = (promptList: PromptWithAssets[]) => {
   const unique = new Set<string>(promptList.map((p) => p.category));
   const fromPrompts = Array.from(unique).filter(Boolean);
   const list = ["All", ...fromPrompts];
-  if (list.length > 1) return list;
-  return fallback;
+  if (list.length === 1) return ["All"];
+  return list;
 };
 
 const ADSENSE_CLIENT = "ca-pub-1175059421524576";
@@ -270,8 +159,8 @@ const Index = () => {
   });
 
   const remotePrompts = normalizeStrapiPrompts(strapiData?.prompts);
-  const mergedPrompts = remotePrompts.length ? remotePrompts : localPrompts;
-  const categories = buildCategories(mergedPrompts, localPromptData.categories);
+  const mergedPrompts = remotePrompts;
+  const categories = buildCategories(mergedPrompts);
   const defaultCategory = categories[0] ?? "All";
   const [activeCategory, setActiveCategory] = useState(defaultCategory);
   const [searchQuery, setSearchQuery] = useState("");
@@ -469,10 +358,10 @@ const Index = () => {
     });
   };
 
-  const featuredPromptIds = [15, 9, 1];
-  const featuredPrompts = featuredPromptIds
-    .map((id) => mergedPrompts.find((prompt) => prompt.id === id))
-    .filter((prompt): prompt is PromptWithAssets => Boolean(prompt));
+  const featuredPrompts =
+    mergedPrompts.filter((prompt) => prompt.featured).length > 0
+      ? mergedPrompts.filter((prompt) => prompt.featured)
+      : mergedPrompts.slice(0, 3);
 
   const scrollToGallery = () => {
     galleryRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });

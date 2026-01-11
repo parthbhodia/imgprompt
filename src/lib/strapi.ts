@@ -1,10 +1,10 @@
 type StrapiEntity<T> = {
   id: number;
-  attributes: T;
-};
+  attributes?: T;
+} & Partial<T>;
 
 type StrapiMedia = {
-  url: string;
+  url?: string;
   alternativeText?: string | null;
 };
 
@@ -19,15 +19,18 @@ type StrapiPlatform = {
 };
 
 type StrapiSlide = {
-  prompt: string;
+  prompt?: string;
   order?: number | null;
-  image?: {
-    data: StrapiEntity<StrapiMedia> | null;
-  };
+  image?:
+    | {
+        data?: StrapiEntity<StrapiMedia> | null;
+      }
+    | StrapiMedia
+    | null;
 };
 
 type StrapiPrompt = {
-  title: string;
+  title?: string;
   slug?: string | null;
   featured?: boolean;
   category?: { data: StrapiEntity<StrapiCategory> | null };
@@ -53,9 +56,16 @@ export type StrapiPromptResponse = {
 const STRAPI_URL = (import.meta.env.VITE_STRAPI_URL as string | undefined)?.replace(/\/$/, "") || "";
 const STRAPI_TOKEN = import.meta.env.VITE_STRAPI_TOKEN as string | undefined;
 
-const buildImageUrl = (media?: StrapiEntity<StrapiMedia> | null) => {
-  if (!media?.attributes?.url) return "";
-  const url = media.attributes.url;
+const extractMediaUrl = (
+  media?: StrapiEntity<StrapiMedia> | StrapiMedia | { data?: StrapiEntity<StrapiMedia> | StrapiMedia | null } | null
+) => {
+  if (!media) return "";
+  // v4 shape: { data: { attributes: { url } } }
+  const url =
+    (media as any)?.attributes?.url ||
+    (media as any)?.url ||
+    (media as any)?.data?.attributes?.url ||
+    (media as any)?.data?.url;
   if (url.startsWith("http")) return url;
   if (!STRAPI_URL) return "";
   return `${STRAPI_URL}${url}`;
@@ -96,28 +106,39 @@ export const fetchPromptsFromStrapi = async (): Promise<StrapiPromptResponse> =>
   const items: StrapiEntity<StrapiPrompt>[] = payload?.data || [];
 
   const prompts: NormalizedPrompt[] = items.map((item) => {
-    const attrs = item.attributes || {};
-    const slides = attrs.slides?.data || [];
-    const platforms = attrs.platforms?.data || [];
-    const categoryName = attrs.category?.data?.attributes?.name?.trim() || "Uncategorized";
-    const slug = attrs.slug?.trim() || slugify(attrs.title);
+    // Support Strapi v4 (attributes) and v5 (flat fields).
+    const attrs: StrapiPrompt = (item.attributes || item) as StrapiPrompt;
+
+    const rawSlides = (attrs.slides as any)?.data || attrs.slides || [];
+    const rawPlatforms = (attrs.platforms as any)?.data || attrs.platforms || [];
+
+    const categorySource =
+      (attrs.category as any)?.data?.attributes ||
+      (attrs.category as any)?.data ||
+      (attrs.category as any) ||
+      null;
+    const categoryName = categorySource?.name?.trim() || "Uncategorized";
+
+    const slug = attrs.slug?.trim() || slugify(attrs.title || "");
 
     return {
       id: item.id,
-      title: attrs.title,
+      title: attrs.title || `Prompt ${item.id}`,
       slug: slug || `prompt-${item.id}`,
       category: categoryName || "Uncategorized",
-      platforms: platforms.map((p) => p.attributes?.name).filter(Boolean) as string[],
-      slides: slides
-        .map((slide) => {
-          const slideAttrs = slide.attributes || {};
+      platforms: rawPlatforms
+        .map((p: any) => (p?.attributes ? p.attributes.name : p?.name))
+        .filter(Boolean) as string[],
+      slides: rawSlides
+        .map((slide: any) => {
+          const slideAttrs: StrapiSlide = (slide?.attributes || slide || {}) as StrapiSlide;
           return {
-            image: buildImageUrl(slideAttrs.image?.data) || "",
+            image: extractMediaUrl(slideAttrs.image),
             prompt: slideAttrs.prompt || "",
             order: slideAttrs.order ?? 0,
           };
         })
-        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+        .sort((a: any, b: any) => (a.order ?? 0) - (b.order ?? 0))
         .map(({ image, prompt }) => ({ image, prompt })),
       featured: attrs.featured,
     };
