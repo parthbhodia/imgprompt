@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { PromptCard } from "@/components/PromptCard";
 import { CategoryFilter } from "@/components/CategoryFilter";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Sparkles, Zap, Copy, Search, Lightbulb, Star, Palette, MessageCircle, Share2, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import promptsData from "@/data/prompts.json";
+import { fetchPromptsFromStrapi, type NormalizedPrompt } from "@/lib/strapi";
 
 // Import generated images
 import weddingSunset from "@/assets/wedding-sunset.jpg";
@@ -65,7 +67,7 @@ type PromptData = {
   prompts: PromptConfig[];
 };
 
-const promptData = promptsData as PromptData;
+const localPromptData = promptsData as PromptData;
 
 const slugify = (value: string) => {
   return value
@@ -119,7 +121,7 @@ const getImageByKey = (key: string) => {
   return image;
 };
 
-const prompts: PromptWithAssets[] = promptData.prompts.map((prompt) => {
+const localPrompts: PromptWithAssets[] = localPromptData.prompts.map((prompt) => {
   const baseSlug = slugify(prompt.title);
   const slug = baseSlug || `prompt-${prompt.id}`;
   return {
@@ -132,7 +134,28 @@ const prompts: PromptWithAssets[] = promptData.prompts.map((prompt) => {
   };
 });
 
-const categories = promptData.categories;
+const normalizeStrapiPrompts = (data?: NormalizedPrompt[]): PromptWithAssets[] => {
+  if (!data) return [];
+  return data.map((item) => ({
+    id: item.id,
+    title: item.title,
+    category: item.category || "Uncategorized",
+    platforms: item.platforms?.length ? item.platforms : ["Custom"],
+    slug: item.slug || `prompt-${item.id}`,
+    slides: item.slides?.map((slide) => ({
+      image: slide.image || "",
+      prompt: slide.prompt,
+    })) ?? [],
+  }));
+};
+
+const buildCategories = (promptList: PromptWithAssets[], fallback: string[]) => {
+  const unique = new Set<string>(promptList.map((p) => p.category));
+  const fromPrompts = Array.from(unique).filter(Boolean);
+  const list = ["All", ...fromPrompts];
+  if (list.length > 1) return list;
+  return fallback;
+};
 
 const ADSENSE_CLIENT = "ca-pub-1175059421524576";
 const platformUrls: Record<string, string> = {
@@ -195,7 +218,7 @@ const DEFAULT_DOCUMENT_TITLE = "ImgPrompt — Curated AI Prompt Library & Inspir
 const DEFAULT_META_DESCRIPTION =
   "ImgPrompt is a curated library of high-performing AI prompts with visuals, tips, and platform guidance so you can create stunning images faster.";
 
-const getInitialRouteState = () => {
+const getInitialRouteState = (promptList: PromptWithAssets[]) => {
   if (typeof window === "undefined") {
     return { promptId: null as number | null, slideIndex: 0 };
   }
@@ -205,13 +228,13 @@ const getInitialRouteState = () => {
   let promptId: number | null = null;
   let promptRecord: PromptWithAssets | undefined;
   if (promptSlug) {
-    promptRecord = prompts.find((prompt) => prompt.slug === promptSlug);
+    promptRecord = promptList.find((prompt) => prompt.slug === promptSlug);
     if (promptRecord) {
       promptId = promptRecord.id;
     } else {
       const fallbackId = Number(promptSlug);
       if (Number.isFinite(fallbackId)) {
-        promptRecord = prompts.find((prompt) => prompt.id === fallbackId);
+        promptRecord = promptList.find((prompt) => prompt.id === fallbackId);
         if (promptRecord) {
           promptId = promptRecord.id;
         }
@@ -232,36 +255,67 @@ const getInitialRouteState = () => {
   return { promptId, slideIndex };
 };
 
-const getPromptSlugById = (promptId: number) => {
-  const prompt = prompts.find((item) => item.id === promptId);
-  return prompt?.slug ?? null;
-};
-
-const getPromptShareUrl = (promptId: number, slideIndex = 0) => {
-  if (typeof window === "undefined") {
-    return "";
-  }
-  const url = new URL(window.location.href);
-  const promptSlug = getPromptSlugById(promptId);
-  url.searchParams.set("prompt", promptSlug ?? String(promptId));
-  url.searchParams.set("slide", String(slideIndex));
-  return url.toString();
-};
-
 const Index = () => {
+  const strapiEnabled = Boolean(import.meta.env.VITE_STRAPI_URL);
+  const {
+    data: strapiData,
+    isLoading: isStrapiLoading,
+    isError: isStrapiError,
+  } = useQuery({
+    queryKey: ["strapi-prompts"],
+    queryFn: fetchPromptsFromStrapi,
+    enabled: strapiEnabled,
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+
+  const remotePrompts = normalizeStrapiPrompts(strapiData?.prompts);
+  const mergedPrompts = remotePrompts.length ? remotePrompts : localPrompts;
+  const categories = buildCategories(mergedPrompts, localPromptData.categories);
   const defaultCategory = categories[0] ?? "All";
   const [activeCategory, setActiveCategory] = useState(defaultCategory);
   const [searchQuery, setSearchQuery] = useState("");
   const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false);
   const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
-  const initialRouteRef = useRef(getInitialRouteState());
-  const [isPromptDialogOpen, setIsPromptDialogOpen] = useState(Boolean(initialRouteRef.current.promptId));
-  const [selectedPromptId, setSelectedPromptId] = useState<number | null>(initialRouteRef.current.promptId);
-  const [currentSlideIndex, setCurrentSlideIndex] = useState(initialRouteRef.current.slideIndex ?? 0);
+  const [isPromptDialogOpen, setIsPromptDialogOpen] = useState(false);
+  const [selectedPromptId, setSelectedPromptId] = useState<number | null>(null);
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const galleryRef = useRef<HTMLDivElement>(null);
   const adsenseScriptRef = useRef<HTMLScriptElement | null>(null);
-  const selectedPrompt = selectedPromptId ? prompts.find((prompt) => prompt.id === selectedPromptId) ?? null : null;
+  const hasInitializedRoute = useRef(false);
+  const selectedPrompt = selectedPromptId ? mergedPrompts.find((prompt) => prompt.id === selectedPromptId) ?? null : null;
   const selectedSlide = selectedPrompt ? selectedPrompt.slides[currentSlideIndex] : null;
+
+  useEffect(() => {
+    if (!categories.includes(activeCategory)) {
+      setActiveCategory(categories[0] ?? "All");
+    }
+  }, [categories, activeCategory]);
+
+  useEffect(() => {
+    if (hasInitializedRoute.current) return;
+    const initialState = getInitialRouteState(mergedPrompts);
+    setSelectedPromptId(initialState.promptId);
+    setCurrentSlideIndex(initialState.slideIndex ?? 0);
+    setIsPromptDialogOpen(Boolean(initialState.promptId));
+    hasInitializedRoute.current = true;
+  }, [mergedPrompts]);
+
+  const getPromptSlugById = (promptId: number) => {
+    const prompt = mergedPrompts.find((item) => item.id === promptId);
+    return prompt?.slug ?? null;
+  };
+
+  const getPromptShareUrl = (promptId: number, slideIndex = 0) => {
+    if (typeof window === "undefined") {
+      return "";
+    }
+    const url = new URL(window.location.href);
+    const promptSlug = getPromptSlugById(promptId);
+    url.searchParams.set("prompt", promptSlug ?? String(promptId));
+    url.searchParams.set("slide", String(slideIndex));
+    return url.toString();
+  };
 
   useEffect(() => {
     if (typeof document === "undefined") {
@@ -417,8 +471,8 @@ const Index = () => {
 
   const featuredPromptIds = [15, 9, 1];
   const featuredPrompts = featuredPromptIds
-    .map((id) => prompts.find((prompt) => prompt.id === id))
-    .filter((prompt): prompt is (typeof prompts)[number] => Boolean(prompt));
+    .map((id) => mergedPrompts.find((prompt) => prompt.id === id))
+    .filter((prompt): prompt is PromptWithAssets => Boolean(prompt));
 
   const scrollToGallery = () => {
     galleryRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -435,7 +489,7 @@ const Index = () => {
     setTimeout(() => scrollToPromptCard(promptId), 200);
   };
 
-  const filteredPrompts = prompts.filter((prompt) => {
+  const filteredPrompts = mergedPrompts.filter((prompt) => {
     const matchesCategory = activeCategory === "All" || prompt.category === activeCategory;
     const lowerQuery = searchQuery.toLowerCase();
     const matchesSearch =
@@ -601,6 +655,12 @@ const Index = () => {
 
         {/* Prompt Gallery */}
         <section ref={galleryRef} className="container mx-auto px-4 pb-20">
+          {strapiEnabled && isStrapiLoading && (
+            <p className="text-sm text-muted-foreground mb-4">Syncing latest prompts from Strapi…</p>
+          )}
+          {strapiEnabled && isStrapiError && (
+            <p className="text-sm text-amber-600 mb-4">Strapi not reachable; showing local prompts.</p>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredPrompts.map((prompt, index) => (
               <div
