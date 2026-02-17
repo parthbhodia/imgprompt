@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
-import { Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
+import { Sparkles, ChevronLeft, ChevronRight, ThumbsUp, Heart } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 interface SlideContent {
   image: string;
@@ -15,9 +16,25 @@ interface PromptCardProps {
   title: string;
   platforms: string[];
   onOpen: () => void;
+  likeCount?: number;
+  isLiked?: boolean;
+  isFavorited?: boolean;
+  onLike?: (e: React.MouseEvent) => void;
+  onFavorite?: (e: React.MouseEvent) => void;
 }
 
-export const PromptCard = ({ slides, category, title, platforms, onOpen }: PromptCardProps) => {
+export const PromptCard = ({
+  slides,
+  category,
+  title,
+  platforms,
+  onOpen,
+  likeCount = 0,
+  isLiked = false,
+  isFavorited = false,
+  onLike,
+  onFavorite,
+}: PromptCardProps) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const nextImage = (e: React.MouseEvent) => {
@@ -155,9 +172,51 @@ export const PromptCard = ({ slides, category, title, platforms, onOpen }: Promp
             </Badge>
           ))}
         </div>
-        <p className="text-sm text-muted-foreground">
-          Click to open prompt ✨
-        </p>
+
+        {/* Like / Favorite row */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onLike?.(e);
+              }}
+              className={cn(
+                "flex items-center gap-1.5 text-sm transition-colors",
+                isLiked
+                  ? "text-primary font-semibold"
+                  : "text-muted-foreground hover:text-primary"
+              )}
+              aria-label={isLiked ? "Unlike prompt" : "Like prompt"}
+            >
+              <ThumbsUp
+                className={cn("w-4 h-4", isLiked && "fill-primary")}
+              />
+              {likeCount > 0 && <span>{likeCount}</span>}
+            </button>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onFavorite?.(e);
+              }}
+              className={cn(
+                "flex items-center gap-1 text-sm transition-colors",
+                isFavorited
+                  ? "text-rose-500 font-semibold"
+                  : "text-muted-foreground hover:text-rose-500"
+              )}
+              aria-label={isFavorited ? "Remove from favorites" : "Add to favorites"}
+            >
+              <Heart
+                className={cn("w-4 h-4", isFavorited && "fill-rose-500")}
+              />
+            </button>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Click to open ✨
+          </p>
+        </div>
       </div>
     </Card>
   );

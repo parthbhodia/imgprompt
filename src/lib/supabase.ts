@@ -103,3 +103,79 @@ export const deleteImage = async (path: string) => {
   const { error } = await supabase.storage.from("prompt-images").remove([path]);
   if (error) throw error;
 };
+
+/* ------------------------------------------------------------------ */
+/*  Likes & Favorites helpers                                          */
+/* ------------------------------------------------------------------ */
+
+export const fetchLikeCounts = async (): Promise<Record<number, number>> => {
+  const { data, error } = await supabase
+    .from("prompts")
+    .select("id, like_count");
+  if (error) throw error;
+  const map: Record<number, number> = {};
+  for (const row of data ?? []) map[row.id] = row.like_count ?? 0;
+  return map;
+};
+
+export const fetchUserLikes = async (
+  userId: string
+): Promise<Set<number>> => {
+  const { data, error } = await supabase
+    .from("likes")
+    .select("prompt_id")
+    .eq("user_id", userId);
+  if (error) throw error;
+  return new Set((data ?? []).map((r) => r.prompt_id));
+};
+
+export const fetchUserFavorites = async (
+  userId: string
+): Promise<Set<number>> => {
+  const { data, error } = await supabase
+    .from("favorites")
+    .select("prompt_id")
+    .eq("user_id", userId);
+  if (error) throw error;
+  return new Set((data ?? []).map((r) => r.prompt_id));
+};
+
+export const toggleLike = async (
+  userId: string,
+  promptId: number,
+  isLiked: boolean
+) => {
+  if (isLiked) {
+    const { error } = await supabase
+      .from("likes")
+      .delete()
+      .eq("user_id", userId)
+      .eq("prompt_id", promptId);
+    if (error) throw error;
+  } else {
+    const { error } = await supabase
+      .from("likes")
+      .insert({ user_id: userId, prompt_id: promptId });
+    if (error) throw error;
+  }
+};
+
+export const toggleFavorite = async (
+  userId: string,
+  promptId: number,
+  isFavorited: boolean
+) => {
+  if (isFavorited) {
+    const { error } = await supabase
+      .from("favorites")
+      .delete()
+      .eq("user_id", userId)
+      .eq("prompt_id", promptId);
+    if (error) throw error;
+  } else {
+    const { error } = await supabase
+      .from("favorites")
+      .insert({ user_id: userId, prompt_id: promptId });
+    if (error) throw error;
+  }
+};

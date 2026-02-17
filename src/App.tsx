@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "./contexts/AuthContext";
+import { LikesProvider } from "./contexts/LikesContext";
 import { ProtectedRoute } from "./components/admin/ProtectedRoute";
 import { AdminLayout } from "./components/admin/AdminLayout";
 import AdminLogin from "./pages/admin/AdminLogin";
@@ -15,6 +16,7 @@ import AdminPromptForm from "./pages/admin/AdminPromptForm";
 import AdminCategories from "./pages/admin/AdminCategories";
 import AdminPlatforms from "./pages/admin/AdminPlatforms";
 import AdminUsers from "./pages/admin/AdminUsers";
+import Favorites from "./pages/Favorites";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +36,7 @@ const basename = getBasename();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
+      <LikesProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
@@ -41,6 +44,7 @@ const App = () => (
           <Routes>
             {/* Public site */}
             <Route path="/" element={<Index />} />
+            <Route path="/favorites" element={<Favorites />} />
 
             {/* Admin – login (public) */}
             <Route path="/admin/login" element={<AdminLogin />} />
@@ -122,6 +126,7 @@ const App = () => (
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
+      </LikesProvider>
     </AuthProvider>
   </QueryClientProvider>
 );
