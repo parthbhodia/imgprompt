@@ -39,7 +39,12 @@ jobs:
         env:
           GITHUB_REPOSITORY_NAME: ${{ steps.repo.outputs.name }}
           CUSTOM_DOMAIN: true
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: npm run build
+
+      - name: Copy index.html to 404.html for SPA routing
+        run: cp dist/index.html dist/404.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
