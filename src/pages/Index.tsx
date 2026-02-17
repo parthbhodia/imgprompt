@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sparkles, Zap, Copy, Search, Lightbulb, Star, Palette, MessageCircle, Share2, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
-import { fetchPromptsFromStrapi, type NormalizedPrompt } from "@/lib/strapi";
+import { fetchPrompts, type NormalizedPrompt } from "@/lib/supabase";
 
 type PromptWithAssets = {
   id: number;
@@ -145,20 +145,18 @@ const getInitialRouteState = (promptList: PromptWithAssets[]) => {
 };
 
 const Index = () => {
-  const strapiEnabled = Boolean(import.meta.env.VITE_STRAPI_URL);
   const {
-    data: strapiData,
-    isLoading: isStrapiLoading,
-    isError: isStrapiError,
+    data: supabaseData,
+    isLoading: isDataLoading,
+    isError: isDataError,
   } = useQuery({
-    queryKey: ["strapi-prompts"],
-    queryFn: fetchPromptsFromStrapi,
-    enabled: strapiEnabled,
+    queryKey: ["prompts"],
+    queryFn: fetchPrompts,
     staleTime: 5 * 60 * 1000,
-    retry: 1,
+    retry: 2,
   });
 
-  const remotePrompts = normalizeStrapiPrompts(strapiData?.prompts);
+  const remotePrompts = normalizeStrapiPrompts(supabaseData?.prompts);
   const mergedPrompts = remotePrompts;
   const categories = buildCategories(mergedPrompts);
   const defaultCategory = categories[0] ?? "All";
@@ -544,11 +542,11 @@ const Index = () => {
 
         {/* Prompt Gallery */}
         <section ref={galleryRef} className="container mx-auto px-4 pb-20">
-          {strapiEnabled && isStrapiLoading && (
-            <p className="text-sm text-muted-foreground mb-4">Syncing latest prompts from Strapi…</p>
+          {isDataLoading && (
+            <p className="text-sm text-muted-foreground mb-4">Loading prompts…</p>
           )}
-          {strapiEnabled && isStrapiError && (
-            <p className="text-sm text-amber-600 mb-4">Strapi not reachable; showing local prompts.</p>
+          {isDataError && (
+            <p className="text-sm text-amber-600 mb-4">Could not load prompts. Please try again later.</p>
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredPrompts.map((prompt, index) => (

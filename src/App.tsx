@@ -5,23 +5,27 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+import { AuthProvider } from "./contexts/AuthContext";
+import { ProtectedRoute } from "./components/admin/ProtectedRoute";
+import { AdminLayout } from "./components/admin/AdminLayout";
+import AdminLogin from "./pages/admin/AdminLogin";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminPrompts from "./pages/admin/AdminPrompts";
+import AdminPromptForm from "./pages/admin/AdminPromptForm";
+import AdminCategories from "./pages/admin/AdminCategories";
+import AdminPlatforms from "./pages/admin/AdminPlatforms";
+import AdminUsers from "./pages/admin/AdminUsers";
 
 const queryClient = new QueryClient();
 
 // Get base path from import.meta.env.BASE_URL (set by Vite)
-// This will be '/' for local dev and '/repository-name/' for GitHub Pages
-// React Router basename should not have trailing slash
 const getBasename = () => {
   const base = import.meta.env.BASE_URL || '/';
-  // Remove trailing slash for React Router
   const basename = base === '/' ? '/' : base.replace(/\/$/, '');
-  
-  // Debug log (remove in production if needed)
   if (import.meta.env.DEV) {
     console.log('Base URL:', import.meta.env.BASE_URL);
     console.log('Basename:', basename);
   }
-  
   return basename;
 };
 
@@ -29,17 +33,96 @@ const basename = getBasename();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter basename={basename}>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter basename={basename}>
+          <Routes>
+            {/* Public site */}
+            <Route path="/" element={<Index />} />
+
+            {/* Admin – login (public) */}
+            <Route path="/admin/login" element={<AdminLogin />} />
+
+            {/* Admin – protected routes */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <AdminLayout>
+                    <AdminDashboard />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/prompts"
+              element={
+                <ProtectedRoute allowedRoles={["admin", "editor"]}>
+                  <AdminLayout>
+                    <AdminPrompts />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/prompts/new"
+              element={
+                <ProtectedRoute allowedRoles={["admin", "editor"]}>
+                  <AdminLayout>
+                    <AdminPromptForm />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/prompts/:id"
+              element={
+                <ProtectedRoute allowedRoles={["admin", "editor"]}>
+                  <AdminLayout>
+                    <AdminPromptForm />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/categories"
+              element={
+                <ProtectedRoute allowedRoles={["admin", "editor"]}>
+                  <AdminLayout>
+                    <AdminCategories />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/platforms"
+              element={
+                <ProtectedRoute allowedRoles={["admin", "editor"]}>
+                  <AdminLayout>
+                    <AdminPlatforms />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/users"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <AdminLayout>
+                    <AdminUsers />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Catch-all */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
