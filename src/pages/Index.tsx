@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { PromptCard } from "@/components/PromptCard";
 import { CategoryFilter } from "@/components/CategoryFilter";
@@ -148,7 +148,17 @@ const getInitialRouteState = (promptList: PromptWithAssets[]) => {
   return { promptId, slideIndex };
 };
 
+const slugifyCategory = (category: string) => {
+  return category.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+};
+
+const findCategoryFromSlug = (slug: string, categories: string[]) => {
+  return categories.find(cat => slugifyCategory(cat) === slug) || "All";
+};
+
 const Index = () => {
+  const [searchParams] = useSearchParams();
+  
   const {
     data: supabaseData,
     isLoading: isDataLoading,
@@ -164,7 +174,11 @@ const Index = () => {
   const mergedPrompts = remotePrompts;
   const categories = buildCategories(mergedPrompts);
   const defaultCategory = categories[0] ?? "All";
-  const [activeCategory, setActiveCategory] = useState(defaultCategory);
+  
+  // Initialize category from URL parameter
+  const categoryFromUrl = searchParams.get('category');
+  const initialCategory = categoryFromUrl ? findCategoryFromSlug(categoryFromUrl, categories) : defaultCategory;
+  const [activeCategory, setActiveCategory] = useState(initialCategory);
   const [searchQuery, setSearchQuery] = useState("");
   const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false);
   const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
@@ -187,6 +201,15 @@ const Index = () => {
       setActiveCategory(categories[0] ?? "All");
     }
   }, [categories, activeCategory]);
+
+  // Update active category when URL parameter changes
+  useEffect(() => {
+    const categoryFromUrl = searchParams.get('category');
+    const urlCategory = categoryFromUrl ? findCategoryFromSlug(categoryFromUrl, categories) : defaultCategory;
+    if (urlCategory !== activeCategory && categories.length > 0) {
+      setActiveCategory(urlCategory);
+    }
+  }, [searchParams, categories, defaultCategory]);
 
   useEffect(() => {
     if (hasInitializedRoute.current) return;
