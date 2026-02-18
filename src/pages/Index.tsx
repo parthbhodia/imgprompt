@@ -612,8 +612,41 @@ const Index = () => {
                   Most Liked Prompts
                 </h2>
               </div>
+              {mostLikedPrompts.length > 3 && (
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => {
+                      const container = document.getElementById('most-liked-container');
+                      if (container) {
+                        container.scrollBy({ left: -280, behavior: 'smooth' });
+                      }
+                    }}
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => {
+                      const container = document.getElementById('most-liked-container');
+                      if (container) {
+                        container.scrollBy({ left: 280, behavior: 'smooth' });
+                      }
+                    }}
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
             </div>
-            <div className="flex gap-4 overflow-x-auto scrollbar-thin pb-4">
+            <div 
+              id="most-liked-container"
+              className="flex gap-4 overflow-x-auto scrollbar-hide pb-4"
+            >
               {mostLikedPrompts.map((prompt) => {
                 const firstSlide = prompt.slides[0];
                 return (
