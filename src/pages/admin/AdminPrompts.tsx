@@ -80,6 +80,25 @@ const AdminPrompts = () => {
     setDeleteTarget(null);
   };
 
+  const toggleFeatured = async (prompt: PromptListItem) => {
+    const newFeaturedStatus = !prompt.featured;
+    const { error } = await supabase
+      .from("prompts")
+      .update({ featured: newFeaturedStatus })
+      .eq("id", prompt.id);
+    
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success(`${prompt.title} ${newFeaturedStatus ? 'added to' : 'removed from'} featured`);
+      setPrompts((prev) => 
+        prev.map((p) => 
+          p.id === prompt.id ? { ...p, featured: newFeaturedStatus } : p
+        )
+      );
+    }
+  };
+
   const filtered = prompts.filter((p) =>
     p.title.toLowerCase().includes(search.toLowerCase())
   );
@@ -162,7 +181,19 @@ const AdminPrompts = () => {
                     </TableCell>
                     <TableCell className="text-center">{p.slides.length}</TableCell>
                     <TableCell className="text-center">
-                      {p.featured && <Star className="w-4 h-4 text-amber-500 mx-auto fill-amber-500" />}
+                      <button
+                        onClick={() => toggleFeatured(p)}
+                        className="p-1 rounded hover:bg-muted transition-colors mx-auto block"
+                        title={p.featured ? "Remove from featured" : "Add to featured"}
+                      >
+                        <Star 
+                          className={`w-4 h-4 transition-colors ${
+                            p.featured 
+                              ? "text-amber-500 fill-amber-500" 
+                              : "text-muted-foreground hover:text-amber-400"
+                          }`} 
+                        />
+                      </button>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">

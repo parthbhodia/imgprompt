@@ -23,6 +23,7 @@ import {
   Upload,
   Save,
   ArrowLeft,
+  Star,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -380,13 +381,21 @@ const AdminPromptForm = () => {
             </SelectContent>
           </Select>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 p-3 rounded-lg border border-border/50 bg-muted/20">
           <Switch
             id="featured"
             checked={featured}
             onCheckedChange={setFeatured}
           />
-          <Label htmlFor="featured">Featured prompt</Label>
+          <Label htmlFor="featured" className="flex items-center gap-2 cursor-pointer">
+            <Star className={`w-4 h-4 ${featured ? 'text-amber-500 fill-amber-500' : 'text-muted-foreground'}`} />
+            Featured prompt
+          </Label>
+          {featured && (
+            <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-full">
+              Will appear in featured section
+            </span>
+          )}
         </div>
       </div>
 

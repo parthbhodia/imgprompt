@@ -1,0 +1,368 @@
+{
+  "title": "ChatGPT Image Editing Prompts",
+  "total_prompts": 36,
+  "total_images": 72,
+  "platform": {
+    "name": "Fotor GPT Image Generator",
+    "url": "https://www.fotor.com"
+  },
+  "images_folder": "C:\\Users\\parth\\fotor images",
+  "image_base_url": "https://imgv3.fotor.com/images/blog-richtext-image/",
+  "categories": [
+    {
+      "name": "Popular/Creative Tricks",
+      "count": 9,
+      "prompts": [
+        {
+          "id": 1,
+          "title": "Morph Multiple Pictures into One Photo",
+          "prompt": "Combine these multiple photos into one seamless image. Blend the subjects, colors, and lighting naturally so they appear as part of a single, unified scene. Maintain realistic proportions, consistent perspective, and high resolution while preserving the key details from each original photo.",
+          "before_image": "collage-of-a-b-and-w-lady-pumpkins-and-flowers.png",
+          "after_image": "a-blended-image-showing-a-lady-sunflowers-and-pumpkins.png",
+          "before_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/collage-of-a-b-and-w-lady-pumpkins-and-flowers.png",
+          "after_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/a-blended-image-showing-a-lady-sunflowers-and-pumpkins.png"
+        },
+        {
+          "id": 2,
+          "title": "AI Polaroid-Style Couple Photo",
+          "prompt": "Combine these two portrait photos into a single Polaroid-style image showing the two people hugging warmly. Apply a soft, nostalgic color palette with gentle film grain and subtle light fade. Keep the subjects in sharp focus, with natural, warm lighting, a candid feel, and a classic white Polaroid frame around the image.",
+          "before_image": "a-collage-of-a-boy-and-a-girl.png",
+          "after_image": "ai-polaroid-photo-featuring-a-hugging-couple.png",
+          "before_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/a-collage-of-a-boy-and-a-girl.png",
+          "after_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/ai-polaroid-photo-featuring-a-hugging-couple.png"
+        },
+        {
+          "id": 3,
+          "title": "Hug My Younger Self",
+          "prompt": "Create a realistic photo of my current self hugging a younger version of me. Show both figures in a warm, emotional embrace with soft lighting and gentle, nostalgic colors. Use a dreamy, slightly surreal style to symbolize self-acceptance and growth over time. Ensure the scene feels uplifting and inspiring, like a comforting memory or a heartfelt moment.",
+          "before_image": "collage-of-photos-of-a-lady-and-a-smiling-girl.png",
+          "after_image": "a-photo-of-a-mature-woman-hugging-the-younger-self.jpg",
+          "before_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/collage-of-photos-of-a-lady-and-a-smiling-girl.png",
+          "after_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/a-photo-of-a-mature-woman-hugging-the-younger-self.jpg"
+        },
+        {
+          "id": 4,
+          "title": "Chibi Emoji Stickers (2x2/3x3-Grid)",
+          "prompt": "Transform this photo into a 2x2 grid of Chibi-style emoji stickers. Each square should feature a simplified, cute Chibi version of the subject with big expressive eyes and exaggerated facial features. Use bright pastel colors, bold outlines, and sticker-like transparent backgrounds. Arrange the four Chibi emojis in a clean 2x2 grid layout, each with a slightly different pose or expression to create a playful sticker pack effect.",
+          "before_image": "a-photo-of-a-side-face-lay-against-a-flowery-background.jpeg",
+          "after_image": "2-x-2-chibi-character-grid-of-a-girl-made-from-her-photo.png",
+          "before_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/a-photo-of-a-side-face-lay-against-a-flowery-background.jpeg",
+          "after_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/2-x-2-chibi-character-grid-of-a-girl-made-from-her-photo.png"
+        },
+        {
+          "id": 5,
+          "title": "Style Fusion",
+          "prompt": "Blend the visual styles of these two photos into one cohesive image. Combine the color palettes, textures, lighting, and artistic elements from both images to create a unified composition. Preserve the main subjects from each photo while ensuring the merged picture looks natural, seamless, and high-quality.",
+          "before_image": "collage-of-photos-of-a-realistic-and-an-anime-girl.png",
+          "after_image": "an-anime-girl-photo-made-by-the-blending-of-a-realistic-and-an-anime-character.png",
+          "before_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/collage-of-photos-of-a-realistic-and-an-anime-girl.png",
+          "after_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/an-anime-girl-photo-made-by-the-blending-of-a-realistic-and-an-anime-character.png"
+        },
+        {
+          "id": 6,
+          "title": "AI Outpainting",
+          "prompt": "Outpaint this photo by extending its background and scenery beyond the original edges. Maintain the same style, lighting, color palette, and perspective as the existing image. Add realistic details that naturally continue the scene so the expanded area blends seamlessly with the original photo.",
+          "before_image": "original-version-of-a-closeup-mount-view.jpeg",
+          "after_image": "extended-version-of-a-mount-view.png",
+          "before_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/original-version-of-a-closeup-mount-view.jpeg",
+          "after_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/extended-version-of-a-mount-view.png"
+        },
+        {
+          "id": 7,
+          "title": "Time-Based Image Creation",
+          "prompt": "Generate an image that shows how this scene or subject might look after one week. Keep the same perspective and composition, but introduce subtle changes to reflect the passage of time - such as lighting shifts, environmental changes, new details, or natural wear. Maintain the overall style and mood of the original photo while imagining realistic or artistic transformations.",
+          "before_image": "the-spring-version-of-a-warm-picture-of-a-girl-and-a-dog.jpg",
+          "after_image": "the-autumn-version-of-a-warm-picture-of-a-girl-and-a-dog.png",
+          "before_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/the-spring-version-of-a-warm-picture-of-a-girl-and-a-dog.jpg",
+          "after_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/the-autumn-version-of-a-warm-picture-of-a-girl-and-a-dog.png"
+        },
+        {
+          "id": 8,
+          "title": "Sky/Environment Change",
+          "prompt": "Replace the sky in this image with [describe your desired sky - e.g., a vibrant sunset with pink clouds, a clear blue daytime sky, or a dramatic starry night]. Make sure the new sky blends naturally with the lighting, colors, and mood of the existing landscape or subject, maintaining realistic shadows and highlights.",
+          "before_image": "a-flower-land-with-a-sunny-clear-sky.png",
+          "after_image": "a-flower-land-with-a-starry-sky.png",
+          "before_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/a-flower-land-with-a-sunny-clear-sky.png",
+          "after_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/a-flower-land-with-a-starry-sky.png"
+        },
+        {
+          "id": 9,
+          "title": "Pet to Human",
+          "prompt": "Transform this pet photo into a stylized human-inspired character that reflects the pet's main features (colors, patterns, and personality). Keep the human version in an illustrative or cartoon style with soft lines, vibrant colors, and subtle details inspired by the pet's fur, eyes, and expression. Avoid making it look like an exact real person - focus on a creative, anthropomorphic interpretation.",
+          "before_image": "a-cat-sitting-on-a-sofa.jpg",
+          "after_image": "an-anime-girl-turnd-from-a-cat-photo.png",
+          "before_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/a-cat-sitting-on-a-sofa.jpg",
+          "after_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/an-anime-girl-turnd-from-a-cat-photo.png"
+        }
+      ]
+    },
+    {
+      "name": "Style Transfer",
+      "count": 7,
+      "prompts": [
+        {
+          "id": 10,
+          "title": "Photo to Ghibli (Anime Style)",
+          "prompt": "Transform this photo into a Studio Ghibli-inspired illustration. Use soft pastel colors, hand-painted textures, and gentle lighting reminiscent of classic Ghibli films. Add dreamy backgrounds, subtle atmospheric details like drifting clouds or light rays, and a warm, nostalgic mood. Keep the main subject recognizable but stylized with expressive features and delicate outlines.",
+          "before_image": "a-corgi-sitting-on-a-meadow.jpg",
+          "after_image": "a-ghibli-version-of-a-corgi-photo.png",
+          "before_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/a-corgi-sitting-on-a-meadow.jpg",
+          "after_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/a-ghibli-version-of-a-corgi-photo.png"
+        },
+        {
+          "id": 11,
+          "title": "Photo to 3D Figurine",
+          "prompt": "Change this photo to a 3D collectible figurine style. Recreate the subject as a small, detailed figurine with smooth textures, vibrant yet realistic colors, and subtle shading to mimic plastic or resin material. Place the figurine on a simple display base with soft studio lighting and a neutral background to emphasize the 3D look.",
+          "before_image": "a-portrait-photo-of-a-boy.jpg",
+          "after_image": "3d-figurine-version-of-a-boy.png",
+          "before_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/a-portrait-photo-of-a-boy.jpg",
+          "after_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/3d-figurine-version-of-a-boy.png"
+        },
+        {
+          "id": 12,
+          "title": "Photo to Funko Pop Figure",
+          "prompt": "Convert the person in the photo into a Funko Pop-style figure inside a box, shown in isometric view. The packaging features the title [specify the text]. Inside, include a chibi-style figure modeled after the person, along with their [specify essential accessories, e.g., pistol, wristwatch, suit, or signature items]. Beside the box, display a realistic 3D rendering of the figure outside the packaging, with detailed textures and lighting for a lifelike product presentation.",
+          "before_image": "original-photo-of-a-smiling-lady.jpg",
+          "after_image": "funko-version-of-a-lady.jpg",
+          "before_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/original-photo-of-a-smiling-lady.jpg",
+          "after_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/funko-version-of-a-lady.jpg"
+        },
+        {
+          "id": 13,
+          "title": "Photo to Vintage Style (Y2K, 90s)",
+          "prompt": "Turn this photo into a Y2K aesthetic style image. Use glossy metallic textures, holographic gradients, neon pinks and blues, and chrome accents reminiscent of early-2000s pop culture. Add playful stickers, pixel hearts, retro tech elements, and dreamy lens flares for a nostalgic yet futuristic look. Keep the overall vibe bold, colorful, and slightly surreal to match the Y2K aesthetic.",
+          "before_image": "original-photo-of-a-woman-with-a-brown-long-hair.png",
+          "after_image": "y2k-version-of-a-woman-with-a-brown-long-hair.png",
+          "before_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/original-photo-of-a-woman-with-a-brown-long-hair.png",
+          "after_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/y2k-version-of-a-woman-with-a-brown-long-hair.png"
+        },
+        {
+          "id": 14,
+          "title": "Photo to Fantasy/Gaming Style",
+          "prompt": "Transform this photo into a stylized video game character. Keep the key features of the subject recognizable but adapt them to a game-ready design with dynamic colors, detailed textures, and distinctive outfit or gear. Use [choose your style - e.g., RPG fantasy, cyberpunk shooter, retro pixel art, or anime fighting game] to define the aesthetic. Render the character in high resolution with a dramatic pose and a background that matches the game's world.",
+          "before_image": "a-lady-is-standing-beside-a-metro.jpg",
+          "after_image": "a-female-superhero.jpg",
+          "before_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/a-lady-is-standing-beside-a-metro.jpg",
+          "after_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/a-female-superhero.jpg"
+        },
+        {
+          "id": 15,
+          "title": "Line Art to Image",
+          "prompt": "Convert this line art into a realistic photo-style image. Preserve the main shapes, proportions, and composition from the original line drawing, but render it with natural textures, lighting, colors, and details. Add realistic skin tones, materials, and shadows to make the scene or subject look lifelike while maintaining the original design's essence.",
+          "before_image": "line-art-version-of-an-animal-gettogether-illustration.jpg",
+          "after_image": "colored-version-of-an-animal-gettogether-illustration.jpg",
+          "before_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/line-art-version-of-an-animal-gettogether-illustration.jpg",
+          "after_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/colored-version-of-an-animal-gettogether-illustration.jpg"
+        },
+        {
+          "id": 16,
+          "title": "Cartoon to Realistic",
+          "prompt": "Convert this cartoon image into a realistic-style photo. Preserve the main character's features, colors, and personality while translating them into lifelike proportions, textures, and lighting. Add natural skin tones, realistic fabric textures, detailed hair, and soft shadows for a photo-real look, while keeping the overall pose and expression consistent with the original cartoon.",
+          "before_image": "a-cartoon-girl.jpg",
+          "after_image": "a-realistic-smiling-girl-turned-from-a-cartoon-photo.jpg",
+          "before_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/a-cartoon-girl.jpg",
+          "after_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/a-realistic-smiling-girl-turned-from-a-cartoon-photo.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Basic Editing",
+      "count": 8,
+      "prompts": [
+        {
+          "id": 17,
+          "title": "Swap Image Background",
+          "prompt": "Replace the background of this image with [describe your desired background - e.g., a minimalist white studio, a tropical beach at sunset, a futuristic neon cityscape]. Keep the subject sharp and well-lit while blending shadows and lighting naturally to match the new background. Ensure the overall composition looks realistic and seamless.",
+          "before_image": "a-lady-standing-in-front-of-an-antique-museum.jpg",
+          "after_image": "a-lady-standing-in-front-of-a-beach-view.jpg",
+          "before_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/a-lady-standing-in-front-of-an-antique-museum.jpg",
+          "after_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/a-lady-standing-in-front-of-a-beach-view.jpg"
+        },
+        {
+          "id": 18,
+          "title": "Object Extraction",
+          "prompt": "Extract the main object from this image and place it on a transparent background. Remove the original background cleanly, keeping all edges sharp and preserving the object's colors, textures, and details. Output the result as a high-resolution image with no background.",
+          "before_image": "a-cat-sitting-on-a-wooden-chair.jpg",
+          "after_image": "a-cat-photo-with-a-transparent-bg.jpg",
+          "before_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/a-cat-sitting-on-a-wooden-chair.jpg",
+          "after_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/a-cat-photo-with-a-transparent-bg.jpg"
+        },
+        {
+          "id": 19,
+          "title": "Change Image Color",
+          "prompt": "Change the color of [specific object or area] in this image to [new color]. Keep the texture, lighting, and shading realistic while ensuring the new color blends naturally with the rest of the image. Maintain high resolution and preserve all other original details.",
+          "before_image": "a-pink-lotus.jpg",
+          "after_image": "change-a-pink-lotus-to-a-red-lotus.jpg",
+          "before_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/a-pink-lotus.jpg",
+          "after_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/change-a-pink-lotus-to-a-red-lotus.jpg"
+        },
+        {
+          "id": 20,
+          "title": "Remove Object from Image",
+          "prompt": "Remove the bee from the flower. Reconstruct the petals, pollen, and surrounding background naturally so the area looks undisturbed. Preserve the original lighting, color tones, depth of field, and texture. Avoid visible artifacts, cloning patterns, or blur inconsistencies. Ensure the flower remains sharp, realistic, and visually seamless in high resolution.",
+          "before_image": "a-bee-is-hovering-on-a-flower.jpg",
+          "after_image": "a-photo-of-a-flower-without-the-bee.jpg",
+          "before_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/a-bee-is-hovering-on-a-flower.jpg",
+          "after_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/a-photo-of-a-flower-without-the-bee.jpg"
+        },
+        {
+          "id": 21,
+          "title": "Replace or Add Elements",
+          "prompt": "Replace the original content [the specific information] of this image with [describe the new content or scene]. Keep the composition, perspective, and lighting consistent, so the new elements look natural and seamlessly integrated. Preserve the original background if needed, or adjust it to match the new content for a realistic result.",
+          "before_image": "a-dog-is-sitting-on-a-grassland.jpeg",
+          "after_image": "a-cat-is-sitting-on-a-grassland.png",
+          "before_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/a-dog-is-sitting-on-a-grassland.jpeg",
+          "after_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/a-cat-is-sitting-on-a-grassland.png"
+        },
+        {
+          "id": 22,
+          "title": "Edit Text in Image",
+          "prompt": "Edit the text in this image. Replace the existing text [the specific words] with [new text] while keeping the font style, size, color, and perspective consistent with the original design. Ensure the edited text blends naturally with the background and overall composition.",
+          "before_image": "original-version-of-a-fashion-poster-design.jpeg",
+          "after_image": "a-new-fashion-poster-design-with-changed-text.png",
+          "before_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/original-version-of-a-fashion-poster-design.jpeg",
+          "after_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/a-new-fashion-poster-design-with-changed-text.png"
+        },
+        {
+          "id": 23,
+          "title": "Crop & Resize Photo",
+          "prompt": "Crop and resize this image to [desired dimensions or aspect ratio, e.g., 1080x1080 pixels or 16:9]. Keep the main subject centered and well-composed, preserving important details. Ensure the image quality remains high and proportionally balanced after cropping and resizing.",
+          "before_image": "original-photo-of-two-dogs.jpeg",
+          "after_image": "resized-photo-of-two-dogs.jpeg",
+          "before_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/original-photo-of-two-dogs.jpeg",
+          "after_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/resized-photo-of-two-dogs.jpeg"
+        },
+        {
+          "id": 24,
+          "title": "Enhance Photo",
+          "prompt": "Enhance this photo by improving its overall quality. Increase sharpness, clarity, and color vibrancy while reducing noise or blur. Adjust lighting and contrast to make the image more visually appealing, keeping the subject natural and realistic.",
+          "before_image": "blurry-photo-of-a-lady.png",
+          "after_image": "enhanced-photo-of-a-blurry-photo-of-a-girl.png",
+          "before_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/blurry-photo-of-a-lady.png",
+          "after_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/enhanced-photo-of-a-blurry-photo-of-a-girl.png"
+        }
+      ]
+    },
+    {
+      "name": "Portrait Editing",
+      "count": 7,
+      "prompts": [
+        {
+          "id": 25,
+          "title": "Portrait Retouching",
+          "prompt": "Smooth minor skin blemishes while preserving pores and natural texture. Subtly brighten eyes and teeth (+8% brightness), reduce under-eye shadows moderately. Add a faint cast shadow on ground consistent with the light angle.",
+          "before_image": "a-closeup-female-portrait-with-blemishes.jpg",
+          "after_image": "a-closeup-portrait-with-no-flaws.jpg",
+          "before_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/a-closeup-female-portrait-with-blemishes.jpg",
+          "after_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/a-closeup-portrait-with-no-flaws.jpg"
+        },
+        {
+          "id": 26,
+          "title": "Body Reshape",
+          "prompt": "Make the body in this photo [your requirements, eg slim, chubby, etc.] or reshape the body in the photo into [your needs, such as longer legs, slimmer waist and more]. Maintain realistic proportions, natural skin texture, and consistent lighting while making the changes. Ensure the final image looks seamless and lifelike without distorting other elements or the background.",
+          "before_image": "a-fat-lady-is-standing-on-an-ancient-european-town-street.jpg",
+          "after_image": "a-slimmer-lady-is-standing-on-an-ancient-european-town-street.jpg",
+          "before_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/a-fat-lady-is-standing-on-an-ancient-european-town-street.jpg",
+          "after_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/a-slimmer-lady-is-standing-on-an-ancient-european-town-street.jpg"
+        },
+        {
+          "id": 27,
+          "title": "Cinematic Portraits",
+          "prompt": "Convert this portrait photo to a cinematic-style image with dramatic lighting, rich color grading, and a shallow depth of field. Add subtle film grain, soft shadows, and a wide-aspect ratio to evoke a movie still. Use natural tones, cinematic highlights, and mood-driven contrast to give the image a polished, storytelling feel.",
+          "before_image": "originla-male-portrait.jpg",
+          "after_image": "a-cinematic-male-potrait.jpg",
+          "before_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/originla-male-portrait.jpg",
+          "after_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/a-cinematic-male-potrait.jpg"
+        },
+        {
+          "id": 28,
+          "title": "Facial Expression Change",
+          "prompt": "Change the facial expression of the person in this photo to [desired expression - e.g., smiling, surprised, laughing, thoughtful]. Keep the person's identity, facial features, and overall lighting intact while making the expression look natural and realistic. Ensure the adjustment blends seamlessly with the original image.",
+          "before_image": "original-version-of-a-boy-with-a-serious-expression.jpg",
+          "after_image": "change-the-expression-of-a-boy-to-a-smiling-face.jpg",
+          "before_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/original-version-of-a-boy-with-a-serious-expression.jpg",
+          "after_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/change-the-expression-of-a-boy-to-a-smiling-face.jpg"
+        },
+        {
+          "id": 29,
+          "title": "Change Hairstyles",
+          "prompt": "Change the hairstyle of the person in this photo to [desired hairstyle - e.g., long wavy hair, short bob, curly hair, ponytail]. Keep the person's face, identity, and lighting consistent while making the hairstyle look natural and seamlessly integrated with the image. Preserve realistic textures, volume, and shadows.",
+          "before_image": "a-lady-with-a-long-curly-hair.jpg",
+          "after_image": "a-lady-with-a-curly-short-hair.jpg",
+          "before_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/a-lady-with-a-long-curly-hair.jpg",
+          "after_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/a-lady-with-a-curly-short-hair.jpg"
+        },
+        {
+          "id": 30,
+          "title": "Virtual Clothes Try-on",
+          "prompt": "Change the clothes of the person in this photo to [describe desired outfit - e.g., casual t-shirt and jeans, formal suit, fantasy armor]. Keep the person's pose, body proportions, and lighting consistent, while making the clothing look realistic with natural folds, textures, and shadows. Ensure the new outfit integrates seamlessly with the original image.",
+          "before_image": "a-lady-with-a-graceful-blue-dress.jpg",
+          "after_image": "a-lady-with-a-graceful-white-gown-with-flowery-laces.jpg",
+          "before_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/a-lady-with-a-graceful-blue-dress.jpg",
+          "after_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/a-lady-with-a-graceful-white-gown-with-flowery-laces.jpg"
+        },
+        {
+          "id": 31,
+          "title": "Change Pose",
+          "prompt": "Change the pose of the person in this photo to [describe desired pose - e.g., sitting cross-legged, arms crossed, jumping mid-air]. Keep the person's facial features, proportions, and overall lighting consistent. Ensure the new pose looks natural and seamless within the existing scene, without distorting other elements or the background.",
+          "before_image": "a-photo-of-a-lady-with-her-hands-putting-down-on-her-front-jeans.jpg",
+          "after_image": "a-photo-of-a-lady-with-her-hands-crossed.jpg",
+          "before_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/a-photo-of-a-lady-with-her-hands-putting-down-on-her-front-jeans.jpg",
+          "after_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/a-photo-of-a-lady-with-her-hands-crossed.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Practical Applications",
+      "count": 5,
+      "prompts": [
+        {
+          "id": 32,
+          "title": "AI Interior Design",
+          "prompt": "Transform this empty room photo into a complete interior design visual. Add furniture, decor, lighting, and textures that match a [desired style - e.g., modern minimalist, cozy Scandinavian, industrial loft] aesthetic. Keep proportions and perspective accurate, ensuring natural shadows, reflections, and lighting. Make the room visually appealing, realistic, and cohesive.",
+          "before_image": "a-photo-of-an-empty-room.jpg",
+          "after_image": "a-photo-of-a-room-with-the-interior-design.jpg",
+          "before_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/a-photo-of-an-empty-room.jpg",
+          "after_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/a-photo-of-a-room-with-the-interior-design.jpg"
+        },
+        {
+          "id": 33,
+          "title": "Fashion Visualization",
+          "prompt": "Merge this model photo with the clothing from the second picture to create a seamless, realistic composite. Dress the model in the clothes while keeping natural body proportions, correct fabric draping, and accurate lighting. Ensure textures, colors, and shadows of the clothing blend naturally with the model's pose and the overall scene.",
+          "before_image": "a-collage-of-a-photo-of-a-boy-with-a-white-t-shirt-and-shorts-and-a-photo-of-a-blacvk-coat.png",
+          "after_image": "a-photo-of-a-boy-wearing-a-black-coat.jpg",
+          "before_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/a-collage-of-a-photo-of-a-boy-with-a-white-t-shirt-and-shorts-and-a-photo-of-a-blacvk-coat.png",
+          "after_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/a-photo-of-a-boy-wearing-a-black-coat.jpg"
+        },
+        {
+          "id": 34,
+          "title": "Hyper-Realistic Product Mockups",
+          "prompt": "Take this brand logo and create hyper-realistic product mockups showcasing it on at least two different items (for example: mugs, t-shirts, caps, tote bags, or phone cases). Render each product with accurate textures, realistic lighting, and natural shadows. Make sure the logo placement is clean, crisp, and proportionate on each product, presenting them as if photographed for an online store or marketing campaign.",
+          "before_image": "the-logo-of-fotor-on-a-black-bg.jpg",
+          "after_image": "ai-product-mockup-based-on-the-fotor-logo.jpg",
+          "before_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/the-logo-of-fotor-on-a-black-bg.jpg",
+          "after_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/ai-product-mockup-based-on-the-fotor-logo.jpg"
+        },
+        {
+          "id": 35,
+          "title": "Anatomical Illustration",
+          "prompt": "Transform this photo into a detailed anatomical illustration. Depict the underlying [muscles / skeleton / organs - choose what's needed] with high accuracy while maintaining the original pose and proportions of the subject. Use clean, educational illustration style with labeled parts if possible, clear linework, and scientific color coding. Ensure the final image looks like a professional anatomy chart or textbook illustration.",
+          "before_image": "a-golden-dog-sitting-against-the-white-bg.png",
+          "after_image": "anatomical-illustration-of-a-golden-dog.jpg",
+          "before_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/a-golden-dog-sitting-against-the-white-bg.png",
+          "after_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/anatomical-illustration-of-a-golden-dog.jpg"
+        },
+        {
+          "id": 36,
+          "title": "Headshot Creation",
+          "prompt": "Transform this casual portrait photo into a professional headshot suitable for LinkedIn or corporate use. Adjust lighting to be soft and flattering, improve skin tone naturally, smooth minor imperfections, and sharpen facial features subtly. Replace the background with a clean [neutral/office/studio] backdrop, enhance the outfit to look professional (e.g., blazer, dress shirt), and ensure the overall image looks polished, high-resolution, and business-ready.",
+          "before_image": "a-casual-photo-of-a-man-sitting-on-a-wooden-chair.jpg",
+          "after_image": "professional-headshot-from-a-casual-photo-of-a-man.jpg",
+          "before_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/a-casual-photo-of-a-man-sitting-on-a-wooden-chair.jpg",
+          "after_image_url": "https://imgv3.fotor.com/images/blog-richtext-image/professional-headshot-from-a-casual-photo-of-a-man.jpg"
+        }
+      ]
+    }
+  ],
+  "source": "https://www.fotor.com/blog/chatgpt-image-editing-prompt/"
+}

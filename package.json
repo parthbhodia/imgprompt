@@ -9,7 +9,9 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
-    "deploy": "npm run build && echo 'Build complete! Push to GitHub to deploy via GitHub Actions.'"
+    "deploy": "npm run build && echo 'Build complete! Push to GitHub to deploy via GitHub Actions.'",
+    "import:chatgpt-prompts": "node scripts/import-chatgpt-prompts.js",
+    "upload:chatgpt-prompts": "node scripts/upload-and-import-prompts.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -61,7 +63,8 @@
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.9",
-    "zod": "^3.25.76"
+    "zod": "^3.25.76",
+    "dotenv": "^16.4.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
