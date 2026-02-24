@@ -3,6 +3,7 @@ import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { PromptCard } from "@/components/PromptCard";
 import { CategoryFilter } from "@/components/CategoryFilter";
+import { ImageChat } from "@/components/ImageChat";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -574,6 +575,9 @@ const Index = () => {
           </div>
         </header>
 
+        {/* AI Image Chat – visible on first visit */}
+        <ImageChat inline />
+
         {featuredPrompts.length > 0 && (
           <section className="container mx-auto px-4 pb-6">
             <div className="flex items-center justify-between mb-4">
@@ -874,6 +878,15 @@ const Index = () => {
           </div>
         </DialogContent>
       </Dialog>
+      <button
+        type="button"
+        onClick={() => document.getElementById("ai-chat")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+        className="fixed bottom-6 left-6 z-50 flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold shadow-xl bg-gradient-to-r from-primary to-accent hover:scale-105 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
+        aria-label="Scroll to AI Image Chat"
+      >
+        <Sparkles className="w-5 h-5" />
+        <span className="hidden sm:inline">AI Image</span>
+      </button>
       <button
         onClick={() => setIsFeedbackDialogOpen(true)}
         className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold text-white shadow-xl bg-gradient-to-r from-primary to-accent hover:scale-105 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
