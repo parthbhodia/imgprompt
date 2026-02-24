@@ -4,6 +4,7 @@ FastAPI backend for VibeIMG AI image generation.
 - Supabase auth (JWT), credits, chat_sessions, chat_messages, image_generations
 - Prompt suggestions from existing prompt library
 """
+import asyncio
 import logging
 import os
 from typing import Annotated
@@ -20,9 +21,11 @@ from config import settings
 from auth import DEV_USER_ID, get_supabase_admin, get_current_user_id
 from credits import get_credits, deduct_credits, ensure_credits_column
 from replicate_flux import run_flux, run_flux_img2img
+from replicate.exceptions import ModelError as ReplicateModelError
 from prompt_suggest import get_suggestions
 from moderation import check_moderation
-from llm_refine import refine_prompt
+from llm_refine import refine_prompt, sanitize_for_replicate
+from stripe_payments import create_checkout_session, create_portal_session, handle_webhook, PLANS
 
 app = FastAPI(
     title="VibeIMG AI Image API",
@@ -72,11 +75,29 @@ class SuggestResponse(BaseModel):
 
 
 class RefineRequest(BaseModel):
-    text: str = Field(..., min_length=1, max_length=500)
+    text: str = Field(..., min_length=1, max_length=4000)
 
 
 class RefineResponse(BaseModel):
     refined: str
+
+
+class CheckoutRequest(BaseModel):
+    plan: str = Field(..., pattern="^(starter|popular|pro)$")
+
+
+class CheckoutResponse(BaseModel):
+    checkout_url: str
+
+
+class PortalResponse(BaseModel):
+    portal_url: str
+
+
+class SubscriptionStatusResponse(BaseModel):
+    plan: str | None
+    status: str | None
+    credits: int
 
 
 class SessionCreate(BaseModel):
@@ -171,15 +192,53 @@ async def generate_image(
         from prompt_suggest import enhance_prompt_from_library
         prompt = enhance_prompt_from_library(supabase, prompt)
 
-    try:
+    # Pre-sanitize via Groq to avoid Replicate's over-aggressive NSFW filter
+    safe_prompt = await asyncio.get_event_loop().run_in_executor(None, lambda: sanitize_for_replicate(prompt))
+
+    async def _run_replicate(p: str) -> list[str]:
+        """Run Replicate in a thread pool with a 180s timeout."""
         if body.image_base64:
-            urls = run_flux_img2img(prompt, body.image_base64)
+            return await asyncio.wait_for(
+                asyncio.get_event_loop().run_in_executor(None, lambda: run_flux_img2img(p, body.image_base64)),
+                timeout=180,
+            )
+        return await asyncio.wait_for(
+            asyncio.get_event_loop().run_in_executor(None, lambda: run_flux(p)),
+            timeout=180,
+        )
+
+    try:
+        urls = await _run_replicate(safe_prompt)
+    except asyncio.TimeoutError:
+        logger.error("Image generation timed out after 180s")
+        raise HTTPException(status_code=504, detail="Image generation timed out. Please try again.")
+    except ReplicateModelError as e:
+        msg = str(e)
+        if "nsfw" in msg.lower():
+            # Groq sanitization didn't fully work — try one more time with a harder rewrite
+            logger.warning("NSFW false positive after sanitization, retrying with stricter rewrite")
+            harder_prompt = await asyncio.get_event_loop().run_in_executor(
+                None,
+                lambda: sanitize_for_replicate(
+                    "STRICT REWRITE — remove any words that could trigger safety filters: " + safe_prompt
+                ),
+            )
+            try:
+                urls = await _run_replicate(harder_prompt)
+            except ReplicateModelError:
+                raise HTTPException(
+                    status_code=400,
+                    detail=(
+                        "Replicate's safety filter blocked this prompt even after automatic rephrasing. "
+                        "Try changing 'photograph' to 'digital painting' or 'illustration', "
+                        "and rephrase any descriptions involving people."
+                    ),
+                )
         else:
-            urls = run_flux(prompt)
+            raise HTTPException(status_code=400, detail=msg)
     except Exception as e:
-        logger.exception("Image generation failed")
+        logger.exception("Image generation failed: %s", e)
         msg = str(e) if str(e) else "Image generation failed"
-        # Replicate billing 402 → surface as 402 so frontend can handle it specifically
         if "insufficient credit" in msg.lower() and "replicate.com/account/billing" in msg.lower():
             raise HTTPException(
                 status_code=402,
@@ -322,6 +381,92 @@ def list_messages(
         )
         for row in (r.data or [])
     ]
+
+
+@app.get("/payments/plans")
+def list_plans():
+    """Return available subscription plans (no auth required)."""
+    return {
+        slug: {
+            "label": info["label"],
+            "price": info["price"],
+            "credits": info["credits"],
+        }
+        for slug, info in PLANS.items()
+    }
+
+
+@app.get("/payments/subscription", response_model=SubscriptionStatusResponse)
+def get_subscription_status(user_id: Annotated[str, Depends(get_current_user_id)]):
+    """Return the current user's subscription plan and credit balance."""
+    supabase = get_supabase_admin()
+    row = (
+        supabase.table("profiles")
+        .select("credits, stripe_plan, stripe_status")
+        .eq("id", user_id)
+        .execute()
+    )
+    if not row.data:
+        return SubscriptionStatusResponse(plan=None, status=None, credits=0)
+    data = row.data[0]
+    return SubscriptionStatusResponse(
+        plan=data.get("stripe_plan"),
+        status=data.get("stripe_status"),
+        credits=int(data.get("credits") or 0),
+    )
+
+
+@app.post("/payments/create-checkout", response_model=CheckoutResponse)
+def payments_create_checkout(
+    body: CheckoutRequest,
+    user_id: Annotated[str, Depends(get_current_user_id)],
+):
+    if not settings.stripe_secret_key:
+        raise HTTPException(
+            status_code=503,
+            detail="Stripe payments are not configured on this server.",
+        )
+    supabase = get_supabase_admin()
+    profile = supabase.table("profiles").select("id").eq("id", user_id).execute()
+    email = ""
+    try:
+        from auth import get_supabase_admin as _get_admin
+        admin = _get_admin()
+        user_resp = admin.auth.admin.get_user_by_id(user_id)
+        email = getattr(user_resp.user, "email", "") or ""
+    except Exception:
+        pass
+    try:
+        url = create_checkout_session(user_id, email, body.plan)
+        return CheckoutResponse(checkout_url=url)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+
+
+@app.post("/payments/customer-portal", response_model=PortalResponse)
+def payments_customer_portal(user_id: Annotated[str, Depends(get_current_user_id)]):
+    if not settings.stripe_secret_key:
+        raise HTTPException(status_code=503, detail="Stripe is not configured.")
+    try:
+        url = create_portal_session(user_id)
+        return PortalResponse(portal_url=url)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.post("/payments/webhook")
+async def stripe_webhook(request: Request):
+    """Stripe sends events here. Must be unauthenticated."""
+    payload = await request.body()
+    sig = request.headers.get("stripe-signature", "")
+    try:
+        handle_webhook(payload, sig)
+    except ValueError as e:
+        logger.warning("Stripe webhook error: %s", e)
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"status": "ok"}
 
 
 if __name__ == "__main__":

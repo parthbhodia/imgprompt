@@ -34,6 +34,7 @@ def check_moderation(text: str) -> None:
             ],
             max_tokens=5,
             temperature=0,
+            timeout=6,  # Skip moderation and allow if Groq is slow
         )
         verdict = resp.choices[0].message.content.strip().upper()
         if verdict.startswith("UNSAFE"):

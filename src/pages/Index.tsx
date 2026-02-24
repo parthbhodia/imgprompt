@@ -7,7 +7,7 @@ import { ImageChat } from "@/components/ImageChat";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Sparkles, Zap, Copy, Search, Lightbulb, Star, Palette, MessageCircle, Share2, ChevronLeft, ChevronRight, ExternalLink, ThumbsUp, Heart, TrendingUp, LogIn, LogOut, User } from "lucide-react";
+import { Sparkles, Zap, Copy, Search, Lightbulb, Star, Palette, MessageCircle, Share2, ChevronLeft, ChevronRight, ExternalLink, ThumbsUp, Heart, TrendingUp, LogIn, LogOut, User, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchPrompts, type NormalizedPrompt } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -181,6 +181,8 @@ const Index = () => {
   const initialCategory = categoryFromUrl ? findCategoryFromSlug(categoryFromUrl, categories) : defaultCategory;
   const [activeCategory, setActiveCategory] = useState(initialCategory);
   const [searchQuery, setSearchQuery] = useState("");
+  const [visibleCount, setVisibleCount] = useState(6);
+  const [aiPrompt, setAiPrompt] = useState("");
   const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false);
   const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
   const [isPromptDialogOpen, setIsPromptDialogOpen] = useState(false);
@@ -188,6 +190,8 @@ const Index = () => {
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [isSignInDialogOpen, setIsSignInDialogOpen] = useState(false);
   const galleryRef = useRef<HTMLDivElement>(null);
+  const trendingScrollRef = useRef<HTMLDivElement>(null);
+  const likedScrollRef = useRef<HTMLDivElement>(null);
   const adsenseScriptRef = useRef<HTMLScriptElement | null>(null);
   const hasInitializedRoute = useRef(false);
 
@@ -433,9 +437,11 @@ const Index = () => {
   };
 
   const handleFeaturedPromptClick = (promptId: number, promptCategory: string) => {
+    // Open the modal directly — scrolling to gallery card is unreliable when visibleCount limits rendering
+    openPromptModal(promptId);
+    // Also filter to the right category so it's visible if user closes the modal
     setSearchQuery("");
     setActiveCategory(promptCategory);
-    setTimeout(() => scrollToPromptCard(promptId), 200);
   };
 
   const filteredPrompts = mergedPrompts.filter((prompt) => {
@@ -448,6 +454,12 @@ const Index = () => {
     return matchesCategory && matchesSearch;
   });
   const hasPromptContent = filteredPrompts.length > 0;
+  const visiblePrompts = filteredPrompts.slice(0, visibleCount);
+  const hasMore = visibleCount < filteredPrompts.length;
+
+  useEffect(() => {
+    setVisibleCount(6);
+  }, [activeCategory, searchQuery]);
 
   useEffect(() => {
     if (typeof document === "undefined") {
@@ -520,14 +532,25 @@ const Index = () => {
                 </Button>
               )}
 
+              <Link to="/pricing">
+                <Button variant="outline" size="sm" className="gap-1.5">
+                  <Zap className="w-3.5 h-3.5 text-yellow-500" />
+                  <span className="hidden xs:inline">Pricing</span>
+                </Button>
+              </Link>
+
               {user ? (
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground hidden md:inline truncate max-w-[150px]">
-                    {user.user_metadata?.full_name || user.email}
-                  </span>
-                  <Button variant="ghost" size="sm" onClick={signOut} className="gap-2">
+                <div className="flex items-center gap-1">
+                  <Link to="/profile">
+                    <Button variant="ghost" size="sm" className="gap-2">
+                      <User className="w-4 h-4" />
+                      <span className="hidden sm:inline truncate max-w-[120px]">
+                        {user.user_metadata?.full_name?.split(" ")[0] || user.email?.split("@")[0]}
+                      </span>
+                    </Button>
+                  </Link>
+                  <Button variant="ghost" size="sm" onClick={signOut} className="gap-1 px-2">
                     <LogOut className="w-4 h-4" />
-                    <span className="hidden sm:inline">Sign out</span>
                   </Button>
                 </div>
               ) : (
@@ -576,7 +599,11 @@ const Index = () => {
         </header>
 
         {/* AI Image Chat – visible on first visit */}
-        <ImageChat inline />
+        <ImageChat
+          inline
+          initialPrompt={aiPrompt}
+          onPromptConsumed={() => setAiPrompt("")}
+        />
 
         {featuredPrompts.length > 0 && (
           <section className="container mx-auto px-4 pb-6">
@@ -600,30 +627,68 @@ const Index = () => {
                 View all
               </Button>
             </div>
-            <div className="flex gap-4 overflow-x-auto scrollbar-thin pb-4">
-              {featuredPrompts.map((prompt) => {
-                const firstSlide = prompt.slides[0];
-                return (
-                  <article
-                    key={prompt.id}
-                    className="min-w-[260px] max-w-[260px] rounded-3xl border border-border/60 bg-card/80 backdrop-blur p-4 shrink-0"
-                    onClick={() => handleFeaturedPromptClick(prompt.id, prompt.category)}
-                  >
-                    <div className="aspect-[4/5] overflow-hidden rounded-2xl mb-3">
-                      <img
-                        src={firstSlide.image}
-                        alt={prompt.title}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <p className="text-xs uppercase tracking-wide text-primary font-semibold mb-1">
-                      {prompt.category}
-                    </p>
-                    <h3 className="text-lg font-semibold mb-2">{prompt.title}</h3>
-                    <p className="text-sm text-muted-foreground line-clamp-3">{firstSlide.prompt}</p>
-                  </article>
-                );
-              })}
+            {/* Scroll container with side arrow overlays */}
+            <div className="relative group/scroll">
+              <button
+                aria-label="Scroll left"
+                onClick={() => trendingScrollRef.current?.scrollBy({ left: -280, behavior: "smooth" })}
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 -translate-x-2 w-10 h-10 rounded-full bg-background/90 border border-border shadow-lg flex items-center justify-center opacity-0 group-hover/scroll:opacity-100 transition-opacity hover:bg-accent"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <div ref={trendingScrollRef} className="flex gap-4 overflow-x-auto scrollbar-hide pb-4 scroll-smooth">
+                {featuredPrompts.map((prompt) => {
+                  const firstSlide = prompt.slides[0];
+                  return (
+                    <article
+                      key={prompt.id}
+                      className="min-w-[260px] max-w-[260px] rounded-3xl border border-border/60 bg-card/80 backdrop-blur p-4 shrink-0 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-transform hover:border-primary/40 hover:shadow-lg group/card flex flex-col"
+                      onClick={() => handleFeaturedPromptClick(prompt.id, prompt.category)}
+                    >
+                      {/* Image with hover overlay */}
+                      <div className="aspect-[4/5] overflow-hidden rounded-2xl mb-3 relative">
+                        <img
+                          src={firstSlide.image}
+                          alt={prompt.title}
+                          className="w-full h-full object-cover transition-transform duration-300 group-hover/card:scale-105"
+                        />
+                        {/* Hover overlay CTA */}
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/card:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); setAiPrompt(firstSlide.prompt); }}
+                            className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur border border-white/40 text-white text-sm font-semibold hover:bg-white/30 transition-colors"
+                          >
+                            <Wand2 className="w-4 h-4" />
+                            Generate with AI
+                          </button>
+                        </div>
+                      </div>
+                      <p className="text-xs uppercase tracking-wide text-primary font-semibold mb-1">
+                        {prompt.category}
+                      </p>
+                      <h3 className="text-lg font-semibold mb-2">{prompt.title}</h3>
+                      <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{firstSlide.prompt}</p>
+                      {/* Bottom always-visible CTA */}
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setAiPrompt(firstSlide.prompt); }}
+                        className="mt-auto w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-gradient-to-r from-primary to-accent text-white text-sm font-semibold hover:opacity-90 active:scale-95 transition-all"
+                      >
+                        <Wand2 className="w-3.5 h-3.5" />
+                        Generate with AI
+                      </button>
+                    </article>
+                  );
+                })}
+              </div>
+              <button
+                aria-label="Scroll right"
+                onClick={() => trendingScrollRef.current?.scrollBy({ left: 280, behavior: "smooth" })}
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 translate-x-2 w-10 h-10 rounded-full bg-background/90 border border-border shadow-lg flex items-center justify-center opacity-0 group-hover/scroll:opacity-100 transition-opacity hover:bg-accent"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
             </div>
           </section>
         )}
@@ -631,7 +696,7 @@ const Index = () => {
         {/* Most Liked Prompts */}
         {mostLikedPrompts.length > 0 && (
           <section className="container mx-auto px-4 pb-6">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center mb-4">
               <div>
                 <p className="text-sm uppercase tracking-widest text-primary font-semibold">Community picks</p>
                 <h2 className="text-2xl font-bold flex items-center gap-2">
@@ -639,87 +704,116 @@ const Index = () => {
                   Most Liked Prompts
                 </h2>
               </div>
-              {mostLikedPrompts.length > 3 && (
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => {
-                      const container = document.getElementById('most-liked-container');
-                      if (container) {
-                        container.scrollBy({ left: -280, behavior: 'smooth' });
-                      }
-                    }}
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => {
-                      const container = document.getElementById('most-liked-container');
-                      if (container) {
-                        container.scrollBy({ left: 280, behavior: 'smooth' });
-                      }
-                    }}
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
-                </div>
-              )}
             </div>
+            {/* Scroll container with side arrow overlays */}
+            <div className="relative group/scroll2">
+              <button
+                aria-label="Scroll left"
+                onClick={() => likedScrollRef.current?.scrollBy({ left: -280, behavior: "smooth" })}
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 -translate-x-2 w-10 h-10 rounded-full bg-background/90 border border-border shadow-lg flex items-center justify-center opacity-0 group-hover/scroll2:opacity-100 transition-opacity hover:bg-accent"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
             <div 
-              id="most-liked-container"
-              className="flex gap-4 overflow-x-auto scrollbar-hide pb-4"
+              ref={likedScrollRef}
+              className="flex gap-4 overflow-x-auto scrollbar-hide pb-4 scroll-smooth"
             >
               {mostLikedPrompts.map((prompt) => {
                 const firstSlide = prompt.slides[0];
                 return (
                   <article
                     key={prompt.id}
-                    className="min-w-[260px] max-w-[260px] rounded-3xl border border-border/60 bg-card/80 backdrop-blur p-4 shrink-0 cursor-pointer hover:scale-[1.02] transition-transform"
+                    className="min-w-[260px] max-w-[260px] rounded-3xl border border-border/60 bg-card/80 backdrop-blur p-4 shrink-0 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-transform hover:border-primary/40 hover:shadow-lg group/card flex flex-col"
                     onClick={() => {
+                      openPromptModal(prompt.id);
                       setSearchQuery("");
                       setActiveCategory(prompt.category);
-                      setTimeout(() => scrollToPromptCard(prompt.id), 200);
                     }}
                   >
+                    {/* Image with like badge + hover overlay */}
                     <div className="aspect-[4/5] overflow-hidden rounded-2xl mb-3 relative">
                       <img
                         src={firstSlide.image}
                         alt={prompt.title}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover/card:scale-105"
                       />
                       <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-1 rounded-full bg-black/60 backdrop-blur text-white text-xs font-semibold">
                         <ThumbsUp className="w-3 h-3 fill-white" />
                         {likeCounts[prompt.id] ?? 0}
+                      </div>
+                      {/* Hover overlay CTA */}
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/card:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setAiPrompt(firstSlide.prompt); }}
+                          className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur border border-white/40 text-white text-sm font-semibold hover:bg-white/30 transition-colors"
+                        >
+                          <Wand2 className="w-4 h-4" />
+                          Generate with AI
+                        </button>
                       </div>
                     </div>
                     <p className="text-xs uppercase tracking-wide text-primary font-semibold mb-1">
                       {prompt.category}
                     </p>
                     <h3 className="text-lg font-semibold mb-2">{prompt.title}</h3>
-                    <p className="text-sm text-muted-foreground line-clamp-2">{firstSlide.prompt}</p>
+                    <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{firstSlide.prompt}</p>
+                    {/* Bottom always-visible CTA */}
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setAiPrompt(firstSlide.prompt); }}
+                      className="mt-auto w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-gradient-to-r from-primary to-accent text-white text-sm font-semibold hover:opacity-90 active:scale-95 transition-all"
+                    >
+                      <Wand2 className="w-3.5 h-3.5" />
+                      Generate with AI
+                    </button>
                   </article>
                 );
               })}
+            </div>
+              <button
+                aria-label="Scroll right"
+                onClick={() => likedScrollRef.current?.scrollBy({ left: 280, behavior: "smooth" })}
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 translate-x-2 w-10 h-10 rounded-full bg-background/90 border border-border shadow-lg flex items-center justify-center opacity-0 group-hover/scroll2:opacity-100 transition-opacity hover:bg-accent"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
             </div>
           </section>
         )}
 
         {/* Search Bar */}
-        <section className="container mx-auto px-4 py-4">
-          <div className="max-w-2xl mx-auto relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Search prompts by title or description..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 h-12 glass text-base"
-            />
+        <section className="container mx-auto px-4 py-6">
+          <div className="max-w-2xl mx-auto">
+            {/* Glow wrapper */}
+            <div className="relative group">
+              {/* Ambient glow layer — sits behind the input */}
+              <div className="absolute -inset-[2px] rounded-2xl bg-gradient-to-r from-primary/60 via-accent/50 to-primary/60 opacity-0 group-focus-within:opacity-100 blur-md transition-all duration-500 pointer-events-none" />
+              {/* Subtle always-on glow ring */}
+              <div className="absolute -inset-[1px] rounded-2xl bg-gradient-to-r from-primary/30 via-accent/20 to-primary/30 opacity-60 blur-sm transition-all duration-500 pointer-events-none" />
+              {/* Input row */}
+              <div className="relative flex items-center rounded-xl border border-primary/20 bg-background/80 backdrop-blur-md shadow-lg overflow-hidden focus-within:border-primary/60 transition-all duration-300">
+                <div className="pl-4 pr-2 shrink-0">
+                  <Search className="w-5 h-5 text-primary" />
+                </div>
+                <Input
+                  type="text"
+                  placeholder="Search prompts by title or description..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="flex-1 h-12 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-base placeholder:text-muted-foreground/60"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery("")}
+                    className="pr-4 text-muted-foreground hover:text-foreground transition-colors text-xs shrink-0"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </section>
 
@@ -741,7 +835,7 @@ const Index = () => {
             <p className="text-sm text-amber-600 mb-4">Could not load prompts. Please try again later.</p>
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredPrompts.map((prompt, index) => (
+            {visiblePrompts.map((prompt, index) => (
               <div
                 key={prompt.id}
                 id={`prompt-${prompt.id}`}
@@ -755,6 +849,7 @@ const Index = () => {
                   title={prompt.title}
                   platforms={prompt.platforms}
                   onOpen={() => openPromptModal(prompt.id)}
+                  onGenerateWithAI={(promptText) => setAiPrompt(promptText)}
                   likeCount={likeCounts[prompt.id] ?? 0}
                   isLiked={userLikes.has(prompt.id)}
                   isFavorited={userFavorites.has(prompt.id)}
@@ -764,6 +859,20 @@ const Index = () => {
               </div>
             ))}
           </div>
+
+          {hasMore && (
+            <div className="flex justify-center mt-10">
+              <Button
+                variant="outline"
+                size="lg"
+                className="gap-2 px-8"
+                onClick={() => setVisibleCount((prev) => prev + 6)}
+              >
+                <Sparkles className="w-4 h-4" />
+                Load more prompts ({filteredPrompts.length - visibleCount} remaining)
+              </Button>
+            </div>
+          )}
 
           {filteredPrompts.length === 0 && (
             <div className="text-center py-20 max-w-2xl mx-auto space-y-6 glass rounded-3xl p-10">
@@ -995,36 +1104,39 @@ const Index = () => {
               </div>
 
               <div className="flex flex-col gap-4">
-                <div className="flex flex-wrap gap-2">
-                  {selectedPrompt.platforms.map((platform) => (
-                    <Button
-                      key={platform}
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      className="gap-2 text-xs uppercase tracking-wide"
-                      onClick={() => handlePlatformLaunch(platform)}
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      {platform}
-                    </Button>
-                  ))}
+                {/* Prompt text */}
+                <div className="rounded-2xl border border-border/70 bg-background/80 p-4 overflow-y-auto max-h-[320px] relative group/prompt">
+                  <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed pr-8">{selectedSlide.prompt}</p>
+                  {/* Small copy icon top-right of prompt box */}
+                  <button
+                    type="button"
+                    onClick={copySelectedPrompt}
+                    aria-label="Copy prompt"
+                    className="absolute top-3 right-3 p-1.5 rounded-lg bg-muted/60 hover:bg-primary/20 transition-colors opacity-0 group-hover/prompt:opacity-100"
+                  >
+                    <Copy className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
+                  </button>
                 </div>
-                <div className="rounded-2xl border border-border/70 bg-background/80 p-4 overflow-y-auto max-h-[320px]">
-                  <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed">{selectedSlide.prompt}</p>
-                </div>
-                <div className="flex gap-2">
-                  <Button onClick={copySelectedPrompt} className="flex-1">
-                    <Copy className="w-4 h-4 mr-2" />
-                    Copy Prompt
-                  </Button>
+
+                {/* Generate with AI – primary CTA */}
+                <Button
+                  className="w-full gap-2 bg-gradient-to-r from-primary to-accent text-white hover:opacity-90 transition-opacity text-base py-5"
+                  onClick={() => {
+                    setAiPrompt(selectedSlide.prompt);
+                    closePromptModal();
+                  }}
+                >
+                  <Wand2 className="w-4 h-4" />
+                  Generate with AI
+                </Button>
+
+                {/* Like / Favorite row */}
+                <div className="flex items-center gap-2">
                   <Button
                     variant="outline"
                     size="icon"
                     onClick={() => handleLike(selectedPrompt.id)}
-                    className={cn(
-                      userLikes.has(selectedPrompt.id) && "border-primary text-primary"
-                    )}
+                    className={cn(userLikes.has(selectedPrompt.id) && "border-primary text-primary")}
                     aria-label="Like"
                   >
                     <ThumbsUp className={cn("w-4 h-4", userLikes.has(selectedPrompt.id) && "fill-primary")} />
@@ -1033,19 +1145,17 @@ const Index = () => {
                     variant="outline"
                     size="icon"
                     onClick={() => handleFavorite(selectedPrompt.id)}
-                    className={cn(
-                      userFavorites.has(selectedPrompt.id) && "border-rose-500 text-rose-500"
-                    )}
+                    className={cn(userFavorites.has(selectedPrompt.id) && "border-rose-500 text-rose-500")}
                     aria-label="Favorite"
                   >
                     <Heart className={cn("w-4 h-4", userFavorites.has(selectedPrompt.id) && "fill-rose-500")} />
                   </Button>
+                  {(likeCounts[selectedPrompt.id] ?? 0) > 0 && (
+                    <p className="text-xs text-muted-foreground ml-1">
+                      {likeCounts[selectedPrompt.id]} {likeCounts[selectedPrompt.id] === 1 ? "person likes" : "people like"} this
+                    </p>
+                  )}
                 </div>
-                {(likeCounts[selectedPrompt.id] ?? 0) > 0 && (
-                  <p className="text-xs text-muted-foreground text-center">
-                    {likeCounts[selectedPrompt.id]} {likeCounts[selectedPrompt.id] === 1 ? "person likes" : "people like"} this prompt
-                  </p>
-                )}
               </div>
             </div>
           </DialogContent>

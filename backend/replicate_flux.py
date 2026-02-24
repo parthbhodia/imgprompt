@@ -68,6 +68,22 @@ def _ensure_replicate_token() -> None:
         )
 
 
+def _output_to_urls(output) -> list[str]:
+    """
+    Convert any Replicate output shape to a list of HTTPS URL strings.
+    Handles: str, list[str|FileOutput], single FileOutput (newer SDK).
+    """
+    if output is None:
+        return []
+    if isinstance(output, str):
+        return [output] if output.startswith("http") else []
+    if isinstance(output, list):
+        return [str(u) for u in output if str(u).startswith("http")]
+    # FileOutput or any object whose str() is the URL (newer replicate SDK)
+    url = str(output)
+    return [url] if url.startswith("http") else []
+
+
 def run_flux(prompt: str, *, num_outputs: int = 1) -> list[str]:
     """
     Run Flux text-to-image model and return list of image URLs.
@@ -82,11 +98,7 @@ def run_flux(prompt: str, *, num_outputs: int = 1) -> list[str]:
             "num_outputs": num_outputs,
         },
     )
-    if isinstance(output, str):
-        return [output]
-    if isinstance(output, list):
-        return [str(u) for u in output]
-    return []
+    return _output_to_urls(output)
 
 
 def run_flux_img2img(prompt: str, image_base64: str, *, num_outputs: int = 1) -> list[str]:
@@ -101,13 +113,4 @@ def run_flux_img2img(prompt: str, image_base64: str, *, num_outputs: int = 1) ->
         FLUX_IMG2IMG_MODEL,
         input={"image": image_url},
     )
-    # Output can be FileOutput (has .url str), callable .url(), string, or list
-    def to_url(x):
-        if hasattr(x, "url"):
-            u = getattr(x, "url")
-            return u() if callable(u) else str(u)
-        return str(x)
-
-    if isinstance(output, list):
-        return [to_url(u) for u in output]
-    return [to_url(output)]
+    return _output_to_urls(output)

@@ -11,6 +11,8 @@ node_modules
 dist
 .venv
 backend/.venv
+backend/.venv312
+backend/.venv*
 dist-ssr
 *.local
 

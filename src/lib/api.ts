@@ -44,8 +44,13 @@ export type MessageResponse = {
   created_at: string;
 };
 
-/** In dev, allow API calls without token (backend must set ALLOW_DEV_NO_AUTH=1). */
-const isDevNoAuth = () => import.meta.env.DEV;
+/**
+ * Dev bypass: only active when VITE_DEV_NO_AUTH=1 is set in the frontend .env.
+ * Set it in your root .env for local testing without sign-in.
+ * Leave it unset (or set to 0) to require real auth even in dev.
+ */
+const isDevNoAuth = () =>
+  import.meta.env.DEV && import.meta.env.VITE_DEV_NO_AUTH === "1";
 
 async function fetchApi<T>(
   path: string,
@@ -70,7 +75,7 @@ async function fetchApi<T>(
   return res.json() as Promise<T>;
 }
 
-/** When true (dev + VITE_DEV_NO_AUTH), API can be called without a token; backend uses dev user. */
+/** True only when VITE_DEV_NO_AUTH=1 is explicitly set in the frontend .env. */
 export function canUseDevNoAuth(): boolean {
   return isDevNoAuth();
 }
@@ -137,5 +142,40 @@ export async function refinePrompt(
     method: "POST",
     token,
     body: JSON.stringify({ text }),
+  });
+}
+
+export type SubscriptionStatus = {
+  plan: string | null;
+  status: string | null;
+  credits: number;
+};
+
+export async function getSubscriptionStatus(
+  token: string | null
+): Promise<SubscriptionStatus> {
+  return fetchApi<SubscriptionStatus>("/payments/subscription", {
+    method: "GET",
+    token,
+  });
+}
+
+export async function createSubscriptionCheckout(
+  token: string | null,
+  plan: string
+): Promise<{ checkout_url: string }> {
+  return fetchApi<{ checkout_url: string }>("/payments/create-checkout", {
+    method: "POST",
+    token,
+    body: JSON.stringify({ plan }),
+  });
+}
+
+export async function openCustomerPortal(
+  token: string | null
+): Promise<{ portal_url: string }> {
+  return fetchApi<{ portal_url: string }>("/payments/customer-portal", {
+    method: "POST",
+    token,
   });
 }

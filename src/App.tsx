@@ -17,6 +17,8 @@ import AdminCategories from "./pages/admin/AdminCategories";
 import AdminPlatforms from "./pages/admin/AdminPlatforms";
 import AdminUsers from "./pages/admin/AdminUsers";
 import Favorites from "./pages/Favorites";
+import Pricing from "./pages/Pricing";
+import Profile from "./pages/Profile";
 
 const queryClient = new QueryClient();
 
@@ -45,6 +47,8 @@ const App = () => (
             {/* Public site */}
             <Route path="/" element={<Index />} />
             <Route path="/favorites" element={<Favorites />} />
+            <Route path="/pricing" element={<Pricing />} />
+            <Route path="/profile" element={<Profile />} />
 
             {/* Admin – login (public) */}
             <Route path="/admin/login" element={<AdminLogin />} />
