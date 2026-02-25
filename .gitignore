@@ -13,6 +13,9 @@ dist
 backend/.venv
 backend/.venv312
 backend/.venv*
+__pycache__/
+*.pyc
+*.pyo
 dist-ssr
 *.local
 

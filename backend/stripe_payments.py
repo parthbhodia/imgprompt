@@ -81,8 +81,8 @@ def create_checkout_session(user_id: str, email: str, plan: str) -> str:
         subscription_data={
             "metadata": {"supabase_user_id": user_id, "plan": plan},
         },
-        success_url=f"{app_url}/pricing?success=true&plan={plan}",
-        cancel_url=f"{app_url}/pricing?canceled=true",
+        success_url=f"{app_url}/profile?success=true&plan={plan}",
+        cancel_url=f"{app_url}/profile?canceled=true",
         metadata={"supabase_user_id": user_id, "plan": plan},
         allow_promotion_codes=True,
     )

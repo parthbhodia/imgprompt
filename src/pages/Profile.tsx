@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import {
@@ -55,10 +55,22 @@ const PLAN_META: Record<
 export default function Profile() {
   const { user, session, signOut } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [sub, setSub] = useState<SubscriptionStatus | null>(null);
   const [loadingSub, setLoadingSub] = useState(true);
   const [portalLoading, setPortalLoading] = useState(false);
   const [upgradeLoading, setUpgradeLoading] = useState<string | null>(null);
+
+  // Show success toast when returning from Stripe checkout
+  useEffect(() => {
+    const success = searchParams.get("success");
+    const canceled = searchParams.get("canceled");
+    if (success === "true") {
+      toast.success("Subscription activated! Your credits have been added. Refresh to see the latest amount.", { duration: 5000 });
+    } else if (canceled === "true") {
+      toast.info("Checkout was canceled. No charges were made.");
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!user) {
@@ -192,7 +204,24 @@ export default function Profile() {
                   <p className="text-3xl font-bold">{sub?.credits ?? 0}</p>
                   <p className="text-xs text-muted-foreground">1 credit = 1 generated image</p>
                 </div>
-                <Zap className="w-10 h-10 text-primary opacity-60" />
+                <div className="flex flex-col items-end gap-2">
+                  <Zap className="w-10 h-10 text-primary opacity-60" />
+                  {!isActive && (sub?.credits ?? 0) < 5 && (
+                    <Button
+                      size="xs"
+                      onClick={() => handleUpgrade("starter")}
+                      disabled={upgradeLoading !== null}
+                      className="gap-1.5 text-xs"
+                    >
+                      {upgradeLoading ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <Zap className="w-3 h-3" />
+                      )}
+                      Buy Now
+                    </Button>
+                  )}
+                </div>
               </div>
 
               {/* Plan status */}
@@ -277,6 +306,20 @@ export default function Profile() {
             Quick Links
           </h2>
           <div className="flex flex-wrap gap-3">
+            {!isActive && (
+              <Button
+                onClick={() => handleUpgrade("starter")}
+                disabled={upgradeLoading !== null}
+                className="gap-2 bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity"
+              >
+                {upgradeLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Zap className="w-4 h-4" />
+                )}
+                Buy Credits Now
+              </Button>
+            )}
             <Link to="/pricing">
               <Button variant="outline" className="gap-2">
                 <Zap className="w-4 h-4 text-yellow-500" />
