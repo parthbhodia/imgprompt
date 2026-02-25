@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { PromptCard } from "@/components/PromptCard";
 import { CategoryFilter } from "@/components/CategoryFilter";
 import { ImageChat } from "@/components/ImageChat";
+import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -1200,6 +1201,7 @@ const Index = () => {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
+      <Footer />
     </>
   );
 };

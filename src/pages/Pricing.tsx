@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import { Footer } from "@/components/Footer";
 import { Loader2, Check, Zap, Star, Rocket, ArrowLeft, Settings } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -289,6 +290,7 @@ export default function Pricing() {
           )}
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

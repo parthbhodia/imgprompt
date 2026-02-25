@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import { Footer } from "@/components/Footer";
 import {
   Sparkles,
   ArrowLeft,
@@ -410,6 +411,7 @@ export default function Profile() {
           </Button>
         </section>
       </main>
+      <Footer />
     </div>
   );
 }
