@@ -33,6 +33,7 @@ import {
 import { cn } from "@/lib/utils";
 import { PromptFrameworkBuilder } from "./PromptFrameworkBuilder";
 import { PromptGuidePanel } from "./PromptGuidePanel";
+import { PresetTags } from "./PresetTags";
 
 const PLACEHOLDER = "Describe the image you want to create...";
 
@@ -660,6 +661,17 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
             )}
             {credits === 0 && (
               <p className="text-xs text-destructive">No credits left. Contact support for more.</p>
+            )}
+            
+            {/* Preset Tags */}
+            {user && (
+              <div className="px-4 py-3 border-t bg-muted/20">
+                <PresetTags
+                  onPresetSelected={(prompt) => {
+                    setPrompt(prompt);
+                  }}
+                />
+              </div>
             )}
           </div>
         </>
