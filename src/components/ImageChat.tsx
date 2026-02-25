@@ -24,9 +24,11 @@ import {
   listMessages,
   refinePrompt,
   getChatInsights,
+  getConversationContext,
   type MessageResponse,
   type SuggestResponse,
   type ChatInsightsResponse,
+  type ConversationContextResponse,
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -56,6 +58,7 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
   const [refining, setRefining] = useState(false);
   const [chatInsights, setChatInsights] = useState<ChatInsightsResponse | null>(null);
   const [insightsLoading, setInsightsLoading] = useState(false);
+  const [conversationContext, setConversationContext] = useState<ConversationContextResponse | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -117,6 +120,26 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
     
     return () => clearTimeout(timer);
   }, [prompt, session, user, messages]);
+
+  // Fetch conversation context for smart suggestions
+  useEffect(() => {
+    if (!session || !user || messages.length < 2) return;
+
+    const timer = setTimeout(async () => {
+      try {
+        const contextMessages = messages.map(m => ({
+          role: m.role,
+          content: m.content,
+        }));
+        const context = await getConversationContext(session.access_token, contextMessages);
+        setConversationContext(context);
+      } catch (e) {
+        // Fail silently
+      }
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [messages, session, user]);
 
   const token = session?.access_token ?? null;
   const devNoAuth = canUseDevNoAuth();
@@ -416,31 +439,50 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
                                 <span className="hidden sm:inline">Regenerate</span>
                               </button>
                             </div>
-                            {/* Quick action suggestions */}
+                            {/* Quick action suggestions - context-aware */}
                             {messages.length > 0 && messages.some(msg => msg.role === "user") && (
                               <div className="pt-2 border-t border-border/40 space-y-2">
                                 <p className="text-xs font-medium text-muted-foreground">Try next:</p>
                                 <div className="flex flex-col gap-1.5">
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setPrompt(`${m.content}, but with a different artistic style`);
-                                      setTimeout(() => handleGenerate(), 100);
-                                    }}
-                                    className="text-left px-2 py-1 rounded-md text-xs bg-muted/40 hover:bg-primary/10 text-muted-foreground transition-colors"
-                                  >
-                                    Different artistic style
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setPrompt(`${m.content}, cinematic lighting`);
-                                      setTimeout(() => handleGenerate(), 100);
-                                    }}
-                                    className="text-left px-2 py-1 rounded-md text-xs bg-muted/40 hover:bg-primary/10 text-muted-foreground transition-colors"
-                                  >
-                                    Cinematic version
-                                  </button>
+                                  {conversationContext?.next_variations && conversationContext.next_variations.length > 0 ? (
+                                    conversationContext.next_variations.slice(0, 2).map((variation, idx) => (
+                                      <button
+                                        key={idx}
+                                        type="button"
+                                        onClick={() => {
+                                          setPrompt(`${m.content}, ${variation}`);
+                                          setTimeout(() => handleGenerate(), 100);
+                                        }}
+                                        className="text-left px-2 py-1 rounded-md text-xs bg-muted/40 hover:bg-primary/10 text-muted-foreground transition-colors truncate"
+                                        title={variation}
+                                      >
+                                        {variation}
+                                      </button>
+                                    ))
+                                  ) : (
+                                    <>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setPrompt(`${m.content}, different artistic style`);
+                                          setTimeout(() => handleGenerate(), 100);
+                                        }}
+                                        className="text-left px-2 py-1 rounded-md text-xs bg-muted/40 hover:bg-primary/10 text-muted-foreground transition-colors"
+                                      >
+                                        Different artistic style
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setPrompt(`${m.content}, cinematic lighting`);
+                                          setTimeout(() => handleGenerate(), 100);
+                                        }}
+                                        className="text-left px-2 py-1 rounded-md text-xs bg-muted/40 hover:bg-primary/10 text-muted-foreground transition-colors"
+                                      >
+                                        Cinematic version
+                                      </button>
+                                    </>
+                                  )}
                                 </div>
                               </div>
                             )}

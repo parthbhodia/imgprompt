@@ -50,6 +50,13 @@ export type ChatInsightsResponse = {
   insight: string;
 };
 
+export type ConversationContextResponse = {
+  themes: string[];
+  preferred_styles: string[];
+  complexity: string;
+  next_variations: string[];
+};
+
 /**
  * Dev bypass: only active when VITE_DEV_NO_AUTH=1 is set in the frontend .env.
  * Set it in your root .env for local testing without sign-in.
@@ -149,6 +156,17 @@ export async function getChatInsights(
     method: "POST",
     token,
     body: JSON.stringify({ message, previous_prompts: previousPrompts }),
+  });
+}
+
+export async function getConversationContext(
+  token: string | null,
+  messages: Array<{ role: "user" | "assistant"; content: string }>
+): Promise<ConversationContextResponse> {
+  return fetchApi<ConversationContextResponse>("/chat/context", {
+    method: "POST",
+    token,
+    body: JSON.stringify({ messages }),
   });
 }
 

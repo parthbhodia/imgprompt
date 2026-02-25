@@ -24,7 +24,7 @@ from replicate_flux import run_flux, run_flux_img2img
 from replicate.exceptions import ModelError as ReplicateModelError
 from prompt_suggest import get_suggestions
 from moderation import check_moderation
-from llm_refine import refine_prompt, sanitize_for_replicate, get_chat_insights
+from llm_refine import refine_prompt, sanitize_for_replicate, get_chat_insights, analyze_conversation_context
 from stripe_payments import create_checkout_session, create_portal_session, handle_webhook, PLANS
 
 app = FastAPI(
@@ -91,6 +91,17 @@ class ChatInsightsResponse(BaseModel):
     should_refine: bool
     is_variation: bool
     insight: str
+
+
+class ConversationContextRequest(BaseModel):
+    messages: list[dict]  # [{role: "user"|"assistant", content: str}, ...]
+
+
+class ConversationContextResponse(BaseModel):
+    themes: list[str]
+    preferred_styles: list[str]
+    complexity: str
+    next_variations: list[str]
 
 
 class CheckoutRequest(BaseModel):
@@ -224,6 +235,34 @@ def chat_insights_endpoint(
             should_refine=False,
             is_variation=False,
             insight="",
+        )
+
+
+@app.post("/chat/context", response_model=ConversationContextResponse)
+def conversation_context_endpoint(
+    body: ConversationContextRequest,
+    user_id: Annotated[str, Depends(get_current_user_id)],
+):
+    """
+    Analyze full conversation history to understand user preferences
+    and suggest relevant next steps.
+    """
+    try:
+        context = analyze_conversation_context(body.messages)
+        return ConversationContextResponse(
+            themes=context.get("themes", []),
+            preferred_styles=context.get("preferred_styles", []),
+            complexity=context.get("complexity", "medium"),
+            next_variations=context.get("next_variations", []),
+        )
+    except Exception as e:
+        logger.exception("Conversation context analysis failed")
+        # Return defaults on error
+        return ConversationContextResponse(
+            themes=[],
+            preferred_styles=[],
+            complexity="medium",
+            next_variations=[],
         )
 
 

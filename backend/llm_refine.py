@@ -100,6 +100,62 @@ def sanitize_for_replicate(prompt: str) -> str:
         return prompt  # Always fall back gracefully
 
 
+def analyze_conversation_context(messages: list[dict]) -> dict:
+    """
+    Analyze the full conversation history and provide context-aware suggestions.
+    
+    Args:
+        messages: List of dicts with 'role' ('user'/'assistant') and 'content' keys
+    
+    Returns:
+        Dict with themes, style preferences, complexity level, etc.
+    """
+    key = settings.groq_api_key
+    if not key or not messages:
+        return {"themes": [], "preferred_styles": [], "complexity": "medium"}
+
+    from groq import Groq
+    client = Groq(api_key=key)
+    
+    # Summarize conversation for context
+    recent_prompts = [m["content"] for m in messages if m.get("role") == "user"][-5:]
+    conversation_text = "\n".join([f"User: {p}" for p in recent_prompts])
+    
+    system_prompt = (
+        "Analyze the user's image generation requests and respond with a JSON object: "
+        '{"themes": list[str] (main topics/subjects, e.g., ["nature", "fantasy"]), '
+        '"preferred_styles": list[str] (artistic styles mentioned, e.g., ["cinematic", "watercolor"]), '
+        '"complexity": str (simple/medium/complex - how detailed are their requests?), '
+        '"next_variations": list[str] (2-3 suggested variations they might want)} '
+        "Respond ONLY with valid JSON, no other text."
+    )
+    
+    try:
+        resp = client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"Analyze these requests:\n{conversation_text}"},
+            ],
+            max_tokens=200,
+            temperature=0.5,
+            timeout=5,
+        )
+        content = resp.choices[0].message.content.strip()
+        
+        import json
+        result = json.loads(content)
+        return {
+            "themes": result.get("themes", []),
+            "preferred_styles": result.get("preferred_styles", []),
+            "complexity": result.get("complexity", "medium"),
+            "next_variations": result.get("next_variations", []),
+        }
+    except Exception as e:
+        logger.warning("Conversation context analysis failed: %s", e)
+        return {"themes": [], "preferred_styles": [], "complexity": "medium", "next_variations": []}
+
+
 def get_chat_insights(user_message: str, previous_prompts: list[str] | None = None) -> dict:
     """
     Analyze user message and provide contextual insights:
