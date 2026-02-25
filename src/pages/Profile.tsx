@@ -318,19 +318,9 @@ export default function Profile() {
                 </div>
 
                 {/* Help text & sync button */}
-                <div className={cn(
-                  "rounded-lg border px-4 py-3 text-sm space-y-3",
-                  isActive
-                    ? "bg-blue-500/10 border-blue-500/20"
-                    : "bg-amber-500/10 border-amber-500/20"
-                )}>
+                <div className="rounded-lg bg-blue-500/10 border border-blue-500/20 px-4 py-3 text-sm space-y-3">
                   <div className="space-y-1">
-                    <p className={cn(
-                      "font-medium",
-                      isActive
-                        ? "text-blue-600 dark:text-blue-400"
-                        : "text-amber-600 dark:text-amber-400"
-                    )}>
+                    <p className="font-medium text-blue-600 dark:text-blue-400">
                       {isActive ? "💡 How to cancel your subscription" : "⚠️ Subscription not syncing?"}
                     </p>
                     <p className="text-xs text-muted-foreground">
