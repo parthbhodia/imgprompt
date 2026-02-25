@@ -16,9 +16,9 @@ logger = logging.getLogger(__name__)
 # Plan catalog  (price_id is resolved at runtime from settings)
 # ---------------------------------------------------------------------------
 PLANS: dict[str, dict] = {
-    "starter": {"credits": 20,  "label": "Starter",  "price": "$1.99"},
-    "popular": {"credits": 60,  "label": "Popular",  "price": "$4.99"},
-    "pro":     {"credits": 150, "label": "Pro",       "price": "$9.99"},
+    "starter": {"credits": 15,  "label": "Starter",  "price": "$2.99"},
+    "popular": {"credits": 30,  "label": "Popular",  "price": "$5.99"},
+    "pro":     {"credits": 50,  "label": "Pro",       "price": "$9.99"},
 }
 
 
