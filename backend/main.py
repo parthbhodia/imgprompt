@@ -469,6 +469,64 @@ async def stripe_webhook(request: Request):
     return {"status": "ok"}
 
 
+@app.post("/payments/sync-credits")
+def payments_sync_credits(
+    user_id: Annotated[str, Depends(get_current_user_id)],
+):
+    """Debug endpoint: manually sync credits from Stripe subscription. For testing only."""
+    import stripe as stripe_lib
+    from stripe_payments import (
+        _get_or_create_stripe_customer, _resolve_plan_from_subscription,
+        _user_id_from_customer, PLANS
+    )
+    
+    if not settings.stripe_secret_key:
+        raise HTTPException(status_code=503, detail="Stripe not configured")
+    
+    supabase = get_supabase_admin()
+    
+    # Get user's stripe customer ID
+    row = supabase.table("profiles").select("stripe_customer_id").eq("id", user_id).execute()
+    if not row.data or not row.data[0].get("stripe_customer_id"):
+        raise HTTPException(status_code=404, detail="No Stripe customer found for this user")
+    
+    customer_id = row.data[0]["stripe_customer_id"]
+    stripe_lib.api_key = settings.stripe_secret_key
+    
+    try:
+        # Get the most recent active subscription
+        subs = stripe_lib.Subscription.list(customer=customer_id, status="active", limit=1)
+        if not subs.data:
+            raise HTTPException(status_code=404, detail="No active subscription found")
+        
+        sub = subs.data[0]
+        plan = _resolve_plan_from_subscription(sub.id)
+        if not plan:
+            raise HTTPException(status_code=400, detail="Could not resolve plan from subscription")
+        
+        credits = PLANS[plan]["credits"]
+        supabase.table("profiles").update({
+            "credits": credits,
+            "stripe_subscription_id": sub.id,
+            "stripe_plan": plan,
+            "stripe_status": "active",
+        }).eq("id", user_id).execute()
+        
+        logger.info("Manually synced %d credits for user %s (plan=%s)", credits, user_id, plan)
+        return {
+            "status": "synced",
+            "credits": credits,
+            "plan": plan,
+            "subscription_id": sub.id,
+        }
+    except stripe_lib.error.StripeError as e:
+        logger.error("Stripe error during sync: %s", e)
+        raise HTTPException(status_code=400, detail=f"Stripe error: {str(e)}")
+    except Exception as e:
+        logger.error("Error syncing credits: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))

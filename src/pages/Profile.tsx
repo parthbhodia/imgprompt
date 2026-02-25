@@ -22,6 +22,7 @@ import {
   getSubscriptionStatus,
   openCustomerPortal,
   createSubscriptionCheckout,
+  syncCreditsFromStripe,
   type SubscriptionStatus,
 } from "@/lib/api";
 
@@ -60,6 +61,7 @@ export default function Profile() {
   const [loadingSub, setLoadingSub] = useState(true);
   const [portalLoading, setPortalLoading] = useState(false);
   const [upgradeLoading, setUpgradeLoading] = useState<string | null>(null);
+  const [syncLoading, setSyncLoading] = useState(false);
 
   // Show success toast when returning from Stripe checkout
   useEffect(() => {
@@ -114,6 +116,24 @@ export default function Profile() {
   const handleSignOut = async () => {
     await signOut();
     navigate("/");
+  };
+
+  const handleSyncCredits = async () => {
+    setSyncLoading(true);
+    try {
+      const token = session?.access_token ?? null;
+      const result = await syncCreditsFromStripe(token);
+      toast.success(`Synced ${result.credits} credits from Stripe! (Plan: ${result.plan})`);
+      setSub((prev) =>
+        prev
+          ? { ...prev, credits: result.credits }
+          : { plan: result.plan, status: "active", credits: result.credits }
+      );
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not sync credits");
+    } finally {
+      setSyncLoading(false);
+    }
   };
 
   const planMeta = sub?.plan ? PLAN_META[sub.plan] : null;
@@ -297,15 +317,33 @@ export default function Profile() {
                   )}
                 </div>
 
-                {/* Help text */}
+                {/* Help text & debug button */}
                 {isActive && (
-                  <div className="rounded-lg bg-blue-500/10 border border-blue-500/20 px-4 py-3 text-sm space-y-1">
-                    <p className="font-medium text-blue-600 dark:text-blue-400">
-                      💡 How to cancel your subscription
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Click "Manage Subscription" above to access your Stripe billing dashboard. You can cancel anytime — your remaining credits will continue to work until the end of your billing cycle.
-                    </p>
+                  <div className="rounded-lg bg-blue-500/10 border border-blue-500/20 px-4 py-3 text-sm space-y-3">
+                    <div className="space-y-1">
+                      <p className="font-medium text-blue-600 dark:text-blue-400">
+                        💡 How to cancel your subscription
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Click "Manage Subscription" above to access your Stripe billing dashboard. You can cancel anytime — your remaining credits will continue to work until the end of your billing cycle.
+                      </p>
+                    </div>
+                    <div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleSyncCredits}
+                        disabled={syncLoading}
+                        className="gap-1.5 text-xs"
+                      >
+                        {syncLoading ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <Zap className="w-3 h-3" />
+                        )}
+                        Sync Credits from Stripe
+                      </Button>
+                    </div>
                   </div>
                 )}
               </div>

@@ -179,3 +179,12 @@ export async function openCustomerPortal(
     token,
   });
 }
+
+export async function syncCreditsFromStripe(
+  token: string | null
+): Promise<{ status: string; credits: number; plan: string; subscription_id: string }> {
+  return fetchApi<{ status: string; credits: number; plan: string; subscription_id: string }>("/payments/sync-credits", {
+    method: "POST",
+    token,
+  });
+}
