@@ -188,3 +188,19 @@ export async function syncCreditsFromStripe(
     token,
   });
 }
+
+export type PlanInfo = {
+  slug: string;
+  label: string;
+  price: string;
+  credits: number;
+};
+
+export async function getPlans(): Promise<{ plans: PlanInfo[] }> {
+  const baseUrl = getBaseUrl();
+  const response = await fetch(`${baseUrl}/pricing/plans`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch plans: ${response.statusText}`);
+  }
+  return response.json();
+}

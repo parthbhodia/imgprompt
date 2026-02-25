@@ -133,6 +133,32 @@ def credits(user_id: Annotated[str, Depends(get_current_user_id)]):
     return CreditsResponse(credits=get_credits(supabase, user_id))
 
 
+class PlanInfo(BaseModel):
+    slug: str
+    label: str
+    price: str
+    credits: int
+
+
+class PlansResponse(BaseModel):
+    plans: list[PlanInfo]
+
+
+@app.get("/pricing/plans", response_model=PlansResponse)
+def get_plans():
+    """Get all available subscription plans. Public endpoint."""
+    plans = [
+        PlanInfo(
+            slug=slug,
+            label=info["label"],
+            price=info["price"],
+            credits=info["credits"],
+        )
+        for slug, info in PLANS.items()
+    ]
+    return PlansResponse(plans=plans)
+
+
 @app.get("/suggest", response_model=SuggestResponse)
 def suggest_prompts(
     limit: int = 5,
