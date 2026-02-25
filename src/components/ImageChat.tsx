@@ -23,8 +23,10 @@ import {
   createSession,
   listMessages,
   refinePrompt,
+  getChatInsights,
   type MessageResponse,
   type SuggestResponse,
+  type ChatInsightsResponse,
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -52,6 +54,8 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
   const [suggestions, setSuggestions] = useState<SuggestResponse["suggestions"]>([]);
   const [attachedImage, setAttachedImage] = useState<{ file: File; preview: string } | null>(null);
   const [refining, setRefining] = useState(false);
+  const [chatInsights, setChatInsights] = useState<ChatInsightsResponse | null>(null);
+  const [insightsLoading, setInsightsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -86,6 +90,33 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
     document.body.style.overflow = fullscreen ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
   }, [fullscreen]);
+
+  // Debounce and fetch chat insights as user types
+  useEffect(() => {
+    if (!prompt.trim() || !session || !user) {
+      setChatInsights(null);
+      return;
+    }
+    
+    const timer = setTimeout(async () => {
+      try {
+        setInsightsLoading(true);
+        const previousPrompts = messages
+          .filter(m => m.role === "user")
+          .map(m => m.content)
+          .slice(-3);
+        const insights = await getChatInsights(session.access_token, prompt, previousPrompts);
+        setChatInsights(insights);
+      } catch (e) {
+        // Fail silently for insights
+        setChatInsights(null);
+      } finally {
+        setInsightsLoading(false);
+      }
+    }, 800);
+    
+    return () => clearTimeout(timer);
+  }, [prompt, session, user, messages]);
 
   const token = session?.access_token ?? null;
   const devNoAuth = canUseDevNoAuth();
@@ -474,18 +505,48 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
                   rows={2}
                 />
                 {prompt.trim() && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="self-start gap-1.5 h-7 text-xs"
-                    onClick={handleRefine}
-                    disabled={refining || loading}
-                    aria-label="Refine prompt with AI"
-                  >
-                    {refining ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
-                    {refining ? "Refining…" : "Refine with AI"}
-                  </Button>
+                  <div className="flex flex-col gap-1.5">
+                    {/* AI insights hints */}
+                    {insightsLoading && (
+                      <div className="flex gap-1">
+                        <div className="h-5 w-16 bg-muted rounded animate-pulse" />
+                      </div>
+                    )}
+                    {chatInsights && !insightsLoading && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {chatInsights.should_refine && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-700 dark:text-purple-400 text-xs font-medium">
+                            <Wand2 className="w-3 h-3" />
+                            Refinable
+                          </span>
+                        )}
+                        {chatInsights.is_variation && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-700 dark:text-blue-400 text-xs font-medium">
+                            <RotateCcw className="w-3 h-3" />
+                            Variation
+                          </span>
+                        )}
+                        {chatInsights.insight && !chatInsights.should_refine && !chatInsights.is_variation && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-500/15 text-green-700 dark:text-green-400 text-xs font-medium">
+                            <Sparkles className="w-3 h-3" />
+                            {chatInsights.insight}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="self-start gap-1.5 h-7 text-xs"
+                      onClick={handleRefine}
+                      disabled={refining || loading}
+                      aria-label="Refine prompt with AI"
+                    >
+                      {refining ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
+                      {refining ? "Refining…" : "Refine with AI"}
+                    </Button>
+                  </div>
                 )}
               </div>
               <Button

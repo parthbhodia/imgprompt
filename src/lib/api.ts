@@ -44,6 +44,12 @@ export type MessageResponse = {
   created_at: string;
 };
 
+export type ChatInsightsResponse = {
+  should_refine: boolean;
+  is_variation: boolean;
+  insight: string;
+};
+
 /**
  * Dev bypass: only active when VITE_DEV_NO_AUTH=1 is set in the frontend .env.
  * Set it in your root .env for local testing without sign-in.
@@ -131,6 +137,18 @@ export async function listMessages(
   return fetchApi<MessageResponse[]>(`/sessions/${sessionId}/messages`, {
     method: "GET",
     token,
+  });
+}
+
+export async function getChatInsights(
+  token: string | null,
+  message: string,
+  previousPrompts?: string[]
+): Promise<ChatInsightsResponse> {
+  return fetchApi<ChatInsightsResponse>("/chat/insights", {
+    method: "POST",
+    token,
+    body: JSON.stringify({ message, previous_prompts: previousPrompts }),
   });
 }
 

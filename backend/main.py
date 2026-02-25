@@ -24,7 +24,7 @@ from replicate_flux import run_flux, run_flux_img2img
 from replicate.exceptions import ModelError as ReplicateModelError
 from prompt_suggest import get_suggestions
 from moderation import check_moderation
-from llm_refine import refine_prompt, sanitize_for_replicate
+from llm_refine import refine_prompt, sanitize_for_replicate, get_chat_insights
 from stripe_payments import create_checkout_session, create_portal_session, handle_webhook, PLANS
 
 app = FastAPI(
@@ -80,6 +80,17 @@ class RefineRequest(BaseModel):
 
 class RefineResponse(BaseModel):
     refined: str
+
+
+class ChatInsightsRequest(BaseModel):
+    message: str = Field(..., min_length=1, max_length=2000)
+    previous_prompts: list[str] | None = None
+
+
+class ChatInsightsResponse(BaseModel):
+    should_refine: bool
+    is_variation: bool
+    insight: str
 
 
 class CheckoutRequest(BaseModel):
@@ -188,6 +199,32 @@ def refine_prompt_endpoint(
     except Exception as e:
         logger.exception("Prompt refinement failed")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/chat/insights", response_model=ChatInsightsResponse)
+def chat_insights_endpoint(
+    body: ChatInsightsRequest,
+    user_id: Annotated[str, Depends(get_current_user_id)],
+):
+    """
+    Analyze user's chat message and provide conversational insights.
+    Helps frontend adapt the UI based on user's intent.
+    """
+    try:
+        insights = get_chat_insights(body.message, body.previous_prompts or [])
+        return ChatInsightsResponse(
+            should_refine=insights["should_refine"],
+            is_variation=insights["is_variation"],
+            insight=insights["insight"],
+        )
+    except Exception as e:
+        logger.exception("Chat insights failed")
+        # Return defaults on error instead of failing
+        return ChatInsightsResponse(
+            should_refine=False,
+            is_variation=False,
+            insight="",
+        )
 
 
 @app.post("/generate", response_model=GenerateResponse)

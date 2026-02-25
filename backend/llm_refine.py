@@ -98,3 +98,57 @@ def sanitize_for_replicate(prompt: str) -> str:
     except Exception as e:
         logger.warning("Groq prompt sanitization failed (using original): %s", e)
         return prompt  # Always fall back gracefully
+
+
+def get_chat_insights(user_message: str, previous_prompts: list[str] | None = None) -> dict:
+    """
+    Analyze user message and provide contextual insights:
+    - Whether they want to refine/improve a prompt
+    - Whether they're doing variations
+    - Suggestions for next steps
+    
+    Falls back gracefully if Groq is unavailable.
+    """
+    key = settings.groq_api_key
+    if not key:
+        return {"should_refine": False, "is_variation": False, "insight": ""}
+
+    from groq import Groq
+    client = Groq(api_key=key)
+    
+    system_prompt = (
+        "You are a helpful AI chat assistant that understands user intent for image generation. "
+        "Analyze the user's message and respond with a JSON object: "
+        '{"should_refine": bool (true if user wants AI to enhance the prompt), '
+        '"is_variation": bool (true if user wants variations of previous image), '
+        '"insight": str (brief insight about what user might want, e.g., "User wants cinematic style variations")} '
+        "Respond ONLY with valid JSON, no other text."
+    )
+    
+    context = ""
+    if previous_prompts and len(previous_prompts) > 0:
+        context = f"\nPrevious prompts this session: {', '.join(previous_prompts[-3:])}"
+    
+    try:
+        resp = client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"{user_message}{context}"},
+            ],
+            max_tokens=150,
+            temperature=0.5,
+            timeout=5,
+        )
+        content = resp.choices[0].message.content.strip()
+        
+        import json
+        result = json.loads(content)
+        return {
+            "should_refine": result.get("should_refine", False),
+            "is_variation": result.get("is_variation", False),
+            "insight": result.get("insight", ""),
+        }
+    except Exception as e:
+        logger.warning("Chat insights analysis failed: %s", e)
+        return {"should_refine": False, "is_variation": False, "insight": ""}
