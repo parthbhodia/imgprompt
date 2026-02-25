@@ -256,44 +256,57 @@ export default function Profile() {
               )}
 
               {/* Billing actions */}
-              <div className="flex flex-wrap gap-3 pt-1">
-                {isActive ? (
-                  <Button
-                    onClick={handlePortal}
-                    disabled={portalLoading}
-                    variant="outline"
-                    className="gap-2"
-                  >
-                    {portalLoading ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <CreditCard className="w-4 h-4" />
-                    )}
-                    Manage Billing
-                    <ExternalLink className="w-3.5 h-3.5 opacity-60" />
-                  </Button>
-                ) : (
-                  <>
-                    {(["starter", "popular", "pro"] as const).map((plan) => {
-                      const m = PLAN_META[plan];
-                      return (
-                        <Button
-                          key={plan}
-                          onClick={() => handleUpgrade(plan)}
-                          disabled={upgradeLoading !== null}
-                          variant={plan === "popular" ? "default" : "outline"}
-                          className="gap-2"
-                        >
-                          {upgradeLoading === plan ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <m.icon className="w-4 h-4" />
-                          )}
-                          {m.label} – {m.price}
-                        </Button>
-                      );
-                    })}
-                  </>
+              <div className="space-y-3 pt-1">
+                <div className="flex flex-wrap gap-3">
+                  {isActive ? (
+                    <Button
+                      onClick={handlePortal}
+                      disabled={portalLoading}
+                      className="gap-2 bg-gradient-to-r from-primary to-accent text-white hover:opacity-90 transition-opacity"
+                    >
+                      {portalLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <CreditCard className="w-4 h-4" />
+                      )}
+                      Manage Subscription
+                      <ExternalLink className="w-3.5 h-3.5 opacity-60" />
+                    </Button>
+                  ) : (
+                    <>
+                      {(["starter", "popular", "pro"] as const).map((plan) => {
+                        const m = PLAN_META[plan];
+                        return (
+                          <Button
+                            key={plan}
+                            onClick={() => handleUpgrade(plan)}
+                            disabled={upgradeLoading !== null}
+                            variant={plan === "popular" ? "default" : "outline"}
+                            className="gap-2"
+                          >
+                            {upgradeLoading === plan ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <m.icon className="w-4 h-4" />
+                            )}
+                            {m.label} – {m.price}
+                          </Button>
+                        );
+                      })}
+                    </>
+                  )}
+                </div>
+
+                {/* Help text */}
+                {isActive && (
+                  <div className="rounded-lg bg-blue-500/10 border border-blue-500/20 px-4 py-3 text-sm space-y-1">
+                    <p className="font-medium text-blue-600 dark:text-blue-400">
+                      💡 How to cancel your subscription
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Click "Manage Subscription" above to access your Stripe billing dashboard. You can cancel anytime — your remaining credits will continue to work until the end of your billing cycle.
+                    </p>
+                  </div>
                 )}
               </div>
             </>
