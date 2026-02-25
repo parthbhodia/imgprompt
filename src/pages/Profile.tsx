@@ -317,35 +317,45 @@ export default function Profile() {
                   )}
                 </div>
 
-                {/* Help text & debug button */}
-                {isActive && (
-                  <div className="rounded-lg bg-blue-500/10 border border-blue-500/20 px-4 py-3 text-sm space-y-3">
-                    <div className="space-y-1">
-                      <p className="font-medium text-blue-600 dark:text-blue-400">
-                        💡 How to cancel your subscription
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Click "Manage Subscription" above to access your Stripe billing dashboard. You can cancel anytime — your remaining credits will continue to work until the end of your billing cycle.
-                      </p>
-                    </div>
-                    <div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={handleSyncCredits}
-                        disabled={syncLoading}
-                        className="gap-1.5 text-xs"
-                      >
-                        {syncLoading ? (
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                        ) : (
-                          <Zap className="w-3 h-3" />
-                        )}
-                        Sync Credits from Stripe
-                      </Button>
-                    </div>
+                {/* Help text & sync button */}
+                <div className={cn(
+                  "rounded-lg border px-4 py-3 text-sm space-y-3",
+                  isActive
+                    ? "bg-blue-500/10 border-blue-500/20"
+                    : "bg-amber-500/10 border-amber-500/20"
+                )}>
+                  <div className="space-y-1">
+                    <p className={cn(
+                      "font-medium",
+                      isActive
+                        ? "text-blue-600 dark:text-blue-400"
+                        : "text-amber-600 dark:text-amber-400"
+                    )}>
+                      {isActive ? "💡 How to cancel your subscription" : "⚠️ Subscription not syncing?"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {isActive
+                        ? "Click 'Manage Subscription' above to access your Stripe billing dashboard. You can cancel anytime — your remaining credits will continue to work until the end of your billing cycle."
+                        : "If you just purchased a plan but don't see credits yet, click the button below to manually sync your subscription from Stripe."}
+                    </p>
                   </div>
-                )}
+                  <div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleSyncCredits}
+                      disabled={syncLoading}
+                      className="gap-1.5 text-xs"
+                    >
+                      {syncLoading ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <Zap className="w-3 h-3" />
+                      )}
+                      {isActive ? "Sync Credits from Stripe" : "Sync Subscription Now"}
+                    </Button>
+                  </div>
+                </div>
               </div>
             </>
           )}
