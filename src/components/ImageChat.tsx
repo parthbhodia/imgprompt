@@ -31,6 +31,7 @@ import {
   type ConversationContextResponse,
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { PromptFrameworkBuilder } from "./PromptFrameworkBuilder";
 
 const PLACEHOLDER = "Describe the image you want to create...";
 
@@ -619,18 +620,26 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
                         )}
                       </div>
                     )}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="self-start gap-1.5 h-7 text-xs"
-                      onClick={handleRefine}
-                      disabled={refining || loading}
-                      aria-label="Refine prompt with AI"
-                    >
-                      {refining ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
-                      {refining ? "Refining…" : "Refine with AI"}
-                    </Button>
+                    <div className="flex gap-2 flex-wrap">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="gap-1.5 h-7 text-xs"
+                        onClick={handleRefine}
+                        disabled={refining || loading}
+                        aria-label="Refine prompt with AI"
+                      >
+                        {refining ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
+                        {refining ? "Refining…" : "Refine with AI"}
+                      </Button>
+                      <PromptFrameworkBuilder
+                        onPromptGenerated={(builtPrompt) => {
+                          setPrompt(builtPrompt);
+                          setTimeout(() => handleGenerate(), 200);
+                        }}
+                      />
+                    </div>
                   </div>
                 )}
               </div>
