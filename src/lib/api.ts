@@ -57,6 +57,44 @@ export type ConversationContextResponse = {
   next_variations: string[];
 };
 
+export type PromptFramework = {
+  subject_definition: string;
+  action_context: string;
+  environment_setting: string;
+  mood_story: string;
+  visual_style: string;
+  lighting_color: string;
+  camera_composition: string;
+  detail_texture: string;
+  quality_realism: string;
+  negative_constraints: string;
+};
+
+export type BuildPromptResponse = {
+  full_prompt: string;
+  compact_prompt: string;
+  tips: string;
+};
+
+export type FrameworkFromNaturalLanguageResponse = {
+  framework: PromptFramework;
+  confidence: string;
+};
+
+export type QuickFixResponse = {
+  issue: string;
+  fixes: string[];
+};
+
+export type NegativeConstraintsResponse = {
+  constraints: string;
+  count: number;
+};
+
+export type PresetsResponse = {
+  presets: Record<string, PromptFramework>;
+};
+
 /**
  * Dev bypass: only active when VITE_DEV_NO_AUTH=1 is set in the frontend .env.
  * Set it in your root .env for local testing without sign-in.
@@ -239,4 +277,61 @@ export async function getPlans(): Promise<{ plans: PlanInfo[] }> {
     throw new Error(`Failed to fetch plans: ${response.statusText}`);
   }
   return response.json();
+}
+
+// ============================================================================
+// PROMPT FRAMEWORK API
+// ============================================================================
+
+export async function getFrameworkPresets(
+  token: string | null
+): Promise<PresetsResponse> {
+  return fetchApi<PresetsResponse>("/framework/presets", {
+    method: "GET",
+    token,
+  });
+}
+
+export async function buildPromptFromFramework(
+  token: string | null,
+  framework: PromptFramework,
+  format: "full" | "compact" = "compact"
+): Promise<BuildPromptResponse> {
+  return fetchApi<BuildPromptResponse>("/framework/build", {
+    method: "POST",
+    token,
+    body: JSON.stringify({ framework, format }),
+  });
+}
+
+export async function createFrameworkFromDescription(
+  token: string | null,
+  description: string
+): Promise<FrameworkFromNaturalLanguageResponse> {
+  return fetchApi<FrameworkFromNaturalLanguageResponse>("/framework/from-description", {
+    method: "POST",
+    token,
+    body: JSON.stringify({ description }),
+  });
+}
+
+export async function getQuickFixes(
+  token: string | null,
+  issue: string
+): Promise<QuickFixResponse> {
+  return fetchApi<QuickFixResponse>(`/framework/quick-fixes/${issue}`, {
+    method: "GET",
+    token,
+  });
+}
+
+export async function buildNegativeConstraints(
+  token: string | null,
+  categories?: string[]
+): Promise<NegativeConstraintsResponse> {
+  return fetchApi<NegativeConstraintsResponse>("/framework/negatives", {
+    method: "POST",
+    token,
+    body: JSON.stringify({ categories: categories || ["text_and_artifacts", "anatomy", "quality"] }),
+  });
 }

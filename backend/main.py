@@ -26,6 +26,11 @@ from prompt_suggest import get_suggestions
 from moderation import check_moderation
 from llm_refine import refine_prompt, sanitize_for_replicate, get_chat_insights, analyze_conversation_context
 from stripe_payments import create_checkout_session, create_portal_session, handle_webhook, PLANS
+from prompt_framework import (
+    PromptFramework, build_prompt_from_framework, build_compact_prompt,
+    get_quick_fixes_for_issue, build_negative_constraints_from_categories,
+    enhance_framework_with_ai, PRESET_TEMPLATES, FRAMEWORK_HINTS,
+)
 
 app = FastAPI(
     title="VibeIMG AI Image API",
@@ -104,6 +109,44 @@ class ConversationContextResponse(BaseModel):
     next_variations: list[str]
 
 
+class BuildPromptRequest(BaseModel):
+    framework: PromptFramework
+    format: str = Field(default="full", pattern="^(full|compact)$")
+
+
+class BuildPromptResponse(BaseModel):
+    full_prompt: str
+    compact_prompt: str
+    tips: str
+
+
+class FrameworkFromNaturalLanguageRequest(BaseModel):
+    description: str = Field(..., min_length=10, max_length=2000)
+
+
+class FrameworkFromNaturalLanguageResponse(BaseModel):
+    framework: dict  # PromptFramework as dict
+    confidence: str  # low, medium, high
+
+
+class QuickFixResponse(BaseModel):
+    issue: str
+    fixes: list[str]
+
+
+class NegativeConstraintsRequest(BaseModel):
+    categories: list[str] = Field(default=["text_and_artifacts", "anatomy", "quality"])
+
+
+class NegativeConstraintsResponse(BaseModel):
+    constraints: str
+    count: int
+
+
+class PresetsResponse(BaseModel):
+    presets: dict
+
+
 class CheckoutRequest(BaseModel):
     plan: str = Field(..., pattern="^(starter|popular|pro)$")
 
@@ -179,6 +222,110 @@ def get_plans():
         for slug, info in PLANS.items()
     ]
     return PlansResponse(plans=plans)
+
+
+# ============================================================================
+# PROMPT FRAMEWORK ENDPOINTS - 10-Part AI Image Prompt Framework
+# ============================================================================
+
+@app.get("/framework/presets", response_model=PresetsResponse)
+def get_framework_presets():
+    """Get preset templates for different image types (cinematic, fantasy, etc.)."""
+    return PresetsResponse(presets=PRESET_TEMPLATES)
+
+
+@app.post("/framework/build", response_model=BuildPromptResponse)
+def build_prompt(
+    body: BuildPromptRequest,
+    user_id: Annotated[str, Depends(get_current_user_id)],
+):
+    """
+    Build a generation-ready prompt from the 10-part framework structure.
+    Returns both full and compact versions with tips.
+    """
+    try:
+        full_prompt = build_prompt_from_framework(body.framework)
+        compact_prompt = build_compact_prompt(body.framework)
+        
+        tips = (
+            "✓ This prompt includes all 10 framework sections for consistent results\n"
+            "✓ The compact version flows naturally for generation\n"
+            "✓ Try the 'Lock and Iterate' approach: fix one section at a time\n"
+            "✓ If results are inconsistent, strengthen the visual style section"
+        )
+        
+        return BuildPromptResponse(
+            full_prompt=full_prompt if body.format == "full" else "",
+            compact_prompt=compact_prompt,
+            tips=tips,
+        )
+    except Exception as e:
+        logger.exception("Prompt building failed")
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/framework/from-description", response_model=FrameworkFromNaturalLanguageResponse)
+def create_framework_from_natural_language(
+    body: FrameworkFromNaturalLanguageRequest,
+    user_id: Annotated[str, Depends(get_current_user_id)],
+):
+    """
+    Use Groq LLM to help user fill the 10-part framework from natural language description.
+    User describes what they want, AI breaks it down into framework sections.
+    """
+    if not settings.groq_api_key:
+        raise HTTPException(
+            status_code=503,
+            detail="Framework AI enhancement not available (GROQ_API_KEY not set)",
+        )
+    
+    try:
+        from groq import Groq
+        client = Groq(api_key=settings.groq_api_key)
+        framework_data = enhance_framework_with_ai(body.description, client)
+        
+        if not framework_data:
+            raise ValueError("Failed to generate framework from description")
+        
+        return FrameworkFromNaturalLanguageResponse(
+            framework=framework_data,
+            confidence="high",
+        )
+    except Exception as e:
+        logger.exception("Framework generation from natural language failed")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/framework/quick-fixes/{issue}", response_model=QuickFixResponse)
+def get_quick_fixes(
+    issue: str,
+    user_id: Annotated[str, Depends(get_current_user_id)],
+):
+    """
+    Get quick fix suggestions for common image generation issues.
+    Issues: flat_image, anatomy_weird, too_generic, style_drift, background_mess
+    """
+    hint = get_quick_fixes_for_issue(issue)
+    if not hint:
+        raise HTTPException(status_code=404, detail=f"Unknown issue: {issue}")
+    
+    return QuickFixResponse(issue=hint.issue, fixes=hint.fixes)
+
+
+@app.post("/framework/negatives", response_model=NegativeConstraintsResponse)
+def build_negative_constraints(
+    body: NegativeConstraintsRequest,
+    user_id: Annotated[str, Depends(get_current_user_id)],
+):
+    """
+    Build comprehensive negative constraints from selected categories.
+    Categories: text_and_artifacts, anatomy, quality, geometry_and_artifacts, skin_and_texture
+    """
+    constraints = build_negative_constraints_from_categories(body.categories)
+    return NegativeConstraintsResponse(
+        constraints=constraints,
+        count=len([c for c in constraints.split(",")]),
+    )
 
 
 @app.get("/suggest", response_model=SuggestResponse)
