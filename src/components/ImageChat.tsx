@@ -32,6 +32,7 @@ import {
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { PromptFrameworkBuilder } from "./PromptFrameworkBuilder";
+import { PromptGuidePanel } from "./PromptGuidePanel";
 
 const PLACEHOLDER = "Describe the image you want to create...";
 
@@ -639,6 +640,7 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
                           setTimeout(() => handleGenerate(), 200);
                         }}
                       />
+                      <PromptGuidePanel />
                     </div>
                   </div>
                 )}
