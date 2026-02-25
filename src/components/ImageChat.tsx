@@ -234,10 +234,10 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
     }
   };
 
-  const handleGenerate = async () => {
-    const trimmed = prompt.trim();
+  const handleGenerateWithPrompt = async (customPrompt?: string) => {
+    const promptToUse = (customPrompt ?? prompt).trim();
     const canGenerate = user || devNoAuth;
-    if (!trimmed || !canGenerate) {
+    if (!promptToUse || !canGenerate) {
       if (!canGenerate) { toast.error("Sign in to generate images"); return; }
       toast.error("Enter a prompt");
       return;
@@ -253,7 +253,7 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
 
     try {
       const res = await generateImage(token ?? null, {
-        prompt: trimmed,
+        prompt: promptToUse,
         session_id: sid ?? undefined,
         use_library_style: useLibraryStyle,
         image_base64: imageBase64 ?? undefined,
@@ -265,7 +265,7 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
           id: "",
           session_id: sid,
           role: "user",
-          content: trimmed,
+          content: promptToUse,
           image_url: null,
           created_at: new Date().toISOString(),
           ...(userMessageAttachedUrl && { attached_image_url: userMessageAttachedUrl }),
@@ -299,6 +299,10 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGenerate = () => {
+    handleGenerateWithPrompt();
   };
 
   const applySuggestion = (text: string) => {
@@ -431,10 +435,7 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
                               </button>
                               <button
                                 type="button"
-                                onClick={() => {
-                                  setPrompt(m.content);
-                                  handleGenerate();
-                                }}
+                                onClick={() => handleGenerateWithPrompt(m.content)}
                                 className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-muted/40 hover:bg-primary/10 text-xs font-medium transition-colors"
                                 title="Regenerate with same prompt"
                               >
@@ -452,10 +453,7 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
                                       <button
                                         key={idx}
                                         type="button"
-                                        onClick={() => {
-                                          setPrompt(`${m.content}, ${variation}`);
-                                          setTimeout(() => handleGenerate(), 100);
-                                        }}
+                                        onClick={() => handleGenerateWithPrompt(`${m.content}, ${variation}`)}
                                         className="text-left px-2 py-1 rounded-md text-xs bg-muted/40 hover:bg-primary/10 text-muted-foreground transition-colors truncate"
                                         title={variation}
                                       >
@@ -466,20 +464,14 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
                                     <>
                                       <button
                                         type="button"
-                                        onClick={() => {
-                                          setPrompt(`${m.content}, different artistic style`);
-                                          setTimeout(() => handleGenerate(), 100);
-                                        }}
+                                        onClick={() => handleGenerateWithPrompt(`${m.content}, different artistic style`)}
                                         className="text-left px-2 py-1 rounded-md text-xs bg-muted/40 hover:bg-primary/10 text-muted-foreground transition-colors"
                                       >
                                         Different artistic style
                                       </button>
                                       <button
                                         type="button"
-                                        onClick={() => {
-                                          setPrompt(`${m.content}, cinematic lighting`);
-                                          setTimeout(() => handleGenerate(), 100);
-                                        }}
+                                        onClick={() => handleGenerateWithPrompt(`${m.content}, cinematic lighting`)}
                                         className="text-left px-2 py-1 rounded-md text-xs bg-muted/40 hover:bg-primary/10 text-muted-foreground transition-colors"
                                       >
                                         Cinematic version
