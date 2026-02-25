@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sparkles, Send, Coins, Loader2, LogIn, Lightbulb,
-  ImagePlus, X, Wand2, Maximize2, Minimize2,
+  ImagePlus, X, Wand2, Maximize2, Minimize2, Download, Share2, RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -265,29 +265,46 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
         </div>
       ) : (
         <>
-          <ScrollArea className="flex-1 min-h-0 p-4">
-            <div className="space-y-4">
-              {messages.length === 0 && (
-                <div className="rounded-xl border border-border/60 bg-muted/30 p-4 space-y-2">
-                  <p className="text-sm font-medium flex items-center gap-2">
-                    <Lightbulb className="w-4 h-4 text-primary" />
-                    Try a prompt from our library
-                  </p>
-                  <div className="flex flex-col gap-2 w-full">
-                    {suggestions.slice(0, 3).map((s, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        onClick={() => applySuggestion(s.prompt_text)}
-                        className="text-xs px-3 py-2 rounded-md bg-background border border-border hover:bg-primary/10 hover:border-primary/40 text-left transition-colors w-full"
-                      >
-                        <span className="font-medium text-primary">{s.title}</span>
-                        <span className="block text-muted-foreground mt-0.5 line-clamp-2">{s.prompt_text}</span>
-                      </button>
-                    ))}
+            <ScrollArea className="flex-1 min-h-0 p-4">
+              <div className="space-y-4">
+                {/* Welcome/Help message */}
+                {messages.length === 0 && (
+                  <div className="space-y-3">
+                    <div className="rounded-xl border border-border/60 bg-blue-500/10 border-blue-500/20 p-4 space-y-2">
+                      <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                        ✨ Welcome to VibeIMG AI Chat
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Describe any image you'd like to generate. Be specific about style, mood, composition, and details. You can also:
+                      </p>
+                      <ul className="text-xs text-muted-foreground space-y-1 ml-3">
+                        <li>• Upload a reference image for img2img generation</li>
+                        <li>• Use "Refine with AI" to enhance your prompt</li>
+                        <li>• Download, share, or regenerate any image</li>
+                        <li>• Use prompts from our community library</li>
+                      </ul>
+                    </div>
+                    <div className="rounded-xl border border-border/60 bg-muted/30 p-4 space-y-2">
+                      <p className="text-sm font-medium flex items-center gap-2">
+                        <Lightbulb className="w-4 h-4 text-primary" />
+                        Try a prompt from our library
+                      </p>
+                      <div className="flex flex-col gap-2 w-full">
+                        {suggestions.slice(0, 3).map((s, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => applySuggestion(s.prompt_text)}
+                            className="text-xs px-3 py-2 rounded-md bg-background border border-border hover:bg-primary/10 hover:border-primary/40 text-left transition-colors w-full"
+                          >
+                            <span className="font-medium text-primary">{s.title}</span>
+                            <span className="block text-muted-foreground mt-0.5 line-clamp-2">{s.prompt_text}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
               {messages.map((m) => (
                 <div
                   key={m.id || m.created_at}
@@ -304,20 +321,71 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
                       )}
                       {m.content}
                     </div>
-                  ) : (
-                    <div className="max-w-[90%] space-y-1">
-                      {m.image_url && (
-                        <a
-                          href={m.image_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block rounded-xl overflow-hidden border border-border"
-                        >
-                          <img src={m.image_url} alt="Generated" className="w-full h-auto object-cover" />
-                        </a>
-                      )}
-                    </div>
-                  )}
+                    ) : (
+                      <div className="max-w-[90%] space-y-2">
+                        {m.image_url && (
+                          <>
+                            <a
+                              href={m.image_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="block rounded-xl overflow-hidden border border-border hover:border-primary/40 transition-colors"
+                            >
+                              <img src={m.image_url} alt="Generated" className="w-full h-auto object-cover" />
+                            </a>
+                            {/* Image utilities */}
+                            <div className="flex gap-1.5 flex-wrap">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const link = document.createElement('a');
+                                  link.href = m.image_url!;
+                                  link.download = `vibeimg-${Date.now()}.webp`;
+                                  link.click();
+                                }}
+                                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-muted/40 hover:bg-primary/10 text-xs font-medium transition-colors"
+                                title="Download image"
+                              >
+                                <Download className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">Download</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (navigator.share) {
+                                    navigator.share({
+                                      title: "VibeIMG - Generated Image",
+                                      text: m.content,
+                                      url: m.image_url,
+                                    }).catch(() => {});
+                                  } else {
+                                    navigator.clipboard.writeText(m.image_url!);
+                                    toast.success("Image link copied!");
+                                  }
+                                }}
+                                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-muted/40 hover:bg-primary/10 text-xs font-medium transition-colors"
+                                title="Share image"
+                              >
+                                <Share2 className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">Share</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setPrompt(m.content);
+                                  handleGenerate();
+                                }}
+                                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-muted/40 hover:bg-primary/10 text-xs font-medium transition-colors"
+                                title="Regenerate with same prompt"
+                              >
+                                <RotateCcw className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">Regenerate</span>
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
                 </div>
               ))}
               <div ref={messagesEndRef} />
