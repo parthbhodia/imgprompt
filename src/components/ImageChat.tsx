@@ -339,7 +339,7 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
               {messages.map((m) => (
                 <div
                   key={m.id || m.created_at}
-                  className={cn("flex", m.role === "user" ? "justify-end" : "justify-start")}
+                  className={cn("flex gap-2", m.role === "user" ? "justify-end" : "justify-start")}
                 >
                   {m.role === "user" ? (
                     <div className="max-w-[85%] rounded-2xl bg-primary/15 px-4 py-2 text-sm space-y-2">
@@ -351,6 +351,9 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
                         />
                       )}
                       {m.content}
+                      <span className="text-xs text-muted-foreground/60">
+                        {new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
                     </div>
                     ) : (
                       <div className="max-w-[90%] space-y-2">
@@ -413,12 +416,52 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
                                 <span className="hidden sm:inline">Regenerate</span>
                               </button>
                             </div>
+                            {/* Quick action suggestions */}
+                            {messages.length > 0 && messages.some(msg => msg.role === "user") && (
+                              <div className="pt-2 border-t border-border/40 space-y-2">
+                                <p className="text-xs font-medium text-muted-foreground">Try next:</p>
+                                <div className="flex flex-col gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setPrompt(`${m.content}, but with a different artistic style`);
+                                      setTimeout(() => handleGenerate(), 100);
+                                    }}
+                                    className="text-left px-2 py-1 rounded-md text-xs bg-muted/40 hover:bg-primary/10 text-muted-foreground transition-colors"
+                                  >
+                                    Different artistic style
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setPrompt(`${m.content}, cinematic lighting`);
+                                      setTimeout(() => handleGenerate(), 100);
+                                    }}
+                                    className="text-left px-2 py-1 rounded-md text-xs bg-muted/40 hover:bg-primary/10 text-muted-foreground transition-colors"
+                                  >
+                                    Cinematic version
+                                  </button>
+                                </div>
+                              </div>
+                            )}
                           </>
                         )}
                       </div>
                     )}
                 </div>
               ))}
+              {loading && (
+                <div className="flex gap-2 justify-start">
+                  <div className="bg-muted/40 rounded-2xl px-4 py-3 space-y-2">
+                    <div className="flex gap-1">
+                      <div className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <div className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <div className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: '300ms' }} />
+                    </div>
+                    <p className="text-xs text-muted-foreground">Generating your image...</p>
+                  </div>
+                </div>
+              )}
               <div ref={messagesEndRef} />
             </div>
           </ScrollArea>
