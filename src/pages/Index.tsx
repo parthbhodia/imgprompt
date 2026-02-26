@@ -429,6 +429,10 @@ const Index = () => {
       ? mergedPrompts.filter((prompt) => prompt.featured)
       : mergedPrompts.slice(0, 3);
 
+  const portraitEditingPrompts = mergedPrompts.filter(
+    (prompt) => prompt.category && prompt.category.toLowerCase() === "portrait-editing"
+  );
+
   const scrollToGallery = () => {
     galleryRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
@@ -714,97 +718,72 @@ const Index = () => {
                   Simply select a portrait editing style, add it to your prompt, and let the AI enhance your images with professional-quality transformations. Mix and match styles to create unique artistic variations.
                 </p>
                 <div className="pt-4">
-                  <Button size="lg" className="gap-2">
-                    <Palette className="w-4 h-4" />
-                    Explore All Styles
-                  </Button>
+                  <a href="/?category=portrait-editing">
+                    <Button size="lg" className="gap-2">
+                      <Palette className="w-4 h-4" />
+                      Explore All Styles
+                    </Button>
+                  </a>
                 </div>
               </div>
 
               {/* Right Column - Portrait Cards Grid */}
               <div className="lg:col-span-2 grid grid-cols-2 gap-4">
-                {[
-                  {
-                    id: "princess-jasmine",
-                    name: "Princess Jasmine",
-                    image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=350&h=450&fit=crop",
-                    artist: "Nostradabra",
-                    trigger: "princess jasmine",
-                  },
-                  {
-                    id: "pixel-core",
-                    name: "PIXEL CORE - ILL",
-                    image: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=350&h=450&fit=crop",
-                    artist: "Visionary_Studio",
-                    trigger: "pixel core",
-                    recommended: true,
-                  },
-                  {
-                    id: "incase-style",
-                    name: "Incase Style",
-                    image: "https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=350&h=450&fit=crop",
-                    artist: "Digital_pastel",
-                    trigger: "incase style",
-                  },
-                  {
-                    id: "anime-portrait",
-                    name: "Anime Portrait",
-                    image: "https://images.unsplash.com/photo-1535016120754-18c5d804d309?w=350&h=450&fit=crop",
-                    artist: "AnimeArtist",
-                    trigger: "anime portrait",
-                  },
-                ].map((portrait) => (
-                  <div
-                    key={portrait.id}
-                    className="group relative overflow-hidden rounded-2xl border border-border/40 hover:border-primary/60 transition-all hover:shadow-xl bg-card cursor-pointer"
-                  >
-                    {/* Recommended Badge */}
-                    {portrait.recommended && (
-                      <div className="absolute top-3 right-3 z-20">
-                        <Badge className="bg-gradient-to-r from-amber-500 to-red-500 gap-1">
-                          <Zap className="w-3 h-3" />
-                          Recommended
-                        </Badge>
-                      </div>
-                    )}
+                {portraitEditingPrompts.slice(0, 4).map((prompt) => {
+                  const firstSlide = prompt.slides[0];
+                  return (
+                    <div
+                      key={prompt.id}
+                      className="group relative overflow-hidden rounded-2xl border border-border/40 hover:border-primary/60 transition-all hover:shadow-xl bg-card cursor-pointer"
+                    >
+                      {/* Featured Badge */}
+                      {prompt.featured && (
+                        <div className="absolute top-3 right-3 z-20">
+                          <Badge className="bg-gradient-to-r from-amber-500 to-red-500 gap-1">
+                            <Zap className="w-3 h-3" />
+                            Featured
+                          </Badge>
+                        </div>
+                      )}
 
-                    {/* Image */}
-                    <div className="relative overflow-hidden h-64 sm:h-80">
-                      <img
-                        src={portrait.image}
-                        alt={portrait.name}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                    </div>
-
-                    {/* Content Overlay */}
-                    <div className="absolute bottom-0 left-0 right-0 p-4 text-white space-y-2">
-                      <div>
-                        <p className="text-xs text-white/70">{portrait.artist}</p>
-                        <h3 className="font-bold text-sm line-clamp-1">{portrait.name}</h3>
+                      {/* Image */}
+                      <div className="relative overflow-hidden h-64 sm:h-80">
+                        <img
+                          src={firstSlide.image}
+                          alt={prompt.title}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                       </div>
-                      <div className="bg-white/20 backdrop-blur border border-white/30 rounded px-2 py-1">
-                        <p className="text-xs text-white/70">Trigger:</p>
-                        <code className="text-xs font-mono text-white truncate block">
-                          {portrait.trigger}
-                        </code>
+
+                      {/* Content Overlay */}
+                      <div className="absolute bottom-0 left-0 right-0 p-4 text-white space-y-2">
+                        <div>
+                          <p className="text-xs text-white/70">{prompt.category}</p>
+                          <h3 className="font-bold text-sm line-clamp-1">{prompt.title}</h3>
+                        </div>
+                        <div className="bg-white/20 backdrop-blur border border-white/30 rounded px-2 py-1">
+                          <p className="text-xs text-white/70">Prompt:</p>
+                          <code className="text-xs font-mono text-white truncate block">
+                            {firstSlide.prompt.substring(0, 40)}...
+                          </code>
+                        </div>
+                      </div>
+
+                      {/* Hover Overlay */}
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                        <Button
+                          size="sm"
+                          className="gap-2 rounded-full"
+                          onClick={() => setAiPrompt(firstSlide.prompt)}
+                        >
+                          <Sparkles className="w-4 h-4" />
+                          Use Prompt
+                        </Button>
                       </div>
                     </div>
-
-                    {/* Hover Overlay */}
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                      <Button
-                        size="sm"
-                        className="gap-2 rounded-full"
-                        onClick={() => setAiPrompt(portrait.trigger)}
-                      >
-                        <Sparkles className="w-4 h-4" />
-                        Use Style
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
