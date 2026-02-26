@@ -4,20 +4,28 @@ import { useAuth } from "@/contexts/AuthContext";
 import { getMyGenerations, type GenerationRecord } from "@/lib/api";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Download, Share2, Wand2, LogIn, ImageOff, ArrowLeft, Copy, Check } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Sparkles, Download, Share2, Wand2, LogIn, ImageOff, ArrowLeft, Copy, Check, Edit, RefreshCw, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 export default function Creations() {
-  const { user, session, signInWithGoogle } = useAuth();
+  const { user, session } = useAuth();
   const navigate = useNavigate();
   const [generations, setGenerations] = useState<GenerationRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedGen, setSelectedGen] = useState<GenerationRecord | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const token = session?.access_token ?? null;
 
+  // Load generations on mount
   useEffect(() => {
     if (!token) { setLoading(false); return; }
     getMyGenerations(token)
@@ -53,11 +61,28 @@ export default function Creations() {
     }
   };
 
-  const handleUseInChat = (gen: GenerationRecord) => {
+  // Navigate to chat with prompt (for editing the prompt)
+  const handleEditPrompt = (gen: GenerationRecord) => {
+    setSelectedGen(null);
     navigate(`/?prompt=${encodeURIComponent(gen.content)}`);
   };
 
-  const selectedGen = generations.find((g) => g.id === selectedId);
+  // Navigate to chat with image as reference (for img2img)
+  const handleUseAsReference = (gen: GenerationRecord) => {
+    setSelectedGen(null);
+    localStorage.setItem("creations_reference_image", JSON.stringify({
+      url: gen.image_url,
+      prompt: gen.content,
+    }));
+    navigate("/");
+    toast.success("Image loaded. Upload it in the chat to use as reference.");
+  };
+
+  // Remix with same prompt
+  const handleRemix = (gen: GenerationRecord) => {
+    setSelectedGen(null);
+    navigate(`/?prompt=${encodeURIComponent(gen.content + ", different variation, remix")}`);
+  };
 
   return (
     <>
@@ -84,7 +109,7 @@ export default function Creations() {
               Your Creations
             </h1>
             <p className="text-muted-foreground mt-1">
-              All images you've generated — click any to use the same prompt again.
+              Click any image to edit, remix, or use as reference for new variations.
             </p>
           </div>
 
@@ -98,14 +123,6 @@ export default function Creations() {
                   Your generated images are saved to your account.
                 </p>
               </div>
-              <Button
-                size="lg"
-                className="gap-2"
-                onClick={() => signInWithGoogle(window.location.href)}
-              >
-                <LogIn className="w-4 h-4" />
-                Sign in with Google
-              </Button>
             </div>
           )}
 
@@ -145,13 +162,8 @@ export default function Creations() {
                 {generations.map((gen) => (
                   <div
                     key={gen.id}
-                    className={cn(
-                      "group relative rounded-2xl overflow-hidden cursor-pointer border transition-all duration-200",
-                      selectedId === gen.id
-                        ? "border-primary ring-2 ring-primary/40 scale-[1.02]"
-                        : "border-border/40 hover:border-primary/50 hover:shadow-lg"
-                    )}
-                    onClick={() => setSelectedId(gen.id === selectedId ? null : gen.id)}
+                    className="group relative rounded-2xl overflow-hidden cursor-pointer border border-border/40 hover:border-primary/50 transition-all hover:shadow-lg"
+                    onClick={() => setSelectedGen(gen)}
                   >
                     <img
                       src={gen.image_url}
@@ -161,18 +173,18 @@ export default function Creations() {
                     />
 
                     {/* Overlay on hover */}
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-end p-3 gap-2">
-                      <p className="text-white text-xs line-clamp-2 leading-relaxed">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/0 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-end p-3 gap-2">
+                      <p className="text-white text-xs line-clamp-2 leading-relaxed font-medium">
                         {gen.content || "No prompt"}
                       </p>
-                      <div className="flex gap-1.5">
+                      <div className="flex gap-1">
                         <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); handleDownload(gen); }}
                           className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white text-xs font-medium transition-colors"
                           title="Download"
                         >
-                          <Download className="w-3.5 h-3.5" />
+                          <Download className="w-3 h-3" />
                         </button>
                         <button
                           type="button"
@@ -180,21 +192,13 @@ export default function Creations() {
                           className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white text-xs font-medium transition-colors"
                           title="Share"
                         >
-                          <Share2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); handleUseInChat(gen); }}
-                          className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg bg-primary/80 hover:bg-primary text-white text-xs font-medium transition-colors"
-                          title="Use prompt in chat"
-                        >
-                          <Wand2 className="w-3.5 h-3.5" />
+                          <Share2 className="w-3 h-3" />
                         </button>
                       </div>
                     </div>
 
                     {/* Date badge */}
-                    <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute top-2 left-2">
                       <span className="text-[10px] px-2 py-0.5 rounded-full bg-black/60 text-white/80">
                         {new Date(gen.created_at).toLocaleDateString()}
                       </span>
@@ -202,68 +206,112 @@ export default function Creations() {
                   </div>
                 ))}
               </div>
-
-              {/* Detail panel when selected */}
-              {selectedGen && (
-                <div className="mt-8 rounded-2xl border border-border/60 bg-card/80 backdrop-blur p-6 grid sm:grid-cols-2 gap-6">
-                  <img
-                    src={selectedGen.image_url}
-                    alt={selectedGen.content}
-                    className="w-full rounded-xl object-cover max-h-80"
-                  />
-                  <div className="flex flex-col gap-4">
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Prompt used</p>
-                      <p className="text-sm leading-relaxed text-foreground">
-                        {selectedGen.content || "No prompt recorded"}
-                      </p>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Generated on {new Date(selectedGen.created_at).toLocaleString()}
-                    </p>
-                    <div className="flex flex-col gap-2 mt-auto">
-                      <Button
-                        className="w-full gap-2"
-                        onClick={() => handleUseInChat(selectedGen)}
-                      >
-                        <Wand2 className="w-4 h-4" />
-                        Use this prompt in chat
-                      </Button>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          className="flex-1 gap-2"
-                          onClick={() => handleCopyPrompt(selectedGen)}
-                        >
-                          {copiedId === selectedGen.id
-                            ? <Check className="w-4 h-4 text-green-500" />
-                            : <Copy className="w-4 h-4" />}
-                          Copy prompt
-                        </Button>
-                        <Button
-                          variant="outline"
-                          className="flex-1 gap-2"
-                          onClick={() => handleDownload(selectedGen)}
-                        >
-                          <Download className="w-4 h-4" />
-                          Download
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => handleShare(selectedGen)}
-                        >
-                          <Share2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
             </>
           )}
         </div>
       </main>
+
+      {/* Detail Modal */}
+      {selectedGen && (
+        <Dialog open={!!selectedGen} onOpenChange={() => setSelectedGen(null)}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Your Creation</DialogTitle>
+              <DialogDescription>
+                Generated on {new Date(selectedGen.created_at).toLocaleString()}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="grid sm:grid-cols-2 gap-6">
+              {/* Image */}
+              <div>
+                <img
+                  src={selectedGen.image_url}
+                  alt={selectedGen.content}
+                  className="w-full rounded-xl object-cover max-h-80"
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex flex-col gap-4">
+                {/* Prompt display */}
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-2">Prompt Used</p>
+                  <p className="text-sm bg-muted/50 p-3 rounded-lg leading-relaxed">
+                    {selectedGen.content || "No prompt recorded"}
+                  </p>
+                </div>
+
+                {/* Action buttons */}
+                <div className="space-y-3 mt-auto">
+                  {/* Edit Prompt */}
+                  <Button
+                    className="w-full gap-2 bg-gradient-to-r from-primary to-accent"
+                    onClick={() => handleEditPrompt(selectedGen)}
+                  >
+                    <Edit className="w-4 h-4" />
+                    Edit Prompt in Chat
+                  </Button>
+
+                  {/* Remix */}
+                  <Button
+                    variant="outline"
+                    className="w-full gap-2"
+                    onClick={() => handleRemix(selectedGen)}
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Remix as Variation
+                  </Button>
+
+                  {/* Use as Reference */}
+                  <Button
+                    variant="outline"
+                    className="w-full gap-2"
+                    onClick={() => handleUseAsReference(selectedGen)}
+                  >
+                    <Zap className="w-4 h-4" />
+                    Use as Reference
+                  </Button>
+
+                  {/* Utility buttons */}
+                  <div className="grid grid-cols-3 gap-2 pt-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleCopyPrompt(selectedGen)}
+                      className="gap-1"
+                    >
+                      {copiedId === selectedGen.id
+                        ? <Check className="w-4 h-4 text-green-500" />
+                        : <Copy className="w-4 h-4" />}
+                      Copy
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDownload(selectedGen)}
+                      className="gap-1"
+                    >
+                      <Download className="w-4 h-4" />
+                      Download
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleShare(selectedGen)}
+                      className="gap-1"
+                    >
+                      <Share2 className="w-4 h-4" />
+                      Share
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
       <Footer />
     </>
   );
