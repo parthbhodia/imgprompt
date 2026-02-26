@@ -291,6 +291,8 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
         toast.error("Your Replicate account has no billing credit. Top up at replicate.com/account/billing, then try again.", { duration: 10000 });
       } else if (msg.includes("Insufficient credits") || msg.includes("402")) {
         toast.error("Not enough credits. You need 1 credit per image.");
+      } else if (msg.toLowerCase().includes("high demand") || msg.includes("429")) {
+        toast.error("We're experiencing high demand. Please wait a moment and try again.", { duration: 7000 });
       } else if (msg.toLowerCase().includes("timed out") || msg.includes("504")) {
         toast.error("Image generation timed out — Replicate was too slow. Please try again.", { duration: 7000 });
       } else if (msg.includes("502") || msg.toLowerCase().includes("bad gateway")) {

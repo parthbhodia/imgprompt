@@ -533,7 +533,13 @@ async def generate_image(
         raise HTTPException(status_code=504, detail="Image generation timed out. Please try again.")
     except ReplicateModelError as e:
         msg = str(e)
-        if "nsfw" in msg.lower():
+        if "429" in msg or "throttled" in msg.lower():
+            logger.warning("Rate limit hit from Replicate: %s", msg)
+            raise HTTPException(
+                status_code=429,
+                detail="We're experiencing high demand. Please wait a moment and try again.",
+            )
+        elif "nsfw" in msg.lower():
             # Groq sanitization didn't fully work — try one more time with a harder rewrite
             logger.warning("NSFW false positive after sanitization, retrying with stricter rewrite")
             harder_prompt = await asyncio.get_event_loop().run_in_executor(
@@ -558,7 +564,13 @@ async def generate_image(
     except Exception as e:
         logger.exception("Image generation failed: %s", e)
         msg = str(e) if str(e) else "Image generation failed"
-        if "insufficient credit" in msg.lower() and "replicate.com/account/billing" in msg.lower():
+        if "429" in msg or "throttled" in msg.lower():
+            logger.warning("Rate limit detected: %s", msg)
+            raise HTTPException(
+                status_code=429,
+                detail="We're experiencing high demand. Please wait a moment and try again.",
+            )
+        elif "insufficient credit" in msg.lower() and "replicate.com/account/billing" in msg.lower():
             raise HTTPException(
                 status_code=402,
                 detail="Replicate account has insufficient billing credit. Visit replicate.com/account/billing to top up.",
