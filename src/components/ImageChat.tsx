@@ -717,15 +717,6 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
               </div>
             )}
 
-            {/* Credits Display */}
-            {credits !== null && (
-              <div className="text-xs font-medium" style={{
-                color: credits < 3 && credits > 0 ? "#b45309" : credits === 0 ? "#dc2626" : "#16a34a"
-              }}>
-                {credits} credit{credits !== 1 ? "s" : ""}
-              </div>
-            )}
-            
             {/* Preset Tags */}
             {user && (
               <div className="px-4 py-3 border-t bg-muted/20">
