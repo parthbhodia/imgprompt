@@ -775,11 +775,6 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
                   </Button>
                 </div>
               </div>
-              <p className="text-sm text-muted-foreground mt-1">
-                {devNoAuth && !user
-                  ? "Describe an image and we'll generate it with AI. (Dev mode: no sign-in required.)"
-                  : "Describe an image and we'll generate it with AI. Sign in to get started."}
-              </p>
             </div>
             {/* Body — responsive height */}
             <div className="flex flex-col h-[480px] sm:h-[580px] lg:h-[660px]">
