@@ -698,7 +698,7 @@ def list_messages(
         supabase.table("chat_messages")
         .select("id, session_id, role, content, image_url, created_at")
         .eq("session_id", str(session_id))
-        .order("created_at", ascending=True)
+        .order("created_at", desc=False)
         .execute()
     )
     return [
