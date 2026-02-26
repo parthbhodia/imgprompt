@@ -648,7 +648,7 @@ const Index = () => {
               {/* Right Column - Portrait Cards Grid */}
               <div className="lg:col-span-2 grid grid-cols-2 gap-4">
                 {portraitEditingPrompts.length > 0 ? (
-                portraitEditingPrompts.slice(0, 4).map((prompt) => {
+                portraitEditingPrompts.map((prompt) => {
                   const firstSlide = prompt.slides[0];
                   return (
                     <div
