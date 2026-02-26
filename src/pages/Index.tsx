@@ -702,16 +702,16 @@ const Index = () => {
               {/* Left Column - Text Content */}
               <div className="lg:col-span-1 space-y-4">
                 <div>
-                  <p className="text-sm uppercase tracking-widest text-primary font-semibold mb-2">Portrait Models</p>
+                  <p className="text-sm uppercase tracking-widest text-primary font-semibold mb-2">Portrait Editing</p>
                   <h2 className="text-3xl md:text-4xl font-bold leading-tight">
-                    Create Stunning AI Portraits
+                    Portrait Edits & Styles
                   </h2>
                 </div>
                 <p className="text-base text-muted-foreground leading-relaxed">
-                  Discover our curated collection of portrait editing LoRA models and custom styles. Each model is carefully selected to help you generate beautiful, detailed character portraits and photorealistic images. Mix and match styles to create unique artistic expressions.
+                  Transform your portraits with our curated collection of portrait editing LoRA models and custom styles. Each model is carefully selected to help you enhance, stylize, and transform your portrait images with artistic flair.
                 </p>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Simply select a portrait style, add it to your prompt, and let the AI bring your vision to life with professional-quality results.
+                  Simply select a portrait editing style, add it to your prompt, and let the AI enhance your images with professional-quality transformations. Mix and match styles to create unique artistic variations.
                 </p>
                 <div className="pt-4">
                   <Button size="lg" className="gap-2">

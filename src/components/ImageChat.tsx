@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sparkles, Send, Coins, Loader2, LogIn, Lightbulb,
-  ImagePlus, X, Wand2, Maximize2, Minimize2, Download, Share2, RotateCcw,
+  ImagePlus, X, Wand2, Maximize2, Minimize2, Download, Share2, RotateCcw, Shuffle,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -442,6 +442,15 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
                               >
                                 <RotateCcw className="w-3.5 h-3.5" />
                                 <span className="hidden sm:inline">Regenerate</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleGenerateWithPrompt(`${m.content}, different variation, remix`)}
+                                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 text-xs font-medium transition-colors border border-purple-500/30"
+                                title="Generate a remix variation of this image"
+                              >
+                                <Shuffle className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">Remix</span>
                               </button>
                             </div>
                             {/* Quick action suggestions - context-aware */}
