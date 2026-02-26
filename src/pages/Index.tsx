@@ -7,6 +7,7 @@ import { ImageChat } from "@/components/ImageChat";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sparkles, Zap, Copy, Search, Lightbulb, Star, Palette, MessageCircle, Share2, ChevronLeft, ChevronRight, ExternalLink, ThumbsUp, Heart, TrendingUp, LogIn, LogOut, User, Wand2 } from "lucide-react";
 import { toast } from "sonner";
@@ -694,102 +695,118 @@ const Index = () => {
           </section>
         )}
 
-        {/* Featured Models Section */}
-        <section className="container mx-auto px-4 pb-12">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <p className="text-sm uppercase tracking-widest text-primary font-semibold">Discover styles</p>
-              <h2 className="text-2xl font-bold flex items-center gap-2">
-                <Palette className="w-6 h-6 text-primary" />
-                Featured LoRA Models
-              </h2>
-            </div>
-            <Link to="/gallery" className="hidden md:flex">
-              <Button variant="outline">
-                View All Models
-                <ExternalLink className="w-4 h-4 ml-2" />
-              </Button>
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              {
-                id: "pixel-core",
-                name: "PIXEL CORE - ILL",
-                image: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=300&h=400&fit=crop",
-                trigger: "pixel core style",
-                artist: "Visionary_Studio",
-                recommended: true,
-              },
-              {
-                id: "princess-jasmine",
-                name: "Princess Jasmine",
-                image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&h=400&fit=crop",
-                trigger: "princess jasmine",
-                artist: "Nostradabra",
-                recommended: false,
-              },
-              {
-                id: "space-worlds",
-                name: "Space Worlds Dark",
-                image: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=300&h=400&fit=crop",
-                trigger: "space worlds dark",
-                artist: "Zios",
-                recommended: false,
-              },
-              {
-                id: "incase-style",
-                name: "Incase Style",
-                image: "https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=300&h=400&fit=crop",
-                trigger: "incase style",
-                artist: "Digital_pastel",
-                recommended: false,
-              },
-            ].map((model) => (
-              <Link key={model.id} to="/gallery" className="group">
-                <div className="relative overflow-hidden rounded-xl border border-border/40 hover:border-primary/40 transition-all hover:shadow-lg bg-card h-full flex flex-col">
-                  {model.recommended && (
-                    <div className="absolute top-2 right-2 z-10">
-                      <div className="bg-gradient-to-r from-amber-500 to-red-500 text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
-                        <Zap className="w-3 h-3" />
-                        Recommended
+        {/* Portrait Models Showcase */}
+        <section className="container mx-auto px-4 py-12">
+          <div className="max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
+              {/* Left Column - Text Content */}
+              <div className="lg:col-span-1 space-y-4">
+                <div>
+                  <p className="text-sm uppercase tracking-widest text-primary font-semibold mb-2">Portrait Models</p>
+                  <h2 className="text-3xl md:text-4xl font-bold leading-tight">
+                    Create Stunning AI Portraits
+                  </h2>
+                </div>
+                <p className="text-base text-muted-foreground leading-relaxed">
+                  Discover our curated collection of portrait editing LoRA models and custom styles. Each model is carefully selected to help you generate beautiful, detailed character portraits and photorealistic images. Mix and match styles to create unique artistic expressions.
+                </p>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Simply select a portrait style, add it to your prompt, and let the AI bring your vision to life with professional-quality results.
+                </p>
+                <div className="pt-4">
+                  <Button size="lg" className="gap-2">
+                    <Palette className="w-4 h-4" />
+                    Explore All Styles
+                  </Button>
+                </div>
+              </div>
+
+              {/* Right Column - Portrait Cards Grid */}
+              <div className="lg:col-span-2 grid grid-cols-2 gap-4">
+                {[
+                  {
+                    id: "princess-jasmine",
+                    name: "Princess Jasmine",
+                    image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=350&h=450&fit=crop",
+                    artist: "Nostradabra",
+                    trigger: "princess jasmine",
+                  },
+                  {
+                    id: "pixel-core",
+                    name: "PIXEL CORE - ILL",
+                    image: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=350&h=450&fit=crop",
+                    artist: "Visionary_Studio",
+                    trigger: "pixel core",
+                    recommended: true,
+                  },
+                  {
+                    id: "incase-style",
+                    name: "Incase Style",
+                    image: "https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=350&h=450&fit=crop",
+                    artist: "Digital_pastel",
+                    trigger: "incase style",
+                  },
+                  {
+                    id: "anime-portrait",
+                    name: "Anime Portrait",
+                    image: "https://images.unsplash.com/photo-1535016120754-18c5d804d309?w=350&h=450&fit=crop",
+                    artist: "AnimeArtist",
+                    trigger: "anime portrait",
+                  },
+                ].map((portrait) => (
+                  <div
+                    key={portrait.id}
+                    className="group relative overflow-hidden rounded-2xl border border-border/40 hover:border-primary/60 transition-all hover:shadow-xl bg-card cursor-pointer"
+                  >
+                    {/* Recommended Badge */}
+                    {portrait.recommended && (
+                      <div className="absolute top-3 right-3 z-20">
+                        <Badge className="bg-gradient-to-r from-amber-500 to-red-500 gap-1">
+                          <Zap className="w-3 h-3" />
+                          Recommended
+                        </Badge>
+                      </div>
+                    )}
+
+                    {/* Image */}
+                    <div className="relative overflow-hidden h-64 sm:h-80">
+                      <img
+                        src={portrait.image}
+                        alt={portrait.name}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                    </div>
+
+                    {/* Content Overlay */}
+                    <div className="absolute bottom-0 left-0 right-0 p-4 text-white space-y-2">
+                      <div>
+                        <p className="text-xs text-white/70">{portrait.artist}</p>
+                        <h3 className="font-bold text-sm line-clamp-1">{portrait.name}</h3>
+                      </div>
+                      <div className="bg-white/20 backdrop-blur border border-white/30 rounded px-2 py-1">
+                        <p className="text-xs text-white/70">Trigger:</p>
+                        <code className="text-xs font-mono text-white truncate block">
+                          {portrait.trigger}
+                        </code>
                       </div>
                     </div>
-                  )}
-                  <div className="relative overflow-hidden h-48">
-                    <img
-                      src={model.image}
-                      alt={model.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-4">
-                      <Button size="sm" className="gap-2">
-                        <Sparkles className="w-3.5 h-3.5" />
+
+                    {/* Hover Overlay */}
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                      <Button
+                        size="sm"
+                        className="gap-2 rounded-full"
+                        onClick={() => setAiPrompt(portrait.trigger)}
+                      >
+                        <Sparkles className="w-4 h-4" />
                         Use Style
                       </Button>
                     </div>
                   </div>
-                  <div className="p-3 flex flex-col flex-1">
-                    <p className="text-xs text-muted-foreground truncate">by {model.artist}</p>
-                    <h3 className="font-semibold text-sm line-clamp-2 mb-2">{model.name}</h3>
-                    <div className="bg-muted/50 rounded px-2 py-1 mt-auto">
-                      <p className="text-xs text-muted-foreground">Trigger:</p>
-                      <code className="text-xs font-mono text-primary truncate block">
-                        {model.trigger}
-                      </code>
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-          <div className="flex justify-center mt-6">
-            <Link to="/gallery">
-              <Button variant="outline" className="md:hidden gap-2">
-                Explore All Models
-                <ExternalLink className="w-4 h-4" />
-              </Button>
-            </Link>
+                ))}
+              </div>
+            </div>
           </div>
         </section>
 
