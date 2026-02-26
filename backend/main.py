@@ -7,7 +7,7 @@ FastAPI backend for VibeIMG AI image generation.
 import asyncio
 import logging
 import os
-from typing import Annotated
+from typing import Annotated, Optional
 from uuid import UUID
 
 from fastapi import FastAPI, Depends, HTTPException, Request, status
@@ -30,6 +30,11 @@ from prompt_framework import (
     PromptFramework, build_prompt_from_framework, build_compact_prompt,
     get_quick_fixes_for_issue, build_negative_constraints_from_categories,
     enhance_framework_with_ai, PRESET_TEMPLATES, FRAMEWORK_HINTS,
+)
+from style_library import (
+    LoRAStyle, get_all_curated_styles, get_style, search_styles,
+    get_categories, format_style_for_prompt, format_style_with_credit,
+    build_style_parameters,
 )
 
 app = FastAPI(
@@ -145,6 +150,26 @@ class NegativeConstraintsResponse(BaseModel):
 
 class PresetsResponse(BaseModel):
     presets: dict
+
+
+class StylesResponse(BaseModel):
+    styles: list[LoRAStyle]
+
+
+class StyleDetailResponse(BaseModel):
+    style: LoRAStyle
+    formatted_prompt: str
+    with_credit: str
+    parameters: dict
+
+
+class StyleSearchRequest(BaseModel):
+    query: str = Field(..., min_length=1, max_length=100)
+    category: Optional[str] = None
+
+
+class StyleCategoriesResponse(BaseModel):
+    categories: list[str]
 
 
 class CheckoutRequest(BaseModel):
@@ -326,6 +351,56 @@ def build_negative_constraints(
         constraints=constraints,
         count=len([c for c in constraints.split(",")]),
     )
+
+
+# ============================================================================
+# STYLE LIBRARY ENDPOINTS - LoRA Management & Artist Credits
+# ============================================================================
+
+@app.get("/styles/all", response_model=StylesResponse)
+def get_all_styles(
+    user_id: Annotated[str, Depends(get_current_user_id)],
+):
+    """Get all available curated styles and LoRAs."""
+    styles = list(get_all_curated_styles().values())
+    return StylesResponse(styles=styles)
+
+
+@app.get("/styles/categories", response_model=StyleCategoriesResponse)
+def get_style_categories(
+    user_id: Annotated[str, Depends(get_current_user_id)],
+):
+    """Get all available style categories."""
+    categories = get_categories()
+    return StyleCategoriesResponse(categories=categories)
+
+
+@app.get("/styles/{style_id}", response_model=StyleDetailResponse)
+def get_style_detail(
+    style_id: str,
+    user_id: Annotated[str, Depends(get_current_user_id)],
+):
+    """Get detailed information about a specific style."""
+    style = get_style(style_id)
+    if not style:
+        raise HTTPException(status_code=404, detail=f"Style not found: {style_id}")
+    
+    return StyleDetailResponse(
+        style=style,
+        formatted_prompt=format_style_for_prompt(style, include_strength=True),
+        with_credit=format_style_with_credit(style),
+        parameters=build_style_parameters(style),
+    )
+
+
+@app.post("/styles/search", response_model=StylesResponse)
+def search_styles_endpoint(
+    body: StyleSearchRequest,
+    user_id: Annotated[str, Depends(get_current_user_id)],
+):
+    """Search styles by name, tags, or category."""
+    results = search_styles(body.query, body.category)
+    return StylesResponse(styles=results)
 
 
 @app.get("/suggest", response_model=SuggestResponse)

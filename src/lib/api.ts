@@ -95,6 +95,40 @@ export type PresetsResponse = {
   presets: Record<string, PromptFramework>;
 };
 
+export type LoRAStyle = {
+  id: string;
+  name: string;
+  description: string;
+  trigger_word: string;
+  recommended_strength: number;
+  negative_tags: string[];
+  artist_name: string;
+  artist_url?: string;
+  credit_text: string;
+  recommended_model?: string;
+  recommended_cfg?: number;
+  recommended_steps?: number;
+  recommended_sampler?: string;
+  category: string;
+  tags: string[];
+  preview_image_url?: string;
+};
+
+export type StylesResponse = {
+  styles: LoRAStyle[];
+};
+
+export type StyleDetailResponse = {
+  style: LoRAStyle;
+  formatted_prompt: string;
+  with_credit: string;
+  parameters: Record<string, unknown>;
+};
+
+export type StyleCategoriesResponse = {
+  categories: string[];
+};
+
 /**
  * Dev bypass: only active when VITE_DEV_NO_AUTH=1 is set in the frontend .env.
  * Set it in your root .env for local testing without sign-in.
@@ -333,5 +367,49 @@ export async function buildNegativeConstraints(
     method: "POST",
     token,
     body: JSON.stringify({ categories: categories || ["text_and_artifacts", "anatomy", "quality"] }),
+  });
+}
+
+// ============================================================================
+// STYLE LIBRARY API
+// ============================================================================
+
+export async function getAllStyles(
+  token: string | null
+): Promise<StylesResponse> {
+  return fetchApi<StylesResponse>("/styles/all", {
+    method: "GET",
+    token,
+  });
+}
+
+export async function getStyleCategories(
+  token: string | null
+): Promise<StyleCategoriesResponse> {
+  return fetchApi<StyleCategoriesResponse>("/styles/categories", {
+    method: "GET",
+    token,
+  });
+}
+
+export async function getStyleDetail(
+  token: string | null,
+  styleId: string
+): Promise<StyleDetailResponse> {
+  return fetchApi<StyleDetailResponse>(`/styles/${styleId}`, {
+    method: "GET",
+    token,
+  });
+}
+
+export async function searchStyles(
+  token: string | null,
+  query: string,
+  category?: string
+): Promise<StylesResponse> {
+  return fetchApi<StylesResponse>("/styles/search", {
+    method: "POST",
+    token,
+    body: JSON.stringify({ query, category }),
   });
 }

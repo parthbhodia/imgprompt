@@ -34,6 +34,7 @@ import { cn } from "@/lib/utils";
 import { PromptFrameworkBuilder } from "./PromptFrameworkBuilder";
 import { PromptGuidePanel } from "./PromptGuidePanel";
 import { PresetTags } from "./PresetTags";
+import { StyleLibrary } from "./StyleLibrary";
 
 const PLACEHOLDER = "Describe the image you want to create...";
 
@@ -631,6 +632,11 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
                         onPromptGenerated={(builtPrompt) => {
                           setPrompt(builtPrompt);
                           setTimeout(() => handleGenerate(), 200);
+                        }}
+                      />
+                      <StyleLibrary
+                        onStyleSelected={(styleId, triggerWord) => {
+                          setPrompt((prev) => (prev ? `${prev}, ${triggerWord}` : triggerWord));
                         }}
                       />
                       <PromptGuidePanel />
