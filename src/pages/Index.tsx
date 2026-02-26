@@ -430,7 +430,11 @@ const Index = () => {
       : mergedPrompts.slice(0, 3);
 
   const portraitEditingPrompts = mergedPrompts.filter(
-    (prompt) => prompt.category && prompt.category.toLowerCase() === "portrait-editing"
+    (prompt) => prompt.category && (
+      prompt.category.toLowerCase().includes("portrait") ||
+      prompt.category === "portrait-editing" ||
+      prompt.category.toLowerCase() === "portrait-editing"
+    )
   );
 
   const scrollToGallery = () => {
@@ -729,7 +733,8 @@ const Index = () => {
 
               {/* Right Column - Portrait Cards Grid */}
               <div className="lg:col-span-2 grid grid-cols-2 gap-4">
-                {portraitEditingPrompts.slice(0, 4).map((prompt) => {
+                {portraitEditingPrompts.length > 0 ? (
+                portraitEditingPrompts.slice(0, 4).map((prompt) => {
                   const firstSlide = prompt.slides[0];
                   return (
                     <div
@@ -783,7 +788,15 @@ const Index = () => {
                       </div>
                     </div>
                   );
-                })}
+                })
+                ) : (
+                  <div className="col-span-2 flex items-center justify-center min-h-[300px] text-center">
+                    <div className="space-y-2">
+                      <p className="text-muted-foreground font-medium">No portrait editing prompts yet</p>
+                      <p className="text-sm text-muted-foreground">Check back soon for curated portrait editing styles</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
