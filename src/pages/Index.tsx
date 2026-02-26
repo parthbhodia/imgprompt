@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Sparkles, Zap, Copy, Search, Lightbulb, Star, Palette, MessageCircle, Share2, ChevronLeft, ChevronRight, ExternalLink, ThumbsUp, Heart, TrendingUp, LogIn, LogOut, User, Wand2 } from "lucide-react";
+import { Sparkles, Zap, Copy, Search, Lightbulb, Star, Palette, MessageCircle, Share2, ChevronLeft, ChevronRight, ExternalLink, ThumbsUp, Heart, TrendingUp, LogIn, LogOut, User, Wand2, Images } from "lucide-react";
 import { toast } from "sonner";
 import { fetchPrompts, type NormalizedPrompt } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -531,15 +531,26 @@ const Index = () => {
 
             <div className="flex items-center gap-2">
               {user && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="gap-2"
-                  onClick={() => navigate("/favorites")}
-                >
-                  <Heart className="w-4 h-4 text-rose-500 fill-rose-500" />
-                  <span className="hidden sm:inline">My Favorites</span>
-                </Button>
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => navigate("/creations")}
+                  >
+                    <Images className="w-4 h-4 text-primary" />
+                    <span className="hidden sm:inline">My Creations</span>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => navigate("/favorites")}
+                  >
+                    <Heart className="w-4 h-4 text-rose-500 fill-rose-500" />
+                    <span className="hidden sm:inline">My Favorites</span>
+                  </Button>
+                </>
               )}
 
               <Link to="/pricing">

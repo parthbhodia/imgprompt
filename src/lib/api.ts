@@ -151,7 +151,12 @@ async function fetchApi<T>(
   } else if (isDevNoAuth()) {
     headers["X-Dev-No-Auth"] = "1";
   }
-  const res = await fetch(url, { ...init, headers });
+  let res: Response;
+  try {
+    res = await fetch(url, { ...init, headers });
+  } catch {
+    throw new Error("Server is busy, please try again in a moment.");
+  }
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));
     throw new Error((err as { detail?: string }).detail || res.statusText);
@@ -206,6 +211,18 @@ export async function createSession(
 
 export async function listSessions(token: string | null): Promise<SessionResponse[]> {
   return fetchApi<SessionResponse[]>("/sessions", { method: "GET", token });
+}
+
+export type GenerationRecord = {
+  id: string;
+  session_id: string;
+  content: string;
+  image_url: string;
+  created_at: string;
+};
+
+export async function getMyGenerations(token: string | null): Promise<{ generations: GenerationRecord[] }> {
+  return fetchApi<{ generations: GenerationRecord[] }>("/my-generations", { method: "GET", token });
 }
 
 export async function listMessages(

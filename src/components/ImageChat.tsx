@@ -21,6 +21,7 @@ import {
   generateImage,
   getSuggestions,
   createSession,
+  listSessions,
   listMessages,
   refinePrompt,
   getChatInsights,
@@ -66,6 +67,7 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
   const [welcomeExpanded, setWelcomeExpanded] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     return () => {
@@ -176,21 +178,38 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
     loadSuggestions();
   }, [open, inline, user, devNoAuth]);
 
+  // Restore last session on mount
   useEffect(() => {
-    if (!open || !token || !sessionId) {
-      setMessages([]);
+    if (!token || sessionId) return;
+    listSessions(token)
+      .then((sessions) => {
+        if (sessions.length > 0) {
+          setSessionId(sessions[0].id);
+        }
+      })
+      .catch(() => {});
+  }, [token]);
+
+  // Load messages whenever session is known and chat is visible
+  useEffect(() => {
+    const isVisible = open || inline;
+    if (!isVisible || !token || !sessionId) {
+      if (!inline) setMessages([]);
       return;
     }
     listMessages(token, sessionId)
       .then(setMessages)
       .catch(() => setMessages([]));
-  }, [open, token, sessionId]);
+  }, [open, inline, token, sessionId]);
 
+  // Auto-scroll chat to bottom on new messages (scrolls the ScrollArea, not the page)
   useEffect(() => {
-    if (fullscreen) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (!messages.length) return;
+    const viewport = scrollAreaRef.current?.querySelector("[data-radix-scroll-area-viewport]");
+    if (viewport) {
+      viewport.scrollTop = viewport.scrollHeight;
     }
-  }, [messages, fullscreen]);
+  }, [messages]);
 
   const ensureSession = async (): Promise<string | null> => {
     if (!token && !devNoAuth) return null;
@@ -330,7 +349,7 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
         </div>
       ) : (
         <>
-            <ScrollArea className="flex-1 min-h-0 p-4">
+            <ScrollArea ref={scrollAreaRef} className="flex-1 min-h-0 p-4">
               <div className="space-y-3">
                 {/* Welcome/Help message - Accordion */}
                 {messages.length === 0 && (

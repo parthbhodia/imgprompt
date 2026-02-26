@@ -20,6 +20,7 @@ import Favorites from "./pages/Favorites";
 import Pricing from "./pages/Pricing";
 import Profile from "./pages/Profile";
 import { Gallery } from "./pages/Gallery";
+import Creations from "./pages/Creations";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +50,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/gallery" element={<Gallery />} />
             <Route path="/favorites" element={<Favorites />} />
+            <Route path="/creations" element={<Creations />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/profile" element={<Profile />} />
 
