@@ -38,7 +38,7 @@ const PRESET_CATEGORIES: PresetCategory[] = [
     name: "Portraits",
     icon: <Camera className="w-4 h-4" />,
     description: "Portrait edits, cinematic headshots & face transformations",
-    apiCategory: "portrait-editing",
+    apiCategory: "portrait",
     color: "bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400",
   },
   {
@@ -79,7 +79,12 @@ export function PresetTags({ onPresetSelected }: PresetTagsProps) {
     setLoading(true);
     try {
       const token = session?.access_token ?? null;
-      const res = await getSuggestions(token, { limit: 30, category: category.apiCategory });
+      // First try with category filter
+      let res = await getSuggestions(token, { limit: 50, category: category.apiCategory });
+      // If nothing found, fall back to showing all prompts
+      if (res.suggestions.length === 0) {
+        res = await getSuggestions(token, { limit: 30 });
+      }
       setPrompts(res.suggestions);
     } catch {
       toast.error("Could not load prompts");

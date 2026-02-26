@@ -7,21 +7,30 @@ def get_suggestions(supabase: Client, limit: int = 5, category: str | None = Non
     """
     Fetch prompt texts from slides (and optionally filter by category) for inspiration.
     Returns list of { "prompt_text", "title", "category" }.
+    Category filter is case-insensitive and partial (substring match).
     """
     query = (
         supabase.table("prompts")
         .select("id, title, category:categories(name), slides(prompt_text)")
-        .limit(100)
+        .limit(500)
     )
     rows = query.execute()
     if not rows.data:
         return []
+
+    category_lower = category.lower().replace("-", " ").replace("_", " ").strip() if category else None
+
     out: list[dict] = []
     for row in rows.data:
         cat = row.get("category") or {}
         cat_name = cat.get("name", "Uncategorized") if isinstance(cat, dict) else "Uncategorized"
-        if category and cat_name != category:
-            continue
+
+        if category_lower:
+            cat_normalized = cat_name.lower().replace("-", " ").replace("_", " ").strip()
+            # Match if either contains the other (handles "Portrait Editing" ↔ "portrait")
+            if category_lower not in cat_normalized and cat_normalized not in category_lower:
+                continue
+
         slides = row.get("slides") or []
         for s in slides:
             text = (s if isinstance(s, str) else s.get("prompt_text")) if s else ""
@@ -31,7 +40,9 @@ def get_suggestions(supabase: Client, limit: int = 5, category: str | None = Non
                     "title": row.get("title", ""),
                     "category": cat_name,
                 })
-    random.shuffle(out)
+
+    if not category_lower:
+        random.shuffle(out)
     return out[:limit]
 
 
