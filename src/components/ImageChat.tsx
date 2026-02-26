@@ -513,34 +513,45 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
             </div>
           </ScrollArea>
 
-          <div className="p-4 border-t space-y-2 shrink-0">
-            <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
-              <input
-                type="checkbox"
-                checked={useLibraryStyle}
-                onChange={(e) => setUseLibraryStyle(e.target.checked)}
-                className="rounded border-input"
-              />
-              Use style from prompt library
-            </label>
+          {/* Mobile-Optimized Input Area */}
+          <div className="border-t bg-muted/30 shrink-0 space-y-2 p-3 sm:p-4">
+            {/* Attached Image Preview */}
             {attachedImage && (
               <div className="relative inline-block">
                 <img
                   src={attachedImage.preview}
                   alt="Attached"
-                  className="h-16 w-16 object-cover rounded-lg border border-border"
+                  className="h-12 w-12 sm:h-16 sm:w-16 object-cover rounded-lg border border-border"
                 />
                 <button
                   type="button"
                   onClick={() => setAttachedImage(null)}
-                  className="absolute -top-1 -right-1 rounded-full bg-destructive text-destructive-foreground p-0.5 hover:bg-destructive/90"
+                  className="absolute -top-2 -right-2 rounded-full bg-destructive text-destructive-foreground p-0.5 hover:bg-destructive/90 shadow-lg"
                   aria-label="Remove image"
                 >
                   <X className="w-3 h-3" />
                 </button>
               </div>
             )}
-            <div className="flex gap-2">
+
+            {/* Input Row - Optimized for Mobile */}
+            <div className="flex gap-2 items-end">
+              {/* Input Field */}
+              <div className="flex-1 space-y-1">
+                <Textarea
+                  placeholder={PLACEHOLDER}
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleGenerate(); }
+                  }}
+                  className="min-h-[44px] sm:min-h-[56px] resize-none w-full text-sm"
+                  disabled={loading}
+                  rows={1}
+                />
+              </div>
+
+              {/* Image Upload Button */}
               <input
                 ref={fileInputRef}
                 type="file"
@@ -575,100 +586,99 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
               <Button
                 type="button"
                 variant="outline"
-                size="icon"
-                className="shrink-0 h-[80px] w-12"
+                size="sm"
+                className="shrink-0 h-[44px] sm:h-[56px] aspect-square"
                 onClick={() => fileInputRef.current?.click()}
                 aria-label="Upload image"
               >
-                <ImagePlus className="w-5 h-5" />
+                <ImagePlus className="w-4 h-4 sm:w-5 sm:h-5" />
               </Button>
-              <div className="flex flex-col flex-1 gap-2">
-                <Textarea
-                  placeholder={PLACEHOLDER}
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleGenerate(); }
-                  }}
-                  className="min-h-[80px] resize-none w-full"
-                  disabled={loading}
-                  rows={2}
-                />
-                {prompt.trim() && (
-                  <div className="flex flex-col gap-1.5">
-                    {/* AI insights hints */}
-                    {insightsLoading && (
-                      <div className="flex gap-1">
-                        <div className="h-5 w-16 bg-muted rounded animate-pulse" />
-                      </div>
-                    )}
-                    {chatInsights && !insightsLoading && (
-                      <div className="flex flex-wrap gap-1.5">
-                        {chatInsights.should_refine && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-700 dark:text-purple-400 text-xs font-medium">
-                            <Wand2 className="w-3 h-3" />
-                            Refinable
-                          </span>
-                        )}
-                        {chatInsights.is_variation && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-700 dark:text-blue-400 text-xs font-medium">
-                            <RotateCcw className="w-3 h-3" />
-                            Variation
-                          </span>
-                        )}
-                        {chatInsights.insight && !chatInsights.should_refine && !chatInsights.is_variation && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-500/15 text-green-700 dark:text-green-400 text-xs font-medium">
-                            <Sparkles className="w-3 h-3" />
-                            {chatInsights.insight}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                    <div className="flex gap-2 flex-wrap">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="gap-1.5 h-7 text-xs"
-                        onClick={handleRefine}
-                        disabled={refining || loading}
-                        aria-label="Refine prompt with AI"
-                      >
-                        {refining ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
-                        {refining ? "Refining…" : "Refine with AI"}
-                      </Button>
-                      <PromptFrameworkBuilder
-                        onPromptGenerated={(builtPrompt) => {
-                          setPrompt(builtPrompt);
-                          setTimeout(() => handleGenerate(), 200);
-                        }}
-                      />
-                      <StyleLibrary
-                        onStyleSelected={(styleId, triggerWord) => {
-                          setPrompt((prev) => (prev ? `${prev}, ${triggerWord}` : triggerWord));
-                        }}
-                      />
-                      <PromptGuidePanel />
-                    </div>
-                  </div>
-                )}
-              </div>
+
+              {/* Send Button */}
               <Button
                 onClick={handleGenerate}
                 disabled={loading || !prompt.trim() || (!devNoAuth && credits !== null && credits < 1)}
-                size="icon"
-                className="shrink-0 h-[80px] w-12"
+                size="sm"
+                className="shrink-0 h-[44px] sm:h-[56px] aspect-square bg-gradient-to-r from-primary to-accent hover:opacity-90"
                 aria-label="Generate image"
               >
-                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+                {loading ? <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" /> : <Send className="w-4 h-4 sm:w-5 sm:h-5" />}
               </Button>
             </div>
-            {credits !== null && credits < 3 && credits > 0 && (
-              <p className="text-xs text-amber-600">{credits} credit{credits !== 1 ? "s" : ""} left. 1 credit per image.</p>
+
+            {/* Quick Actions - Only show when prompt is entered */}
+            {prompt.trim() && (
+              <div className="space-y-2">
+                {/* AI Insights Badges */}
+                {!insightsLoading && chatInsights && (
+                  <div className="flex flex-wrap gap-1">
+                    {chatInsights.should_refine && (
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-purple-500/15 text-purple-700 dark:text-purple-400 text-xs font-medium">
+                        <Wand2 className="w-3 h-3" />
+                        <span className="hidden xs:inline">Refinable</span>
+                      </span>
+                    )}
+                    {chatInsights.is_variation && (
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-500/15 text-blue-700 dark:text-blue-400 text-xs font-medium">
+                        <RotateCcw className="w-3 h-3" />
+                        <span className="hidden xs:inline">Variation</span>
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {/* Tool Buttons - Horizontal scroll on mobile */}
+                <div className="flex gap-2 overflow-x-auto pb-1 -mx-3 px-3 sm:mx-0 sm:px-0">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-1 text-xs shrink-0"
+                    onClick={handleRefine}
+                    disabled={refining || loading}
+                  >
+                    {refining ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
+                    <span className="hidden sm:inline">Refine</span>
+                  </Button>
+                  <PromptFrameworkBuilder
+                    onPromptGenerated={(builtPrompt) => {
+                      setPrompt(builtPrompt);
+                      setTimeout(() => handleGenerate(), 200);
+                    }}
+                  />
+                  <StyleLibrary
+                    onStyleSelected={(styleId, triggerWord) => {
+                      setPrompt((prev) => (prev ? `${prev}, ${triggerWord}` : triggerWord));
+                    }}
+                  />
+                  <PromptGuidePanel />
+                </div>
+              </div>
             )}
-            {credits === 0 && (
-              <p className="text-xs text-destructive">No credits left. Contact support for more.</p>
-            )}
+
+            {/* Credits & Library Style */}
+            <div className="space-y-2 text-xs">
+              {credits !== null && (
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-2 text-muted-foreground cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={useLibraryStyle}
+                      onChange={(e) => setUseLibraryStyle(e.target.checked)}
+                      className="rounded border-input w-4 h-4"
+                    />
+                    <span className="hidden sm:inline">Use style from library</span>
+                    <span className="sm:hidden">Use library style</span>
+                  </label>
+                  <span className={cn(
+                    "font-medium",
+                    credits < 3 && credits > 0 ? "text-amber-600" : credits === 0 ? "text-destructive" : "text-green-600"
+                  )}>
+                    {credits} credit{credits !== 1 ? "s" : ""}
+                  </span>
+                </div>
+              )}
+            </div>
             
             {/* Preset Tags */}
             {user && (
