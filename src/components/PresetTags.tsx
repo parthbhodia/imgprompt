@@ -147,21 +147,22 @@ export function PresetTags({ onPresetSelected }: PresetTagsProps) {
 
   return (
     <>
-      {/* Preset Tags Row */}
+      {/* Preset Tags Row - Icon only on mobile */}
       <div className="flex flex-wrap gap-2 items-center">
-        <span className="text-xs font-medium text-muted-foreground">Explore presets:</span>
+        <span className="text-xs font-medium text-muted-foreground hidden sm:inline">Explore presets:</span>
         {PRESET_CATEGORIES.map(category => (
           <button
             key={category.id}
             onClick={() => handleCategoryClick(category)}
             className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all hover:scale-105",
+              "flex items-center gap-1.5 px-3 py-1.5 sm:px-3 sm:py-1.5 rounded-full text-xs font-medium transition-all hover:scale-105",
               category.color,
-              "border cursor-pointer"
+              "border cursor-pointer aspect-square sm:aspect-auto p-2 sm:p-0"
             )}
+            title={category.name}
           >
             {category.icon}
-            <span>{category.name}</span>
+            <span className="hidden sm:inline">{category.name}</span>
           </button>
         ))}
       </div>

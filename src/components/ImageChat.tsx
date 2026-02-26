@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sparkles, Send, Coins, Loader2, LogIn, Lightbulb,
-  ImagePlus, X, Wand2, Maximize2, Minimize2, Download, Share2, RotateCcw, Shuffle,
+  ImagePlus, X, Wand2, Maximize2, Minimize2, Download, Share2, RotateCcw, Shuffle, ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -63,6 +63,8 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
   const [chatInsights, setChatInsights] = useState<ChatInsightsResponse | null>(null);
   const [insightsLoading, setInsightsLoading] = useState(false);
   const [conversationContext, setConversationContext] = useState<ConversationContextResponse | null>(null);
+  const [inputFullscreen, setInputFullscreen] = useState(false);
+  const [welcomeExpanded, setWelcomeExpanded] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -328,24 +330,42 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
       ) : (
         <>
             <ScrollArea className="flex-1 min-h-0 p-4">
-              <div className="space-y-4">
-                {/* Welcome/Help message */}
+              <div className="space-y-3">
+                {/* Welcome/Help message - Accordion */}
                 {messages.length === 0 && (
-                  <div className="space-y-3">
-                    <div className="rounded-xl border border-border/60 bg-blue-500/10 border-blue-500/20 p-4 space-y-2">
+                  <div className="space-y-2">
+                    {/* Accordion Header */}
+                    <button
+                      onClick={() => setWelcomeExpanded(!welcomeExpanded)}
+                      className="w-full rounded-xl border border-border/60 bg-blue-500/10 border-blue-500/20 p-4 flex items-center justify-between hover:bg-blue-500/15 transition-colors"
+                    >
                       <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
                         ✨ Welcome to VibeIMG AI Chat
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        Describe any image you'd like to generate. Be specific about style, mood, composition, and details. You can also:
-                      </p>
-                      <ul className="text-xs text-muted-foreground space-y-1 ml-3">
-                        <li>• Upload a reference image for img2img generation</li>
-                        <li>• Use "Refine with AI" to enhance your prompt</li>
-                        <li>• Download, share, or regenerate any image</li>
-                        <li>• Use prompts from our community library</li>
-                      </ul>
-                    </div>
+                      <ChevronDown
+                        className={cn(
+                          "w-4 h-4 text-blue-600 dark:text-blue-400 transition-transform",
+                          welcomeExpanded && "rotate-180"
+                        )}
+                      />
+                    </button>
+
+                    {/* Accordion Content */}
+                    {welcomeExpanded && (
+                      <div className="rounded-xl border border-border/60 bg-blue-500/5 p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                        <p className="text-xs text-muted-foreground">
+                          Describe any image you'd like to generate. Be specific about style, mood, composition, and details. You can also:
+                        </p>
+                        <ul className="text-xs text-muted-foreground space-y-1 ml-3">
+                          <li>• Upload a reference image for img2img generation</li>
+                          <li>• Use "Refine with AI" to enhance your prompt</li>
+                          <li>• Download, share, or regenerate any image</li>
+                          <li>• Use prompts from our community library</li>
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Suggestions Section */}
                     <div className="rounded-xl border border-border/60 bg-muted/30 p-4 space-y-2">
                       <p className="text-sm font-medium flex items-center gap-2">
                         <Lightbulb className="w-4 h-4 text-primary" />
@@ -534,7 +554,45 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
               </div>
             )}
 
-            {/* Input Row - Optimized for Mobile */}
+            {/* Input Row - Optimized for Mobile with Fullscreen on Focus */}
+            {inputFullscreen && (
+              <div className="fixed inset-0 z-50 bg-background flex flex-col animate-in fade-in duration-200">
+                <div className="flex-1 flex flex-col p-4 gap-3 overflow-hidden">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold">Write your prompt</h3>
+                    <button
+                      onClick={() => setInputFullscreen(false)}
+                      className="p-2 hover:bg-muted rounded-lg transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <Textarea
+                    placeholder={PLACEHOLDER}
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleGenerate(); }
+                    }}
+                    className="flex-1 resize-none w-full text-base p-3"
+                    disabled={loading}
+                    autoFocus
+                  />
+                  <Button
+                    onClick={() => {
+                      setInputFullscreen(false);
+                      handleGenerate();
+                    }}
+                    disabled={loading || !prompt.trim() || (!devNoAuth && credits !== null && credits < 1)}
+                    className="w-full gap-2 h-12"
+                  >
+                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+                    <span>Generate</span>
+                  </Button>
+                </div>
+              </div>
+            )}
+
             <div className="flex gap-2 items-end">
               {/* Input Field */}
               <div className="flex-1 space-y-1">
@@ -545,9 +603,14 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleGenerate(); }
                   }}
-                  className="min-h-[44px] sm:min-h-[56px] resize-none w-full text-sm"
+                  onClick={() => {
+                    if (window.innerWidth < 640) {
+                      setInputFullscreen(true);
+                    }
+                  }}
+                  className="min-h-[64px] sm:min-h-[80px] resize-none w-full text-sm cursor-pointer sm:cursor-auto"
                   disabled={loading}
-                  rows={1}
+                  rows={2}
                 />
               </div>
 
