@@ -283,7 +283,6 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
         },
       ]);
       setPrompt("");
-      setAttachedImage(null);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Generation failed";
       if (msg.toLowerCase().includes("safety filter blocked")) {
