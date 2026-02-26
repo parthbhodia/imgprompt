@@ -472,45 +472,45 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
                                 <span className="hidden sm:inline">Remix</span>
                               </button>
                             </div>
-                            {/* Quick action suggestions - context-aware */}
-                            {messages.length > 0 && messages.some(msg => msg.role === "user") && (
-                              <div className="pt-2 border-t border-border/40 space-y-2">
-                                <p className="text-xs font-medium text-muted-foreground">Try next:</p>
-                                <div className="flex flex-col gap-1.5">
-                                  {conversationContext?.next_variations && conversationContext.next_variations.length > 0 ? (
-                                    conversationContext.next_variations.slice(0, 2).map((variation, idx) => (
-                                      <button
-                                        key={idx}
-                                        type="button"
-                                        onClick={() => handleGenerateWithPrompt(`${m.content}, ${variation}`)}
-                                        className="text-left px-2 py-1 rounded-md text-xs bg-muted/40 hover:bg-primary/10 text-muted-foreground transition-colors truncate"
-                                        title={variation}
-                                      >
-                                        {variation}
-                                      </button>
-                                    ))
-                                  ) : (
-                                    <>
-                                      <button
-                                        type="button"
-                                        onClick={() => handleGenerateWithPrompt(`${m.content}, different artistic style`)}
-                                        className="text-left px-2 py-1 rounded-md text-xs bg-muted/40 hover:bg-primary/10 text-muted-foreground transition-colors"
-                                      >
-                                        Different artistic style
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => handleGenerateWithPrompt(`${m.content}, cinematic lighting`)}
-                                        className="text-left px-2 py-1 rounded-md text-xs bg-muted/40 hover:bg-primary/10 text-muted-foreground transition-colors"
-                                      >
-                                        Cinematic version
-                                      </button>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
-                            )}
                           </>
+                        )}
+                        {/* Quick action suggestions - context-aware */}
+                        {messages.length > 0 && messages.some(msg => msg.role === "user") && (
+                          <div className="pt-2 border-t border-border/40 space-y-2">
+                            <p className="text-xs font-medium text-muted-foreground">Try next:</p>
+                            <div className="flex flex-col gap-1.5">
+                              {conversationContext?.next_variations && conversationContext.next_variations.length > 0 ? (
+                                conversationContext.next_variations.slice(0, 2).map((variation, idx) => (
+                                  <button
+                                    key={idx}
+                                    type="button"
+                                    onClick={() => handleGenerateWithPrompt(`${m.content}, ${variation}`)}
+                                    className="text-left px-2 py-1 rounded-md text-xs bg-muted/40 hover:bg-primary/10 text-muted-foreground transition-colors truncate"
+                                    title={variation}
+                                  >
+                                    {variation}
+                                  </button>
+                                ))
+                              ) : (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleGenerateWithPrompt(`${m.content}, different artistic style`)}
+                                    className="text-left px-2 py-1 rounded-md text-xs bg-muted/40 hover:bg-primary/10 text-muted-foreground transition-colors"
+                                  >
+                                    Different artistic style
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleGenerateWithPrompt(`${m.content}, cinematic lighting`)}
+                                    className="text-left px-2 py-1 rounded-md text-xs bg-muted/40 hover:bg-primary/10 text-muted-foreground transition-colors"
+                                  >
+                                    Cinematic version
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </div>
                         )}
                       </div>
                     )}
