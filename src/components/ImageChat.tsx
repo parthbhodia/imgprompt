@@ -128,16 +128,24 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
     return () => clearTimeout(timer);
   }, [prompt, session, user, messages]);
 
-  // Fetch conversation context for smart suggestions
+  // Fetch conversation context for smart suggestions (focus on last image + context)
   useEffect(() => {
     if (!session || !user || messages.length < 2) return;
 
     const timer = setTimeout(async () => {
       try {
-        const contextMessages = messages.map(m => ({
+        // Get the last assistant message (last generated image) and some context around it
+        const lastAssistantIdx = messages.findIndex((m, idx) => idx === messages.length - 1 - [...messages].reverse().findIndex(msg => msg.role === "assistant"));
+        
+        if (lastAssistantIdx === -1) return;
+        
+        // Include last assistant message + 2-3 messages before it for context
+        const contextStart = Math.max(0, lastAssistantIdx - 2);
+        const contextMessages = messages.slice(contextStart).map(m => ({
           role: m.role,
           content: m.content,
         }));
+        
         const context = await getConversationContext(session.access_token, contextMessages);
         setConversationContext(context);
       } catch (e) {
@@ -202,13 +210,13 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
       .catch(() => setMessages([]));
   }, [open, inline, token, sessionId]);
 
-  // Auto-scroll chat to bottom on new messages (scrolls the ScrollArea, not the page)
+  // Auto-scroll chat to bottom on new messages (using messagesEndRef)
   useEffect(() => {
     if (!messages.length) return;
-    const viewport = scrollAreaRef.current?.querySelector("[data-radix-scroll-area-viewport]");
-    if (viewport) {
-      viewport.scrollTop = viewport.scrollHeight;
-    }
+    // Use a small delay to ensure DOM is updated
+    requestAnimationFrame(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    });
   }, [messages]);
 
   const ensureSession = async (): Promise<string | null> => {
