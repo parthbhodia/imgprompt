@@ -66,7 +66,6 @@ def unhandled_exception_handler(request: Request, exc: Exception):
 class GenerateRequest(BaseModel):
     prompt: str = Field(..., min_length=1, max_length=2000)
     session_id: str | None = None
-    use_library_style: bool = False
     image_base64: str | None = None  # Optional data URL / base64 for reference; reserved for img2img
 
 
@@ -511,10 +510,6 @@ async def generate_image(
         check_moderation(prompt)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-
-    if body.use_library_style:
-        from prompt_suggest import enhance_prompt_from_library
-        prompt = enhance_prompt_from_library(supabase, prompt)
 
     # Pre-sanitize via Groq to avoid Replicate's over-aggressive NSFW filter
     safe_prompt = await asyncio.get_event_loop().run_in_executor(None, lambda: sanitize_for_replicate(prompt))

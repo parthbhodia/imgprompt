@@ -56,7 +56,6 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<MessageResponse[]>([]);
-  const [useLibraryStyle, setUseLibraryStyle] = useState(false);
   const [suggestions, setSuggestions] = useState<SuggestResponse["suggestions"]>([]);
   const [attachedImage, setAttachedImage] = useState<{ file: File; preview: string } | null>(null);
   const [refining, setRefining] = useState(false);
@@ -258,7 +257,6 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
       const res = await generateImage(token ?? null, {
         prompt: promptToUse,
         session_id: sid ?? undefined,
-        use_library_style: useLibraryStyle,
         image_base64: imageBase64 ?? undefined,
       });
       setCredits(res.credits_remaining);
@@ -719,29 +717,14 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
               </div>
             )}
 
-            {/* Credits & Library Style */}
-            <div className="space-y-2 text-xs">
-              {credits !== null && (
-                <div className="flex items-center justify-between">
-                  <label className="flex items-center gap-2 text-muted-foreground cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={useLibraryStyle}
-                      onChange={(e) => setUseLibraryStyle(e.target.checked)}
-                      className="rounded border-input w-4 h-4"
-                    />
-                    <span className="hidden sm:inline">Use style from library</span>
-                    <span className="sm:hidden">Use library style</span>
-                  </label>
-                  <span className={cn(
-                    "font-medium",
-                    credits < 3 && credits > 0 ? "text-amber-600" : credits === 0 ? "text-destructive" : "text-green-600"
-                  )}>
-                    {credits} credit{credits !== 1 ? "s" : ""}
-                  </span>
-                </div>
-              )}
-            </div>
+            {/* Credits Display */}
+            {credits !== null && (
+              <div className="text-xs font-medium" style={{
+                color: credits < 3 && credits > 0 ? "#b45309" : credits === 0 ? "#dc2626" : "#16a34a"
+              }}>
+                {credits} credit{credits !== 1 ? "s" : ""}
+              </div>
+            )}
             
             {/* Preset Tags */}
             {user && (

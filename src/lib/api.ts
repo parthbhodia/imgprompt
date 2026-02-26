@@ -9,7 +9,6 @@ const getBaseUrl = () =>
 export type GenerateRequest = {
   prompt: string;
   session_id?: string | null;
-  use_library_style?: boolean;
   /** Optional base64 data URL (e.g. data:image/jpeg;base64,...) for reference / img2img */
   image_base64?: string | null;
 };
