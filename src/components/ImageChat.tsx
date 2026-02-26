@@ -187,8 +187,10 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
   }, [open, token, sessionId]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    if (fullscreen) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, fullscreen]);
 
   const ensureSession = async (): Promise<string | null> => {
     if (!token && !devNoAuth) return null;

@@ -197,65 +197,6 @@ export function StyleLibrary({ onStyleSelected }: StyleLibraryProps) {
                 </div>
               </div>
 
-              {/* Artist Credit */}
-              <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-4 space-y-2">
-                <p className="text-sm font-medium text-purple-600 dark:text-purple-400">
-                  🎨 Artist Credit
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {selectedStyle.with_credit.split("\n").map((line, i) => (
-                    <div key={i}>{line}</div>
-                  ))}
-                </p>
-                {selectedStyle.style.artist_url && (
-                  <a
-                    href={selectedStyle.style.artist_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-sm text-purple-600 dark:text-purple-400 hover:underline"
-                  >
-                    Support the Artist
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                )}
-              </div>
-
-              {/* Recommended Settings */}
-              <div className="space-y-3">
-                <p className="text-sm font-medium">Recommended Settings</p>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="bg-muted/30 p-3 rounded">
-                    <p className="text-muted-foreground text-xs">Strength</p>
-                    <p className="font-mono font-bold">
-                      {(selectedStyle.style.recommended_strength * 100).toFixed(0)}%
-                    </p>
-                  </div>
-                  {selectedStyle.style.recommended_cfg && (
-                    <div className="bg-muted/30 p-3 rounded">
-                      <p className="text-muted-foreground text-xs">CFG</p>
-                      <p className="font-mono font-bold">
-                        {selectedStyle.style.recommended_cfg}
-                      </p>
-                    </div>
-                  )}
-                  {selectedStyle.style.recommended_steps && (
-                    <div className="bg-muted/30 p-3 rounded">
-                      <p className="text-muted-foreground text-xs">Steps</p>
-                      <p className="font-mono font-bold">
-                        {selectedStyle.style.recommended_steps}
-                      </p>
-                    </div>
-                  )}
-                  {selectedStyle.style.recommended_sampler && (
-                    <div className="bg-muted/30 p-3 rounded">
-                      <p className="text-muted-foreground text-xs">Sampler</p>
-                      <p className="font-mono font-bold text-xs">
-                        {selectedStyle.style.recommended_sampler}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
 
               {/* Negative Tags */}
               {selectedStyle.style.negative_tags.length > 0 && (
