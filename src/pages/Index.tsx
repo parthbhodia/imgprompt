@@ -694,6 +694,105 @@ const Index = () => {
           </section>
         )}
 
+        {/* Featured Models Section */}
+        <section className="container mx-auto px-4 pb-12">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <p className="text-sm uppercase tracking-widest text-primary font-semibold">Discover styles</p>
+              <h2 className="text-2xl font-bold flex items-center gap-2">
+                <Palette className="w-6 h-6 text-primary" />
+                Featured LoRA Models
+              </h2>
+            </div>
+            <Link to="/gallery" className="hidden md:flex">
+              <Button variant="outline">
+                View All Models
+                <ExternalLink className="w-4 h-4 ml-2" />
+              </Button>
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              {
+                id: "pixel-core",
+                name: "PIXEL CORE - ILL",
+                image: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=300&h=400&fit=crop",
+                trigger: "pixel core style",
+                artist: "Visionary_Studio",
+                recommended: true,
+              },
+              {
+                id: "princess-jasmine",
+                name: "Princess Jasmine",
+                image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&h=400&fit=crop",
+                trigger: "princess jasmine",
+                artist: "Nostradabra",
+                recommended: false,
+              },
+              {
+                id: "space-worlds",
+                name: "Space Worlds Dark",
+                image: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=300&h=400&fit=crop",
+                trigger: "space worlds dark",
+                artist: "Zios",
+                recommended: false,
+              },
+              {
+                id: "incase-style",
+                name: "Incase Style",
+                image: "https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=300&h=400&fit=crop",
+                trigger: "incase style",
+                artist: "Digital_pastel",
+                recommended: false,
+              },
+            ].map((model) => (
+              <Link key={model.id} to="/gallery" className="group">
+                <div className="relative overflow-hidden rounded-xl border border-border/40 hover:border-primary/40 transition-all hover:shadow-lg bg-card h-full flex flex-col">
+                  {model.recommended && (
+                    <div className="absolute top-2 right-2 z-10">
+                      <div className="bg-gradient-to-r from-amber-500 to-red-500 text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
+                        <Zap className="w-3 h-3" />
+                        Recommended
+                      </div>
+                    </div>
+                  )}
+                  <div className="relative overflow-hidden h-48">
+                    <img
+                      src={model.image}
+                      alt={model.name}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-4">
+                      <Button size="sm" className="gap-2">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        Use Style
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="p-3 flex flex-col flex-1">
+                    <p className="text-xs text-muted-foreground truncate">by {model.artist}</p>
+                    <h3 className="font-semibold text-sm line-clamp-2 mb-2">{model.name}</h3>
+                    <div className="bg-muted/50 rounded px-2 py-1 mt-auto">
+                      <p className="text-xs text-muted-foreground">Trigger:</p>
+                      <code className="text-xs font-mono text-primary truncate block">
+                        {model.trigger}
+                      </code>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+          <div className="flex justify-center mt-6">
+            <Link to="/gallery">
+              <Button variant="outline" className="md:hidden gap-2">
+                Explore All Models
+                <ExternalLink className="w-4 h-4" />
+              </Button>
+            </Link>
+          </div>
+        </section>
+
         {/* Most Liked Prompts */}
         {mostLikedPrompts.length > 0 && (
           <section className="container mx-auto px-4 pb-6">
