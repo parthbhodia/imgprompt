@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     replicate_api_token: str = ""
     flux_model: str = "black-forest-labs/flux-schnell"
     groq_api_key: str = ""
+    xai_api_key: str = ""
     stripe_secret_key: str = ""
     stripe_webhook_secret: str = ""
     stripe_price_starter: str = ""

@@ -1,6 +1,7 @@
-"""Prompt refinement using Groq LLM — rewrites a rough user idea into a Flux-optimized prompt."""
+"""Prompt refinement using xAI (Grok) primary, Groq fallback when credits/rate limit hit."""
 import logging
 from config import settings
+from llm_client import chat_completion
 
 logger = logging.getLogger(__name__)
 
@@ -43,102 +44,74 @@ _SANITIZE_SYSTEM_PROMPT = (
 
 def refine_prompt(user_text: str) -> str:
     """
-    Rewrite a rough user idea into a rich Flux image generation prompt using Groq.
-    Raises RuntimeError if Groq is not configured.
-    Raises RuntimeError with a user-facing message on API failure.
+    Rewrite a rough user idea into a rich Flux image generation prompt.
+    Uses xAI first, Groq fallback. Raises RuntimeError if no LLM configured.
     """
-    key = settings.groq_api_key
-    if not key:
-        raise RuntimeError("Prompt refinement is not available (GROQ_API_KEY not set).")
+    if not settings.xai_api_key and not settings.groq_api_key:
+        raise RuntimeError("Prompt refinement is not available (XAI_API_KEY or GROQ_API_KEY not set).")
 
-    from groq import Groq
-    client = Groq(api_key=key)
     try:
-        resp = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
-            messages=[
+        refined = chat_completion(
+            [
                 {"role": "system", "content": _SYSTEM_PROMPT},
                 {"role": "user", "content": user_text[:500]},
             ],
             max_tokens=250,
             temperature=0.7,
+            timeout=8,
         )
-        refined = resp.choices[0].message.content.strip()
-        if not refined:
-            return user_text
-        return refined
+        return refined if refined else user_text
     except Exception as e:
-        logger.exception("Groq prompt refinement failed")
+        logger.exception("Prompt refinement failed")
         raise RuntimeError(f"Refinement failed: {e}") from e
 
 
 def sanitize_for_replicate(prompt: str) -> str:
     """
-    Use Groq to rewrite a prompt so it is unlikely to trigger Replicate's
-    internal NSFW safety filter, while keeping the full artistic intent intact.
-    Falls back to the original prompt if Groq is unavailable or slow (>8s).
+    Rewrite a prompt so it is unlikely to trigger Replicate's NSFW safety filter.
+    Uses xAI first, Groq fallback. Falls back to original if both fail or slow.
     """
-    key = settings.groq_api_key
-    if not key:
-        return prompt  # Groq not configured — pass through unchanged
+    if not settings.xai_api_key and not settings.groq_api_key:
+        return prompt
 
-    from groq import Groq
-    client = Groq(api_key=key)
     try:
-        resp = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
-            messages=[
+        rewritten = chat_completion(
+            [
                 {"role": "system", "content": _SANITIZE_SYSTEM_PROMPT},
                 {"role": "user", "content": prompt[:1500]},
             ],
             max_tokens=400,
             temperature=0.3,
-            timeout=8,  # Fall back to original if Groq is slow
+            timeout=8,
         )
-        rewritten = resp.choices[0].message.content.strip()
-        if not rewritten:
-            return prompt
-        logger.info("Prompt sanitized by Groq: %r → %r", prompt[:80], rewritten[:80])
-        return rewritten
+        if rewritten:
+            logger.info("Prompt sanitized: %r → %r", prompt[:80], rewritten[:80])
+            return rewritten
     except Exception as e:
-        logger.warning("Groq prompt sanitization failed (using original): %s", e)
-        return prompt  # Always fall back gracefully
+        logger.warning("Prompt sanitization failed (using original): %s", e)
+    return prompt
 
 
 def analyze_conversation_context(messages: list[dict]) -> dict:
-    """
-    Analyze the full conversation history and provide context-aware suggestions.
-    
-    Args:
-        messages: List of dicts with 'role' ('user'/'assistant') and 'content' keys
-    
-    Returns:
-        Dict with themes, style preferences, complexity level, etc.
-    """
-    key = settings.groq_api_key
-    if not key or not messages:
-        return {"themes": [], "preferred_styles": [], "complexity": "medium"}
+    """Analyze conversation and return themes, styles, next_variations. Uses xAI first, Groq fallback."""
+    if (not settings.xai_api_key and not settings.groq_api_key) or not messages:
+        return {"themes": [], "preferred_styles": [], "complexity": "medium", "next_variations": []}
 
-    from groq import Groq
-    client = Groq(api_key=key)
-    
-    # Summarize conversation for context
     recent_prompts = [m["content"] for m in messages if m.get("role") == "user"][-5:]
     conversation_text = "\n".join([f"User: {p}" for p in recent_prompts])
-    
+
     system_prompt = (
         "Analyze the user's image generation requests and respond with a JSON object: "
-        '{"themes": list[str] (main topics/subjects, e.g., ["nature", "fantasy"]), '
-        '"preferred_styles": list[str] (artistic styles mentioned, e.g., ["cinematic", "watercolor"]), '
-        '"complexity": str (simple/medium/complex - how detailed are their requests?), '
-        '"next_variations": list[str] (2-3 suggested variations they might want)} '
+        '{"themes": list[str] (main topics/subjects), '
+        '"preferred_styles": list[str] (artistic styles mentioned), '
+        '"complexity": str (simple/medium/complex), '
+        '"next_variations": list[str] (2-3 suggested variations)} '
         "Respond ONLY with valid JSON, no other text."
     )
-    
+
     try:
-        resp = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
-            messages=[
+        content = chat_completion(
+            [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": f"Analyze these requests:\n{conversation_text}"},
             ],
@@ -146,8 +119,6 @@ def analyze_conversation_context(messages: list[dict]) -> dict:
             temperature=0.5,
             timeout=5,
         )
-        content = resp.choices[0].message.content.strip()
-        
         import json
         result = json.loads(content)
         return {
@@ -162,38 +133,24 @@ def analyze_conversation_context(messages: list[dict]) -> dict:
 
 
 def get_chat_insights(user_message: str, previous_prompts: list[str] | None = None) -> dict:
-    """
-    Analyze user message and provide contextual insights:
-    - Whether they want to refine/improve a prompt
-    - Whether they're doing variations
-    - Suggestions for next steps
-    
-    Falls back gracefully if Groq is unavailable.
-    """
-    key = settings.groq_api_key
-    if not key:
+    """Analyze user intent. Uses xAI first, Groq fallback."""
+    if not settings.xai_api_key and not settings.groq_api_key:
         return {"should_refine": False, "is_variation": False, "insight": ""}
 
-    from groq import Groq
-    client = Groq(api_key=key)
-    
     system_prompt = (
         "You are a helpful AI chat assistant that understands user intent for image generation. "
         "Analyze the user's message and respond with a JSON object: "
-        '{"should_refine": bool (true if user wants AI to enhance the prompt), '
-        '"is_variation": bool (true if user wants variations of previous image), '
-        '"insight": str (brief insight about what user might want, e.g., "User wants cinematic style variations")} '
+        '{"should_refine": bool, "is_variation": bool, '
+        '"insight": str (brief insight)} '
         "Respond ONLY with valid JSON, no other text."
     )
-    
     context = ""
-    if previous_prompts and len(previous_prompts) > 0:
-        context = f"\nPrevious prompts this session: {', '.join(previous_prompts[-3:])}"
-    
+    if previous_prompts:
+        context = f"\nPrevious prompts: {', '.join(previous_prompts[-3:])}"
+
     try:
-        resp = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
-            messages=[
+        content = chat_completion(
+            [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": f"{user_message}{context}"},
             ],
@@ -201,8 +158,6 @@ def get_chat_insights(user_message: str, previous_prompts: list[str] | None = No
             temperature=0.5,
             timeout=5,
         )
-        content = resp.choices[0].message.content.strip()
-        
         import json
         result = json.loads(content)
         return {

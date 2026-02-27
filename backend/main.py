@@ -359,16 +359,14 @@ def create_framework_from_natural_language(
     Use Groq LLM to help user fill the 10-part framework from natural language description.
     User describes what they want, AI breaks it down into framework sections.
     """
-    if not settings.groq_api_key:
+    if not settings.xai_api_key and not settings.groq_api_key:
         raise HTTPException(
             status_code=503,
-            detail="Framework AI enhancement not available (GROQ_API_KEY not set)",
+            detail="Framework AI enhancement not available (XAI_API_KEY or GROQ_API_KEY not set)",
         )
     
     try:
-        from groq import Groq
-        client = Groq(api_key=settings.groq_api_key)
-        framework_data = enhance_framework_with_ai(body.description, client)
+        framework_data = enhance_framework_with_ai(body.description)
         
         if not framework_data:
             raise ValueError("Failed to generate framework from description")
@@ -480,10 +478,10 @@ def refine_prompt_endpoint(
     body: RefineRequest,
     user_id: Annotated[str, Depends(get_current_user_id)],
 ):
-    if not settings.groq_api_key:
+    if not settings.xai_api_key and not settings.groq_api_key:
         raise HTTPException(
             status_code=503,
-            detail="Prompt refinement is not available. GROQ_API_KEY is not configured.",
+            detail="Prompt refinement is not available (XAI_API_KEY or GROQ_API_KEY not set).",
         )
     try:
         refined = refine_prompt(body.text)

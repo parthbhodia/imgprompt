@@ -232,32 +232,30 @@ def build_negative_constraints_from_categories(categories: list[str]) -> str:
     return ", ".join(constraints)
 
 
-def enhance_framework_with_ai(user_input: str, groq_client) -> dict:
+def enhance_framework_with_ai(user_input: str) -> dict:
     """
-    Use Groq to help user fill in framework sections from natural language input.
+    Use xAI/Groq to help user fill in framework sections from natural language input.
     
     Args:
         user_input: Natural language description from user
-        groq_client: Groq API client
     
     Returns:
         Dict with populated framework sections
     """
-    system_prompt = (
-        "You are an expert at breaking down image descriptions into the 10-part AI Image Prompt Framework. "
-        "The user will give you a natural description of an image they want to create. "
-        "Respond with a JSON object with these exact keys: "
-        '"subject_definition", "action_context", "environment_setting", "mood_story", '
-        '"visual_style", "lighting_color", "camera_composition", "detail_texture", '
-        '"quality_realism", "negative_constraints". '
-        "Each value should be 1-2 sentences. "
-        "Respond ONLY with valid JSON, no other text."
-    )
-    
     try:
-        resp = groq_client.chat.completions.create(
-            model="llama-3.1-8b-instant",
-            messages=[
+        from llm_client import chat_completion
+        system_prompt = (
+            "You are an expert at breaking down image descriptions into the 10-part AI Image Prompt Framework. "
+            "The user will give you a natural description of an image they want to create. "
+            "Respond with a JSON object with these exact keys: "
+            '"subject_definition", "action_context", "environment_setting", "mood_story", '
+            '"visual_style", "lighting_color", "camera_composition", "detail_texture", '
+            '"quality_realism", "negative_constraints". '
+            "Each value should be 1-2 sentences. "
+            "Respond ONLY with valid JSON, no other text."
+        )
+        content = chat_completion(
+            [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_input[:1000]},
             ],
@@ -265,7 +263,6 @@ def enhance_framework_with_ai(user_input: str, groq_client) -> dict:
             temperature=0.7,
             timeout=8,
         )
-        content = resp.choices[0].message.content.strip()
         
         import json
         result = json.loads(content)

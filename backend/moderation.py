@@ -1,6 +1,7 @@
-"""Content moderation using Groq LLM classification."""
+"""Content moderation using xAI (primary) or Groq (fallback) LLM classification."""
 import logging
 from config import settings
+from llm_client import chat_completion
 
 logger = logging.getLogger(__name__)
 
@@ -15,29 +16,24 @@ _SYSTEM_PROMPT = (
 
 def check_moderation(text: str) -> None:
     """
-    Check whether a prompt is safe using Groq LLM classification.
-    Raises ValueError with a user-facing message if the prompt is flagged.
-    Falls back silently (allows) if Groq is not configured.
+    Check whether a prompt is safe using xAI (primary) or Groq (fallback).
+    Raises ValueError if the prompt is flagged.
+    Skips if neither LLM is configured.
     """
-    key = settings.groq_api_key
-    if not key:
-        return  # Moderation is best-effort; skip if not configured
+    if not settings.xai_api_key and not settings.groq_api_key:
+        return
 
     try:
-        from groq import Groq
-        client = Groq(api_key=key)
-        resp = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
-            messages=[
+        verdict = chat_completion(
+            [
                 {"role": "system", "content": _SYSTEM_PROMPT},
-                {"role": "user", "content": text[:1000]},  # cap input size
+                {"role": "user", "content": text[:1000]},
             ],
             max_tokens=5,
             temperature=0,
-            timeout=6,  # Skip moderation and allow if Groq is slow
+            timeout=6,
         )
-        verdict = resp.choices[0].message.content.strip().upper()
-        if verdict.startswith("UNSAFE"):
+        if verdict and verdict.strip().upper().startswith("UNSAFE"):
             raise ValueError("Prompt contains content that cannot be generated.")
     except ValueError:
         raise
