@@ -218,6 +218,25 @@ const Index = () => {
     }
   }, [searchParams, categories, defaultCategory]);
 
+  // Read chatPrompt from URL (from Creations page: Edit / Remix)
+  useEffect(() => {
+    const chatPrompt = searchParams.get('chatPrompt');
+    if (chatPrompt) {
+      try {
+        const decoded = decodeURIComponent(chatPrompt);
+        setAiPrompt(decoded);
+        // Scroll to chat so user sees the prompt
+        setTimeout(() => document.getElementById("ai-chat")?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+      } catch {
+        setAiPrompt(chatPrompt);
+      }
+      // Clear URL param to avoid re-applying on refresh
+      const url = new URL(window.location.href);
+      url.searchParams.delete('chatPrompt');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     if (hasInitializedRoute.current) return;
     const initialState = getInitialRouteState(mergedPrompts);

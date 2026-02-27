@@ -210,13 +210,20 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
       .catch(() => setMessages([]));
   }, [open, inline, token, sessionId]);
 
-  // Auto-scroll chat to bottom on new messages (using messagesEndRef)
+  // Auto-scroll chat to bottom on new messages
   useEffect(() => {
     if (!messages.length) return;
-    // Use a small delay to ensure DOM is updated
-    requestAnimationFrame(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-    });
+    const scrollToBottom = () => {
+      const viewport = scrollAreaRef.current?.querySelector("[data-radix-scroll-area-viewport]");
+      if (viewport) {
+        viewport.scrollTo({ top: viewport.scrollHeight, behavior: "smooth" });
+      } else {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+      }
+    };
+    requestAnimationFrame(() => scrollToBottom());
+    const t = setTimeout(scrollToBottom, 150);
+    return () => clearTimeout(t);
   }, [messages]);
 
   const ensureSession = async (): Promise<string | null> => {

@@ -64,7 +64,7 @@ export default function Creations() {
   // Navigate to chat with prompt (for editing the prompt)
   const handleEditPrompt = (gen: GenerationRecord) => {
     setSelectedGen(null);
-    navigate(`/?prompt=${encodeURIComponent(gen.content)}`);
+    navigate(`/?chatPrompt=${encodeURIComponent(gen.content)}`);
   };
 
   // Navigate to chat with image as reference (for img2img)
@@ -81,7 +81,7 @@ export default function Creations() {
   // Remix with same prompt
   const handleRemix = (gen: GenerationRecord) => {
     setSelectedGen(null);
-    navigate(`/?prompt=${encodeURIComponent(gen.content + ", different variation, remix")}`);
+    navigate(`/?chatPrompt=${encodeURIComponent(gen.content + ", different variation, remix")}`);
   };
 
   return (
