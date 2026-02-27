@@ -7,8 +7,10 @@ FastAPI backend for VibeIMG AI image generation.
 import asyncio
 import logging
 import os
+import requests
 from typing import Annotated, Optional
 from uuid import UUID
+from datetime import datetime
 
 from fastapi import FastAPI, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse
@@ -36,6 +38,66 @@ from style_library import (
     get_categories, format_style_for_prompt, format_style_with_credit,
     build_style_parameters,
 )
+
+# Image archival helpers
+def archive_image_to_storage(supabase, user_id: str, image_url: str, message_id: str) -> Optional[str]:
+    """
+    Download image from Replicate CDN and save to Supabase Storage.
+    Returns the permanent Storage URL or None if failed.
+    """
+    try:
+        # Download image from Replicate CDN
+        response = requests.get(image_url, timeout=30)
+        if response.status_code != 200:
+            logger.warning(f"Failed to download image from {image_url}")
+            return None
+
+        # Upload to Supabase Storage
+        bucket_name = "user-generations"
+        file_path = f"{user_id}/{message_id}.webp"
+        
+        supabase.storage.from_(bucket_name).upload(
+            file_path,
+            response.content,
+            {"content-type": "image/webp"}
+        )
+        
+        # Get public URL
+        storage_url = supabase.storage.from_(bucket_name).get_public_url(file_path)
+        logger.info(f"Image archived to storage: {storage_url}")
+        return storage_url
+    except Exception as e:
+        logger.warning(f"Failed to archive image to storage: {e}")
+        return None
+
+
+def cleanup_old_archives(supabase, user_id: str, plan: Optional[str] = None):
+    """
+    Keep only recent images in storage. Free users: 5 images, Paid: 50 images.
+    """
+    try:
+        # Determine limit based on subscription
+        limit = 50 if plan and plan != "free" else 5
+        
+        # Get all archived images for this user
+        bucket_name = "user-generations"
+        files = supabase.storage.from_(bucket_name).list(user_id)
+        
+        if not files or len(files) <= limit:
+            return
+        
+        # Get files sorted by created_at (oldest first)
+        files_to_delete = sorted(files, key=lambda x: x.get("created_at", ""))[:len(files) - limit]
+        
+        for file in files_to_delete:
+            try:
+                supabase.storage.from_(bucket_name).remove([f"{user_id}/{file['name']}"])
+                logger.info(f"Deleted old archived image: {file['name']}")
+            except Exception as e:
+                logger.warning(f"Failed to delete old archive: {e}")
+    except Exception as e:
+        logger.warning(f"Cleanup failed: {e}")
+
 
 app = FastAPI(
     title="VibeIMG AI Image API",
@@ -587,6 +649,7 @@ async def generate_image(
 
     session_id = body.session_id
     message_id = None
+    archived_url = None
 
     if session_id and user_id != DEV_USER_ID:
         try:
@@ -614,6 +677,22 @@ async def generate_image(
                 .execute()
             )
             message_id = msg_asst.data[0]["id"] if msg_asst.data else None
+            
+            # Archive image to Supabase Storage (async via executor)
+            if message_id:
+                loop = asyncio.get_event_loop()
+                archived_url = await loop.run_in_executor(
+                    None,
+                    lambda: archive_image_to_storage(supabase, user_id, image_url, message_id)
+                )
+                # If archived, use storage URL instead
+                if archived_url:
+                    supabase.table("chat_messages").update({"image_url": archived_url}).eq("id", message_id).execute()
+                    image_url = archived_url
+                
+                # Cleanup old archives
+                await loop.run_in_executor(None, lambda: cleanup_old_archives(supabase, user_id))
+            
             # Record generation
             supabase.table("image_generations").insert({
                 "user_id": user_id,
@@ -624,8 +703,8 @@ async def generate_image(
                 "model": settings.flux_model,
                 "credits_used": cost,
             }).execute()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Failed to archive image: {e}")
 
     credits_remaining = get_credits(supabase, user_id)
     return GenerateResponse(
