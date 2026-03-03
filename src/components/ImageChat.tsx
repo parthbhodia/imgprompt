@@ -112,6 +112,34 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
     return () => window.removeEventListener("keydown", handleEsc);
   }, [fullscreen]);
 
+  // Load editData from localStorage (for Generate with AI workflow)
+  useEffect(() => {
+    const editDataRaw = localStorage.getItem("editData");
+    if (!editDataRaw) return;
+    
+    try {
+      const editData = JSON.parse(editDataRaw);
+      if (editData.prompt) {
+        setPrompt(editData.prompt);
+      }
+      if (editData.imageUrl) {
+        // Load the reference image as attached image
+        fetch(editData.imageUrl)
+          .then(res => res.blob())
+          .then(blob => {
+            const file = new File([blob], 'reference-image.webp', { type: 'image/webp' });
+            const preview = URL.createObjectURL(file);
+            setAttachedImage({ file, preview });
+          })
+          .catch(err => console.error('Failed to load reference image:', err));
+      }
+      // Clear the editData after loading
+      localStorage.removeItem("editData");
+    } catch (e) {
+      console.error('Failed to parse editData:', e);
+    }
+  }, []);
+
   // Animate thinking steps dynamically - progress through pending → active → complete
   useEffect(() => {
     if (thinkingSteps.length === 0 || !loading) return;

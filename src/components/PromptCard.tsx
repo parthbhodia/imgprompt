@@ -16,7 +16,7 @@ interface PromptCardProps {
   title: string;
   platforms: string[];
   onOpen: () => void;
-  onGenerateWithAI?: (prompt: string) => void;
+  onGenerateWithAI?: (prompt: string, imageUrl: string) => void;
   likeCount?: number;
   isLiked?: boolean;
   isFavorited?: boolean;
@@ -177,7 +177,7 @@ export const PromptCard = ({
           className="mt-auto w-full gap-2 bg-gradient-to-r from-primary to-accent text-white hover:opacity-90 transition-opacity"
           onClick={(e) => {
             e.stopPropagation();
-            onGenerateWithAI?.(currentSlide.prompt);
+            onGenerateWithAI?.(currentSlide.prompt, currentSlide.image);
           }}
         >
           <Wand2 className="w-3.5 h-3.5" />

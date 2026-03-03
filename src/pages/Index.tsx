@@ -938,7 +938,17 @@ const Index = () => {
                   title={prompt.title}
                   platforms={prompt.platforms}
                   onOpen={() => openPromptModal(prompt.id)}
-                  onGenerateWithAI={(promptText) => setAiPrompt(promptText)}
+                  onGenerateWithAI={(promptText, imageUrl) => {
+                    // Store both prompt and image for img2img workflow
+                    localStorage.setItem("editData", JSON.stringify({
+                      prompt: promptText,
+                      imageUrl: imageUrl,
+                      useImage: true,
+                      isImg2Img: true,
+                    }));
+                    // Navigate to chat
+                    window.location.href = "/";
+                  }}
                   likeCount={likeCounts[prompt.id] ?? 0}
                   isLiked={userLikes.has(prompt.id)}
                   isFavorited={userFavorites.has(prompt.id)}
