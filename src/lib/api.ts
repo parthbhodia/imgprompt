@@ -11,6 +11,7 @@ export type GenerateRequest = {
   session_id?: string | null;
   /** Optional base64 data URL (e.g. data:image/jpeg;base64,...) for reference / img2img */
   image_base64?: string | null;
+  model?: "replicate-flux" | "imagen-3";
 };
 
 export type GenerateResponse = {
@@ -432,6 +433,25 @@ export async function searchStyles(
     method: "POST",
     token,
     body: JSON.stringify({ query, category }),
+  });
+}
+
+// ============================================================================
+// MODELS API
+// ============================================================================
+
+export type ModelInfo = {
+  id: string;
+  name: string;
+  provider: string;
+  description: string;
+  available: boolean;
+};
+
+export async function getModels(token: string | null): Promise<{ models: ModelInfo[] }> {
+  return fetchApi<{ models: ModelInfo[] }>("/models", {
+    method: "GET",
+    token,
   });
 }
 

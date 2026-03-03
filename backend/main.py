@@ -39,6 +39,7 @@ from style_library import (
     build_style_parameters,
 )
 from thinking import generate_thinking_steps, update_thinking_step
+from imagen_service import generate_imagen, generate_imagen_edit, is_imagen_available
 
 # Image archival helpers
 def archive_image_to_storage(supabase, user_id: str, image_url: str, message_id: str) -> Optional[str]:
@@ -129,7 +130,43 @@ def unhandled_exception_handler(request: Request, exc: Exception):
 class GenerateRequest(BaseModel):
     prompt: str = Field(..., min_length=1, max_length=2000)
     session_id: str | None = None
-    image_base64: str | None = None  # Optional data URL / base64 for reference; reserved for img2img
+    image_base64: str | None = None
+    model: str = Field(default="replicate-flux", pattern="^(replicate-flux|imagen-3)$")
+
+
+class ModelInfo(BaseModel):
+    id: str
+    name: str
+    provider: str
+    description: str
+    available: bool
+
+
+@app.get("/models", response_model=list[ModelInfo])
+def list_models():
+    """List available image generation models."""
+    models = [
+        ModelInfo(
+            id="replicate-flux",
+            name="Flux 1.1 Ultra",
+            provider="Replicate",
+            description="Best quality, supports img2img transformations",
+            available=True,
+        ),
+    ]
+    
+    if is_imagen_available():
+        models.append(
+            ModelInfo(
+                id="imagen-3",
+                name="Imagen 3",
+                provider="Google",
+                description="Fast generation, great for portraits",
+                available=True,
+            )
+        )
+    
+    return models
 
 
 class GenerateResponse(BaseModel):
@@ -575,53 +612,88 @@ async def generate_image(
     # Pre-sanitize via Groq to avoid Replicate's over-aggressive NSFW filter
     safe_prompt = await asyncio.get_event_loop().run_in_executor(None, lambda: sanitize_for_replicate(prompt))
 
-    async def _run_replicate(p: str) -> list[str]:
-        """Run Replicate in a thread pool with a 180s timeout."""
-        if body.image_base64:
+    # Determine which model to use
+    use_imagen = body.model == "imagen-3" and is_imagen_available()
+    logger.info(f"Using model: {'Imagen 3' if use_imagen else 'Replicate Flux'}")
+    
+    if use_imagen:
+        # Use Google Imagen
+        async def _run_imagen(p: str) -> list[str]:
+            """Run Imagen in a thread pool with a 60s timeout."""
+            if body.image_base64:
+                # Imagen supports image editing/transformation
+                return await asyncio.wait_for(
+                    asyncio.get_event_loop().run_in_executor(
+                        None, 
+                        lambda: [generate_imagen_edit(p, body.image_base64)]
+                    ),
+                    timeout=60,
+                )
             return await asyncio.wait_for(
-                asyncio.get_event_loop().run_in_executor(None, lambda: run_flux_img2img(p, body.image_base64)),
+                asyncio.get_event_loop().run_in_executor(
+                    None, 
+                    lambda: [generate_imagen(p)]
+                ),
+                timeout=60,
+            )
+        
+        try:
+            urls = await _run_imagen(safe_prompt)
+        except asyncio.TimeoutError:
+            logger.error("Imagen generation timed out after 60s")
+            raise HTTPException(status_code=504, detail="Image generation timed out. Please try again.")
+        except Exception as e:
+            logger.error(f"Imagen generation failed: {e}")
+            raise HTTPException(status_code=502, detail=f"Image generation failed: {str(e)}")
+    else:
+        # Use Replicate Flux
+        async def _run_replicate(p: str) -> list[str]:
+            """Run Replicate in a thread pool with a 180s timeout."""
+            if body.image_base64:
+                return await asyncio.wait_for(
+                    asyncio.get_event_loop().run_in_executor(None, lambda: run_flux_img2img(p, body.image_base64)),
+                    timeout=180,
+                )
+            return await asyncio.wait_for(
+                asyncio.get_event_loop().run_in_executor(None, lambda: run_flux(p)),
                 timeout=180,
             )
-        return await asyncio.wait_for(
-            asyncio.get_event_loop().run_in_executor(None, lambda: run_flux(p)),
-            timeout=180,
-        )
 
-    try:
-        urls = await _run_replicate(safe_prompt)
-    except asyncio.TimeoutError:
-        logger.error("Image generation timed out after 180s")
-        raise HTTPException(status_code=504, detail="Image generation timed out. Please try again.")
-    except ReplicateModelError as e:
-        msg = str(e)
-        if "429" in msg or "throttled" in msg.lower():
-            logger.warning("Rate limit hit from Replicate: %s", msg)
-            raise HTTPException(
-                status_code=429,
-                detail="We're experiencing high demand. Please wait a moment and try again.",
-            )
-        elif "nsfw" in msg.lower():
-            # Groq sanitization didn't fully work — try one more time with a harder rewrite
-            logger.warning("NSFW false positive after sanitization, retrying with stricter rewrite")
-            harder_prompt = await asyncio.get_event_loop().run_in_executor(
-                None,
-                lambda: sanitize_for_replicate(
-                    "STRICT REWRITE — remove any words that could trigger safety filters: " + safe_prompt
-                ),
-            )
-            try:
-                urls = await _run_replicate(harder_prompt)
-            except ReplicateModelError:
+        try:
+            urls = await _run_replicate(safe_prompt)
+        except asyncio.TimeoutError:
+            logger.error("Image generation timed out after 180s")
+            raise HTTPException(status_code=504, detail="Image generation timed out. Please try again.")
+        except ReplicateModelError as e:
+            msg = str(e)
+            if "429" in msg or "throttled" in msg.lower():
+                logger.warning("Rate limit hit from Replicate: %s", msg)
                 raise HTTPException(
-                    status_code=400,
-                    detail=(
-                        "Replicate's safety filter blocked this prompt even after automatic rephrasing. "
-                        "Try changing 'photograph' to 'digital painting' or 'illustration', "
-                        "and rephrase any descriptions involving people."
+                    status_code=429,
+                    detail="We're experiencing high demand. Please wait a moment and try again.",
+                )
+            elif "nsfw" in msg.lower():
+                # Groq sanitization didn't fully work — try one more time with a harder rewrite
+                logger.warning("NSFW false positive after sanitization, retrying with stricter rewrite")
+                harder_prompt = await asyncio.get_event_loop().run_in_executor(
+                    None,
+                    lambda: sanitize_for_replicate(
+                        "STRICT REWRITE — remove any words that could trigger safety filters: " + safe_prompt
                     ),
                 )
-        else:
-            raise HTTPException(status_code=400, detail=msg)
+                try:
+                    urls = await _run_replicate(harder_prompt)
+                except ReplicateModelError:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=(
+                            "Replicate's safety filter blocked this prompt even after automatic rephrasing. "
+                            "Try changing 'photograph' to 'digital painting' or 'illustration', "
+                            "and rephrase any descriptions involving people."
+                        ),
+                    )
+            else:
+                raise HTTPException(status_code=400, detail=msg)
     except Exception as e:
         logger.exception("Image generation failed: %s", e)
         msg = str(e) if str(e) else "Image generation failed"

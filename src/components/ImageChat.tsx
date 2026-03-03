@@ -42,6 +42,7 @@ import { PromptGuidePanel } from "./PromptGuidePanel";
 import { PresetTags } from "./PresetTags";
 import { StyleLibrary } from "./StyleLibrary";
 import { CreditDisplay } from "./CreditDisplay";
+import { ModelSelector } from "./ModelSelector";
 import { validateImageRequirement, getImageRequirementMessage, shouldBlockGeneration } from "@/utils/promptValidation";
 
 const PLACEHOLDER = "Describe the image you want to create...";
@@ -80,6 +81,7 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
   const [promptValidation, setPromptValidation] = useState<{ show: boolean; message: string; blocksGeneration: boolean }>({ show: false, message: '', blocksGeneration: false });
   const [thinkingSteps, setThinkingSteps] = useState<ThinkingStep[]>([]);
   const [showThinking, setShowThinking] = useState(false);
+  const [selectedModel, setSelectedModel] = useState<string>("replicate-flux");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -436,6 +438,7 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
         prompt: promptToUse,
         session_id: sid ?? undefined,
         image_base64: imageBase64 ?? undefined,
+        model: selectedModel as "replicate-flux" | "imagen-3",
       });
       setCredits(res.credits_remaining);
       setMessages((prev) => [
@@ -1016,6 +1019,12 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
                     {refining ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
                     <span className="hidden sm:inline">Refine</span>
                   </Button>
+                  <ModelSelector
+                    token={token}
+                    selectedModel={selectedModel}
+                    onSelectModel={setSelectedModel}
+                    disabled={loading}
+                  />
                   <PromptFrameworkBuilder
                     onPromptGenerated={(builtPrompt) => {
                       setPrompt(builtPrompt);
