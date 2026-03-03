@@ -11,7 +11,7 @@ export type GenerateRequest = {
   session_id?: string | null;
   /** Optional base64 data URL (e.g. data:image/jpeg;base64,...) for reference / img2img */
   image_base64?: string | null;
-  model?: "replicate-flux" | "gemini-2.5-flash-image" | "gemini-3.1-flash-image-preview" | "gemini-3-pro-image-preview";
+  model?: string;
 };
 
 export type GenerateResponse = {

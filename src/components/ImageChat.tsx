@@ -282,7 +282,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
   const [promptValidation, setPromptValidation] = useState<{ show: boolean; message: string; blocksGeneration: boolean }>({ show: false, message: '', blocksGeneration: false });
   const [thinkingSteps, setThinkingSteps] = useState<ThinkingStep[]>([]);
   const [showThinking, setShowThinking] = useState(false);
-  const [selectedModel, setSelectedModel] = useState<string>("gemini-3.1-flash-image-preview");
+  const [selectedModel, setSelectedModel] = useState<string>("imagen-4-fast-generate-001");
   const [showRecapToast, setShowRecapToast] = useState(false);
   const [recapData, setRecapData] = useState({ cost: 1, remaining: 0, type: "standard" as const });
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -292,7 +292,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
   const [creditHistory, setCreditHistory] = useState<any[]>([]);
   const [generationSettings, setGenerationSettings] = useState({
     imageSize: "1024x1024" as "512x512" | "768x768" | "1024x1024" | "1024x576" | "576x1024",
-    model: "gemini-3.1-flash-image-preview" as "replicate-flux" | "gemini-2.5-flash-image" | "gemini-3.1-flash-image-preview",
+    model: "imagen-4-fast-generate-001" as "replicate-flux" | "gemini-2.5-flash-image" | "gemini-3.1-flash-image-preview",
     quality: "standard" as "standard" | "hd",
   });
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -813,7 +813,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
         prompt: promptToUse,
         session_id: sid ?? undefined,
         image_base64: imageBase64 ?? undefined,
-        model: selectedModel as "replicate-flux" | "gemini-2.5-flash-image" | "gemini-3.1-flash-image-preview" | "gemini-3-pro-image-preview",
+        model: selectedModel,
       });
       setCredits(res.credits_remaining);
       
