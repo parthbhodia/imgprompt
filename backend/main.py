@@ -809,6 +809,24 @@ async def generate_image(
     # Pre-sanitize via Groq to avoid Replicate's over-aggressive NSFW filter
     safe_prompt = await asyncio.get_event_loop().run_in_executor(None, lambda: sanitize_for_replicate(prompt))
 
+    # Log incoming image dimensions for debugging
+    if body.image_base64:
+        try:
+            import base64
+            from io import BytesIO
+            from PIL import Image
+            
+            # Decode and check original dimensions
+            img_data = body.image_base64
+            if "base64," in img_data:
+                img_data = img_data.split("base64,")[1]
+            
+            raw_bytes = base64.b64decode(img_data)
+            img = Image.open(BytesIO(raw_bytes))
+            print(f"[GENERATE_ENDPOINT] Original image: {img.size[0]}x{img.size[1]}, mode={img.mode}, bytes={len(raw_bytes)}")
+        except Exception as e:
+            print(f"[GENERATE_ENDPOINT] Failed to parse image: {e}")
+
     # Determine which model to use
     use_imagen = body.model.startswith("gemini-") and is_imagen_available()
     imagen_model = body.model if use_imagen else None
