@@ -42,7 +42,8 @@ export function ModelSelector({ token, selectedModel, onSelectModel, disabled }:
     
     getModels(token)
       .then((data) => {
-        setModels(data.models.filter((m) => m.available));
+        // Show ALL models, not just available ones
+        setModels(data.models);
         setLoading(false);
       })
       .catch(() => {
@@ -101,30 +102,39 @@ export function ModelSelector({ token, selectedModel, onSelectModel, disabled }:
           const icon = modelIcons[model.id] || <Cpu className="w-4 h-4" />;
           const badge = modelBadges[model.id];
           const isSelected = selectedModel === model.id;
+          const isAvailable = model.available;
           
           return (
             <DropdownMenuItem
               key={model.id}
-              onClick={() => onSelectModel(model.id)}
+              onClick={() => isAvailable && onSelectModel(model.id)}
+              disabled={!isAvailable}
               className={cn(
                 "flex items-start gap-3 py-2.5",
-                isSelected && "bg-accent"
+                isSelected && "bg-accent",
+                !isAvailable && "opacity-50 cursor-not-allowed"
               )}
             >
-              <div className="mt-0.5 shrink-0">{icon}</div>
+              <div className={cn("mt-0.5 shrink-0", !isAvailable && "opacity-50")}>{icon}</div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-medium text-sm">{model.name}</span>
-                  {badge && (
+                  <span className={cn("font-medium text-sm", !isAvailable && "text-muted-foreground")}>
+                    {model.name}
+                  </span>
+                  {!isAvailable ? (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground whitespace-nowrap">
+                      Will be live soon
+                    </span>
+                  ) : badge && (
                     <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary whitespace-nowrap">
                       {badge}
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                <p className={cn("text-xs mt-0.5 line-clamp-2", !isAvailable ? "text-muted-foreground/50" : "text-muted-foreground")}>
                   {model.description}
                 </p>
-                <span className="text-[10px] text-muted-foreground/60 mt-1">
+                <span className={cn("text-[10px] mt-1", !isAvailable ? "text-muted-foreground/40" : "text-muted-foreground/60")}>
                   via {model.provider}
                 </span>
               </div>
