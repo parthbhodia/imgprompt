@@ -30,12 +30,14 @@ import {
   refinePrompt,
   getChatInsights,
   getConversationContext,
+  getThinkingSteps,
+  getCreditHistory,
   type MessageResponse,
   type SuggestResponse,
   type ChatInsightsResponse,
   type ConversationContextResponse,
-  getThinkingSteps,
   type ThinkingStep,
+  type CreditHistoryResponse,
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { PromptFrameworkBuilder } from "./PromptFrameworkBuilder";
@@ -253,6 +255,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
   const [recapData, setRecapData] = useState({ cost: 1, remaining: 0, type: "standard" as const });
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [chatSessions, setChatSessions] = useState<Array<{ id: string; title: string; timestamp: Date; messageCount: number }>>([]);
+  const [creditHistory, setCreditHistory] = useState<any[]>([]);
   const [generationSettings, setGenerationSettings] = useState({
     imageSize: "1024x1024" as "512x512" | "768x768" | "1024x1024" | "1024x576" | "576x1024",
     model: "gemini-3.1-flash-image-preview" as "replicate-flux" | "gemini-2.5-flash-image" | "gemini-3.1-flash-image-preview",
@@ -320,6 +323,35 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
     window.addEventListener("keydown", handleEsc);
     return () => window.removeEventListener("keydown", handleEsc);
   }, [fullscreen]);
+
+  // Load sessions and credit history from backend
+  useEffect(() => {
+    if (!user && !session) return;
+    
+    const loadSessionsAndHistory = async () => {
+      try {
+        const token = session?.access_token ?? null;
+        
+        // Load sessions
+        const sessions = await listSessions(token);
+        const formattedSessions = sessions.map(s => ({
+          id: s.id,
+          title: s.title,
+          timestamp: new Date(s.created_at),
+          messageCount: 0, // Will be updated when messages are loaded
+        }));
+        setChatSessions(formattedSessions);
+        
+        // Load credit history
+        const history = await getCreditHistory(token, 20);
+        setCreditHistory(history.transactions || []);
+      } catch (err) {
+        console.error('Failed to load sessions or credit history:', err);
+      }
+    };
+    
+    loadSessionsAndHistory();
+  }, [user, session]);
 
   // Load initialImageUrl when provided (for Generate with AI workflow)
   useEffect(() => {
