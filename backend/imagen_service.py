@@ -3,7 +3,7 @@ import os
 import logging
 import base64
 from io import BytesIO
-from typing import Optional
+from typing import Optional, Tuple
 from PIL import Image
 from google import genai
 from google.genai import types
@@ -12,6 +12,31 @@ logger = logging.getLogger(__name__)
 
 # Initialize Gemini client
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+
+# Imagen models require dimensions divisible by 8 (patch size)
+PATCH_SIZE = 8
+
+
+def _ensure_divisible_by_patch_size(width: int, height: int) -> Tuple[int, int]:
+    """Ensure dimensions are divisible by patch size for model compatibility."""
+    new_width = (width // PATCH_SIZE) * PATCH_SIZE
+    new_height = (height // PATCH_SIZE) * PATCH_SIZE
+    # Ensure minimum size
+    new_width = max(PATCH_SIZE, new_width)
+    new_height = max(PATCH_SIZE, new_height)
+    return new_width, new_height
+
+
+def _resize_image_if_needed(pil_image: Image.Image) -> Image.Image:
+    """Resize image to ensure dimensions divisible by patch size."""
+    orig_width, orig_height = pil_image.size
+    new_width, new_height = _ensure_divisible_by_patch_size(orig_width, orig_height)
+    
+    if (orig_width, orig_height) != (new_width, new_height):
+        pil_image = pil_image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+        logger.info(f"Resized image from {orig_width}x{orig_height} to {new_width}x{new_height}")
+    
+    return pil_image
 
 
 def _get_client():
@@ -111,8 +136,9 @@ def generate_imagen_edit(
         
         image_bytes = base64.b64decode(reference_image_base64)
         
-        # Convert to PIL Image
+        # Convert to PIL Image and resize to ensure dimensions divisible by 8
         pil_image = Image.open(BytesIO(image_bytes))
+        pil_image = _resize_image_if_needed(pil_image)
         
         # Use generate_content with image input
         response = client.models.generate_content(
