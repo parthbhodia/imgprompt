@@ -14,6 +14,19 @@ _SYSTEM_PROMPT = (
     "Respond with ONLY the refined prompt — no explanation, no quotes, no preamble."
 )
 
+_IMG2IMG_SYSTEM_PROMPT = (
+    "You are an expert at writing image-to-image transformation prompts. "
+    "A reference photo is already provided by the user. Your job is to describe "
+    "HOW to transform it, NOT what to generate from scratch.\n\n"
+    "Rules:\n"
+    "- Start with 'Transform this image:' or 'Convert this photo:'\n"
+    "- Always include: 'keeping the original person's face, pose, and likeness'\n"
+    "- Style words like 'cartoon', 'sketch', 'anime' are SAFE - do not replace them\n"
+    "- Do NOT expand into full scene generation - stay transformation-focused\n"
+    "- Keep it concise: 1-2 sentences max\n"
+    "- Respond with ONLY the rewritten prompt — no explanation, no quotes."
+)
+
 _SANITIZE_SYSTEM_PROMPT = (
     "You are an AI image prompt safety editor. "
     "Rewrite the given prompt so it passes strict image model safety filters, "
@@ -41,19 +54,38 @@ _SANITIZE_SYSTEM_PROMPT = (
     "- Respond with ONLY the rewritten prompt — no explanation, no quotes, no preamble."
 )
 
+_IMG2IMG_SANITIZE_PROMPT = (
+    "You are an AI image prompt safety editor for IMAGE-TO-IMAGE transformations. "
+    "A reference photo is already provided. Rewrite the prompt to pass safety filters "
+    "while PRESERVING the transformation intent.\n\n"
+    "Rules:\n"
+    "- Style words like 'cartoon', 'sketch', 'anime', 'painting' are SAFE - keep them\n"
+    "- Do NOT replace 'photo' with 'digital painting' - user is transforming a real photo\n"
+    "- Always preserve: 'keeping the original person's face, pose, and likeness'\n"
+    "- Age progression rules apply only if explicitly describing two ages\n"
+    "- Keep transformation-focused language, not generation-focused\n"
+    "- Respond with ONLY the rewritten prompt — no explanation, no quotes."
+)
 
-def refine_prompt(user_text: str) -> str:
+
+def refine_prompt(user_text: str, has_reference_image: bool = False) -> str:
     """
     Rewrite a rough user idea into a rich Flux image generation prompt.
     Uses xAI first, Groq fallback. Raises RuntimeError if no LLM configured.
+    
+    Args:
+        user_text: The raw user input
+        has_reference_image: If True, use img2img-focused prompt that preserves transformation intent
     """
     if not settings.xai_api_key and not settings.groq_api_key:
         raise RuntimeError("Prompt refinement is not available (XAI_API_KEY or GROQ_API_KEY not set).")
 
+    system_prompt = _IMG2IMG_SYSTEM_PROMPT if has_reference_image else _SYSTEM_PROMPT
+
     try:
         refined = chat_completion(
             [
-                {"role": "system", "content": _SYSTEM_PROMPT},
+                {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_text[:500]},
             ],
             max_tokens=250,
@@ -66,18 +98,24 @@ def refine_prompt(user_text: str) -> str:
         raise RuntimeError(f"Refinement failed: {e}") from e
 
 
-def sanitize_for_replicate(prompt: str) -> str:
+def sanitize_for_replicate(prompt: str, has_reference_image: bool = False) -> str:
     """
     Rewrite a prompt so it is unlikely to trigger Replicate's NSFW safety filter.
     Uses xAI first, Groq fallback. Falls back to original if both fail or slow.
+    
+    Args:
+        prompt: The prompt to sanitize
+        has_reference_image: If True, use img2img rules that preserve transformation intent
     """
     if not settings.xai_api_key and not settings.groq_api_key:
         return prompt
 
+    system_prompt = _IMG2IMG_SANITIZE_PROMPT if has_reference_image else _SANITIZE_SYSTEM_PROMPT
+
     try:
         rewritten = chat_completion(
             [
-                {"role": "system", "content": _SANITIZE_SYSTEM_PROMPT},
+                {"role": "system", "content": system_prompt},
                 {"role": "user", "content": prompt[:1500]},
             ],
             max_tokens=400,

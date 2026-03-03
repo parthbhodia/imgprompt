@@ -790,7 +790,11 @@ async def generate_image(
         raise HTTPException(status_code=400, detail=str(e))
 
     # Pre-sanitize via Groq to avoid Replicate's over-aggressive NSFW filter
-    safe_prompt = await asyncio.get_event_loop().run_in_executor(None, lambda: sanitize_for_replicate(prompt))
+    # Pass has_reference_image flag so img2img prompts don't get mangled
+    has_image = bool(body.image_base64)
+    safe_prompt = await asyncio.get_event_loop().run_in_executor(
+        None, lambda: sanitize_for_replicate(prompt, has_reference_image=has_image)
+    )
 
     # Log incoming image dimensions for debugging
     if body.image_base64:
@@ -883,7 +887,8 @@ async def generate_image(
             harder_prompt = await asyncio.get_event_loop().run_in_executor(
                 None,
                 lambda: sanitize_for_replicate(
-                    "STRICT REWRITE — remove any words that could trigger safety filters: " + safe_prompt
+                    "STRICT REWRITE — remove any words that could trigger safety filters: " + safe_prompt,
+                    has_reference_image=has_image
                 ),
             )
             try:
