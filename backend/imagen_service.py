@@ -54,15 +54,15 @@ def generate_imagen(
     prompt: str,
     *,
     aspect_ratio: str = "1:1",
-    model: str = "gemini-2.5-flash-image",
+    model: str = "imagen-4-fast-generate-001",
 ) -> str:
     """
-    Generate an image using Gemini Nano Banana API.
+    Generate an image using Google Imagen API.
     
     Args:
         prompt: The text prompt for image generation
         aspect_ratio: Image aspect ratio (1:1, 3:4, 4:3, 9:16, 16:9)
-        model: Model to use (gemini-2.5-flash-image, gemini-3.1-flash-image-preview, gemini-3-pro-image-preview)
+        model: Model to use (default: imagen-4-fast-generate-001 for best rate limits)
         
     Returns:
         Data URI of the generated image
@@ -116,15 +116,15 @@ def generate_imagen_edit(
     prompt: str,
     reference_image_base64: str,
     *,
-    model: str = "gemini-2.5-flash-image",
+    model: str = "imagen-4-fast-generate-001",
 ) -> str:
     """
-    Edit/transform an existing image using Gemini Nano Banana.
+    Edit/transform an existing image using Google Imagen API.
     
     Args:
         prompt: The transformation prompt
         reference_image_base64: Base64 encoded reference image
-        model: Model to use
+        model: Model to use (default: imagen-4-fast-generate-001 for best rate limits)
         
     Returns:
         Data URI of the generated image
@@ -177,17 +177,47 @@ def is_imagen_available() -> bool:
 
 
 def get_imagen_models() -> list[dict]:
-    """Get list of available Imagen models."""
+    """Get list of available Imagen models - prioritized by rate limits."""
     if not is_imagen_available():
         return []
     
+    # Top 4 models prioritized by rate limits (higher = better)
+    # Rate limits: Imagen 4 models = 25/day, Nano Banana = varies
     return [
         {
-            "id": "imagen-3.0-generate-002",
-            "name": "Imagen 3",
+            "id": "imagen-4-fast-generate-001",
+            "name": "Imagen 4 Fast",
             "provider": "google",
-            "description": "High quality, fast generation",
+            "description": "Fastest generation (25 req/day)",
             "supports_img2img": True,
             "max_resolution": "1024x1024",
-        }
+            "priority": 1,
+        },
+        {
+            "id": "imagen-4-generate-001", 
+            "name": "Imagen 4",
+            "provider": "google",
+            "description": "Balanced quality & speed (25 req/day)",
+            "supports_img2img": True,
+            "max_resolution": "1024x1024",
+            "priority": 2,
+        },
+        {
+            "id": "imagen-4-ultra-generate-001",
+            "name": "Imagen 4 Ultra", 
+            "provider": "google",
+            "description": "Highest quality (25 req/day)",
+            "supports_img2img": True,
+            "max_resolution": "1024x1024",
+            "priority": 3,
+        },
+        {
+            "id": "gemini-2.5-flash-image",
+            "name": "Nano Banana (Flash)",
+            "provider": "google",
+            "description": "Experimental image model",
+            "supports_img2img": True,
+            "max_resolution": "1024x1024",
+            "priority": 4,
+        },
     ]

@@ -19,15 +19,19 @@ interface ModelSelectorProps {
 
 const modelIcons: Record<string, React.ReactNode> = {
   "replicate-flux": <Cpu className="w-4 h-4 text-purple-500" />,
+  "imagen-4-fast-generate-001": <Zap className="w-4 h-4 text-green-500" />,
+  "imagen-4-generate-001": <Sparkles className="w-4 h-4 text-blue-500" />,
+  "imagen-4-ultra-generate-001": <Crown className="w-4 h-4 text-amber-500" />,
   "gemini-2.5-flash-image": <Zap className="w-4 h-4 text-yellow-500" />,
   "gemini-3.1-flash-image-preview": <Sparkles className="w-4 h-4 text-blue-500" />,
   "gemini-3-pro-image-preview": <Crown className="w-4 h-4 text-amber-500" />,
 };
 
 const modelBadges: Record<string, string> = {
-  "gemini-2.5-flash-image": "Fastest",
-  "gemini-3.1-flash-image-preview": "Best Balance",
-  "gemini-3-pro-image-preview": "Pro Quality",
+  "imagen-4-fast-generate-001": "Fastest",
+  "imagen-4-generate-001": "Balanced",
+  "imagen-4-ultra-generate-001": "Ultra Quality",
+  "gemini-2.5-flash-image": "Flash",
 };
 
 export function ModelSelector({ token, selectedModel, onSelectModel, disabled }: ModelSelectorProps) {
