@@ -44,6 +44,10 @@ import { PresetTags } from "./PresetTags";
 import { StyleLibrary } from "./StyleLibrary";
 import { CreditDisplay } from "./CreditDisplay";
 import { ModelSelector } from "./ModelSelector";
+import { ChatSidebar } from "./ChatSidebar";
+import { CreditBadge } from "./CreditBadge";
+import { GenerationCostLabel } from "./GenerationCostLabel";
+import { GenerationRecapToast } from "./GenerationRecapToast";
 import { validateImageRequirement, getImageRequirementMessage, shouldBlockGeneration } from "@/utils/promptValidation";
 
 const PLACEHOLDER = "Describe the image you want to create...";
