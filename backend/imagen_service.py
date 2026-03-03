@@ -1,8 +1,10 @@
-"""Google Imagen 3 image generation service."""
+"""Google Imagen 3 / Nano Banana image generation service."""
 import os
 import logging
 import base64
+from io import BytesIO
 from typing import Optional
+from PIL import Image
 from google import genai
 from google.genai import types
 
@@ -23,13 +25,15 @@ def generate_imagen(
     prompt: str,
     *,
     aspect_ratio: str = "1:1",
+    model: str = "gemini-2.5-flash-image",
 ) -> str:
     """
-    Generate an image using Google Imagen 3 via Gemini API.
+    Generate an image using Gemini Nano Banana API.
     
     Args:
         prompt: The text prompt for image generation
         aspect_ratio: Image aspect ratio (1:1, 3:4, 4:3, 9:16, 16:9)
+        model: Model to use (gemini-2.5-flash-image, gemini-3.1-flash-image-preview, gemini-3-pro-image-preview)
         
     Returns:
         Data URI of the generated image
@@ -37,9 +41,9 @@ def generate_imagen(
     client = _get_client()
     
     try:
-        logger.info(f"Generating Imagen image with prompt: {prompt[:100]}...")
+        logger.info(f"Generating image with {model}, prompt: {prompt[:100]}...")
         
-        # Map aspect ratio to Imagen format
+        # Map aspect ratio
         ratio_map = {
             "1:1": "1:1",
             "3:4": "3:4", 
@@ -49,42 +53,47 @@ def generate_imagen(
         }
         imagen_ratio = ratio_map.get(aspect_ratio, "1:1")
         
-        # Generate image using new Google GenAI SDK
-        response = client.models.generate_image(
-            model='imagen-3.0-generate-002',
-            prompt=prompt,
-            config=types.GenerateImageConfig(
-                aspect_ratio=imagen_ratio,
-                number_of_images=1,
+        # Use generate_content API (not generate_image)
+        response = client.models.generate_content(
+            model=model,
+            contents=[prompt],
+            config=types.GenerateContentConfig(
+                response_modalities=["Image"],
+                image_config=types.ImageConfig(
+                    aspect_ratio=imagen_ratio,
+                ),
             )
         )
         
-        # Imagen returns bytes, convert to base64 for consistency
-        if response.generated_images:
-            image_bytes = response.generated_images[0].image.image_bytes
-            base64_str = base64.b64encode(image_bytes).decode('utf-8')
-            return f"data:image/png;base64,{base64_str}"
+        # Extract image from response parts
+        for part in response.parts:
+            if part.inline_data is not None:
+                # Get image bytes and convert to base64
+                image_bytes = part.inline_data.data
+                mime_type = part.inline_data.mime_type or "image/png"
+                base64_str = base64.b64encode(image_bytes).decode('utf-8')
+                return f"data:{mime_type};base64,{base64_str}"
         
-        raise RuntimeError("No image generated")
+        raise RuntimeError("No image generated in response")
         
     except Exception as e:
-        logger.error(f"Imagen generation failed: {e}")
-        raise RuntimeError(f"Imagen generation failed: {str(e)}")
+        logger.error(f"Image generation failed: {e}")
+        raise RuntimeError(f"Image generation failed: {str(e)}")
 
 
 def generate_imagen_edit(
     prompt: str,
     reference_image_base64: str,
     *,
-    edit_mode: str = "inpainting",
+    model: str = "gemini-2.5-flash-image",
 ) -> str:
     """
-    Edit/transform an existing image using Imagen 3.
+    Edit/transform an existing image using Gemini Nano Banana.
     
     Args:
         prompt: The transformation prompt
         reference_image_base64: Base64 encoded reference image
-        edit_mode: Type of edit (inpainting for transformations)
+        model: Model to use
         
     Returns:
         Data URI of the generated image
@@ -92,7 +101,7 @@ def generate_imagen_edit(
     client = _get_client()
     
     try:
-        logger.info(f"Generating Imagen edit with prompt: {prompt[:100]}...")
+        logger.info(f"Generating image edit with {model}, prompt: {prompt[:100]}...")
         
         # Decode base64 image
         if "base64," in reference_image_base64:
@@ -100,32 +109,31 @@ def generate_imagen_edit(
         
         image_bytes = base64.b64decode(reference_image_base64)
         
-        # Use Imagen with reference image
-        response = client.models.generate_image(
-            model='imagen-3.0-generate-002',
-            prompt=prompt,
-            reference_images=[
-                types.ReferenceImage(
-                    reference_id=1,
-                    reference_image=types.Image(image_bytes=image_bytes),
-                    reference_type="REFERENCE_TYPE_SUBJECT",
-                )
-            ],
-            config=types.GenerateImageConfig(
-                number_of_images=1,
+        # Convert to PIL Image
+        pil_image = Image.open(BytesIO(image_bytes))
+        
+        # Use generate_content with image input
+        response = client.models.generate_content(
+            model=model,
+            contents=[prompt, pil_image],
+            config=types.GenerateContentConfig(
+                response_modalities=["Image"],
             )
         )
         
-        if response.generated_images:
-            result_bytes = response.generated_images[0].image.image_bytes
-            base64_result = base64.b64encode(result_bytes).decode('utf-8')
-            return f"data:image/png;base64,{base64_result}"
+        # Extract image from response parts
+        for part in response.parts:
+            if part.inline_data is not None:
+                result_bytes = part.inline_data.data
+                mime_type = part.inline_data.mime_type or "image/png"
+                base64_result = base64.b64encode(result_bytes).decode('utf-8')
+                return f"data:{mime_type};base64,{base64_result}"
         
-        raise RuntimeError("No image generated")
+        raise RuntimeError("No image generated in response")
         
     except Exception as e:
-        logger.error(f"Imagen edit failed: {e}")
-        raise RuntimeError(f"Imagen edit failed: {str(e)}")
+        logger.error(f"Image edit failed: {e}")
+        raise RuntimeError(f"Image edit failed: {str(e)}")
 
 
 def is_imagen_available() -> bool:
