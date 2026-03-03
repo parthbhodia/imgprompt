@@ -35,12 +35,8 @@ export function ModelSelector({ token, selectedModel, onSelectModel, disabled }:
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-    
-    getModels(token)
+    // Models endpoint is public - fetch even without token
+    getModels(token)  // token can be null
       .then((data) => {
         console.log("Models API response:", data);
         if (data.models && data.models.length > 0) {
