@@ -828,7 +828,12 @@ async def generate_image(
     # Define helper functions outside try block for proper scope
     async def _run_imagen(p: str) -> list[str]:
         """Run Imagen in a thread pool with a 60s timeout."""
+        print(f"[_RUN_IMAGEN] Called with prompt: {p[:50]}...")
+        print(f"[_RUN_IMAGEN] body.image_base64 present: {bool(body.image_base64)}")
+        sys.stdout.flush()
         if body.image_base64:
+            print(f"[_RUN_IMAGEN] Calling generate_imagen_edit...")
+            sys.stdout.flush()
             return await asyncio.wait_for(
                 asyncio.get_event_loop().run_in_executor(
                     None, 
@@ -836,6 +841,8 @@ async def generate_image(
                 ),
                 timeout=60,
             )
+        print(f"[_RUN_IMAGEN] No image, calling generate_imagen...")
+        sys.stdout.flush()
         return await asyncio.wait_for(
             asyncio.get_event_loop().run_in_executor(
                 None, 
@@ -852,11 +859,21 @@ async def generate_image(
             timeout=180,
         )
     
+    logger.info(f"[GENERATE_ENDPOINT] Starting generation. Has image: {bool(body.image_base64)}, Model: {body.model}")
+    print(f"[GENERATE_ENDPOINT] ========== REQUEST RECEIVED ==========")
+    print(f"[GENERATE_ENDPOINT] Prompt: {body.prompt[:50]}...")
+    print(f"[GENERATE_ENDPOINT] Has image_base64: {bool(body.image_base64)}")
+    print(f"[GENERATE_ENDPOINT] Selected model: {body.model}")
+    print(f"[GENERATE_ENDPOINT] use_imagen: {use_imagen}")
+    sys.stdout.flush()
+    
     urls: list[str] = []
     fallback_to_flux = False
     
     try:
         if use_imagen:
+            print(f"[GENERATE_ENDPOINT] Using Imagen, calling _run_imagen...")
+            sys.stdout.flush()
             try:
                 urls = await _run_imagen(safe_prompt)
             except Exception as imagen_error:
