@@ -179,7 +179,7 @@ class GenerateRequest(BaseModel):
     image_base64: str | None = None
     model: str = Field(
         default="replicate-flux",
-        pattern="^(replicate-flux|gemini-2\.5-flash-image|gemini-3\.1-flash-image-preview|gemini-3-pro-image-preview)$"
+        pattern=r"^(replicate-flux|gemini-2\.5-flash-image|gemini-3\.1-flash-image-preview|gemini-3-pro-image-preview)$"
     )
 
 
