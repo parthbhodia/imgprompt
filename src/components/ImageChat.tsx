@@ -1665,10 +1665,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
               </div>
             </div>
             {/* Body — responsive height */}
-            <div 
-              className="flex flex-col h-[480px] sm:h-[580px] lg:h-[660px] cursor-pointer"
-              onClick={() => setFullscreen(true)}
-            >
+            <div className="flex flex-col h-[480px] sm:h-[580px] lg:h-[660px]">
               {renderChatContent()}
             </div>
           </div>
