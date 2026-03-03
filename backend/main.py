@@ -158,7 +158,11 @@ def list_models():
         ),
     ]
     
-    if is_imagen_available():
+    imagen_available = is_imagen_available()
+    logger.info(f"Imagen available check: {imagen_available}")
+    
+    if imagen_available:
+        logger.info("Adding Gemini Nano Banana models to available list")
         # Nano Banana 2 - best all-around
         models.append(
             ModelInfo(
@@ -189,7 +193,10 @@ def list_models():
                 available=True,
             )
         )
+    else:
+        logger.warning("GEMINI_API_KEY not set - Gemini models unavailable")
     
+    logger.info(f"Returning {len(models)} models: {[m.id for m in models]}")
     return models
 
 

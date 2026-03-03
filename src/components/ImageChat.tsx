@@ -145,9 +145,11 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
     }
 
     const validation = validateImageRequirement(prompt);
-    if (validation.requiresImage) {
-      const hasImage = !!attachedImage;
-      const blocksGeneration = shouldBlockGeneration(validation, hasImage);
+    const hasImage = !!attachedImage;
+    
+    // Only show validation warning if NO image is attached
+    if (validation.requiresImage && !hasImage) {
+      const blocksGeneration = validation.isStronglyRequired;
       const message = getImageRequirementMessage(validation);
       
       setPromptValidation({
@@ -156,6 +158,7 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
         blocksGeneration,
       });
     } else {
+      // Clear validation if image is attached or no image required
       setPromptValidation({ show: false, message: '', blocksGeneration: false });
     }
   }, [prompt, attachedImage]);
