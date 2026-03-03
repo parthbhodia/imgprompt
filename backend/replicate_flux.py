@@ -84,7 +84,7 @@ def _output_to_urls(output) -> list[str]:
     return [url] if url.startswith("http") else []
 
 
-def run_flux(prompt: str, *, num_outputs: int = 1) -> list[str]:
+def run_flux(prompt: str, *, num_outputs: int = 1, guidance_scale: float = 3.5, num_inference_steps: int = 28) -> list[str]:
     """
     Run Flux text-to-image model and return list of image URLs.
     Uses flux-schnell by default for speed; set FLUX_MODEL for flux-1.1-pro etc.
@@ -96,21 +96,34 @@ def run_flux(prompt: str, *, num_outputs: int = 1) -> list[str]:
         input={
             "prompt": prompt,
             "num_outputs": num_outputs,
+            "guidance_scale": guidance_scale,
+            "num_inference_steps": num_inference_steps,
         },
     )
     return _output_to_urls(output)
 
 
-def run_flux_img2img(prompt: str, image_base64: str, *, num_outputs: int = 1) -> list[str]:
+def run_flux_img2img(prompt: str, image_base64: str, *, num_outputs: int = 1, strength: float = 0.8, guidance_scale: float = 7.5, num_inference_steps: int = 28) -> list[str]:
     """
     Run Flux img2img model using the user's uploaded image and prompt.
     Uploads the image to Replicate, then runs bxclib2/flux_img2img.
+    
+    Args:
+        strength: 0-1, how much to transform (0=original, 1=completely new)
+        guidance_scale: how strictly to follow prompt (higher=more adherence)
+        num_inference_steps: quality vs speed (more steps=better quality but slower)
     """
     _ensure_replicate_token()
     image_url = _upload_image_to_replicate(image_base64)
     # Model accepts image (required) and prompt (optional but important for control)
     output = replicate.run(
         FLUX_IMG2IMG_MODEL,
-        input={"image": image_url, "prompt": prompt},
+        input={
+            "image": image_url, 
+            "prompt": prompt,
+            "strength": strength,
+            "guidance_scale": guidance_scale,
+            "num_inference_steps": num_inference_steps,
+        },
     )
     return _output_to_urls(output)
