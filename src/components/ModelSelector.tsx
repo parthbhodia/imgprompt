@@ -42,11 +42,26 @@ export function ModelSelector({ token, selectedModel, onSelectModel, disabled }:
     
     getModels(token)
       .then((data) => {
-        // Show ALL models, not just available ones
-        setModels(data.models);
+        console.log("Models API response:", data);
+        if (data.models && data.models.length > 0) {
+          setModels(data.models);
+        } else {
+          console.warn("No models returned from API, using fallback");
+          // Use fallback if no models
+          setModels([
+            {
+              id: "replicate-flux",
+              name: "Flux 1.1 Ultra",
+              provider: "replicate",
+              description: "Best quality, supports img2img",
+              available: true,
+            },
+          ]);
+        }
         setLoading(false);
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error("Failed to fetch models:", err);
         // Fallback to default if API fails
         setModels([
           {
@@ -65,8 +80,8 @@ export function ModelSelector({ token, selectedModel, onSelectModel, disabled }:
   const selectedIcon = modelIcons[selectedModel] || <Cpu className="w-4 h-4" />;
   const selectedBadge = modelBadges[selectedModel];
 
-  // Don't show if only one model available
-  if (!models || models.length <= 1) {
+  // Don't show if no models available (loading or error)
+  if (!models || models.length === 0 || loading) {
     return (
       <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50 text-xs text-muted-foreground">
         {selectedIcon}
