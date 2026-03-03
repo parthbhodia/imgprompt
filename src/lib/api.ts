@@ -319,6 +319,10 @@ export async function listSessions(token: string | null): Promise<SessionRespons
   return fetchApi<SessionResponse[]>("/sessions", { method: "GET", token });
 }
 
+export async function deleteSession(token: string | null, sessionId: string): Promise<void> {
+  return fetchApi<void>(`/sessions/${sessionId}`, { method: "DELETE", token });
+}
+
 export type GenerationRecord = {
   id: string;
   session_id: string;

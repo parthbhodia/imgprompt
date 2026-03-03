@@ -199,21 +199,23 @@ export function ChatSidebar({
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -10 }}
-                    className="group"
+                    className="group relative"
                   >
                     <button
                       onClick={() => {
                         onSelectSession(session.id);
                       }}
                       className={cn(
-                        "w-full text-left px-3 py-2 rounded-lg text-sm transition-colors",
+                        "w-full text-left px-3 py-2 pr-8 rounded-lg text-sm transition-colors",
                         "hover:bg-muted/50 flex items-center gap-2",
                         currentSessionId === session.id && "bg-primary/10 text-primary"
                       )}
                     >
                       <MessageSquare className="h-3.5 w-3.5 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className="truncate text-xs font-medium">{session.title}</p>
+                        <p className="truncate text-xs font-medium" title={session.title}>
+                          {session.title.length > 35 ? session.title.slice(0, 35) + "..." : session.title}
+                        </p>
                       </div>
                     </button>
 
@@ -223,7 +225,8 @@ export function ChatSidebar({
                         e.stopPropagation();
                         onDeleteSession(session.id);
                       }}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-destructive/10"
+                      title="Delete chat"
                     >
                       <Trash2 className="h-3.5 w-3.5 text-destructive hover:text-destructive/80" />
                     </button>

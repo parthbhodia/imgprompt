@@ -37,6 +37,7 @@ import {
   claimDailyLoginCredit,
   claimShareCredit,
   claimCommunityCredit,
+  deleteSession,
   type MessageResponse,
   type SuggestResponse,
   type ChatInsightsResponse,
@@ -318,6 +319,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
   const listRef = useRef<any>(null);
   const sizeMap = useRef<Map<number, number>>(new Map());
   const scrollPositionRef = useRef<number>(0);
+  const generatingRef = useRef<boolean>(false); // Synchronous lock to prevent race conditions
   
   // Get item size for virtualization (estimated, then measured)
   const getItemSize = useCallback((index: number) => {
@@ -406,7 +408,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
     };
     
     loadSessionsAndHistory();
-  }, [session]);
+  }, [session?.access_token]);
 
   // Sync selectedModel with generationSettings.model (bidirectional sync)
   useEffect(() => {
@@ -414,14 +416,14 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
     if (generationSettings.model !== selectedModel) {
       setSelectedModel(generationSettings.model);
     }
-  }, [generationSettings.model]);
+  }, [generationSettings.model, selectedModel]);
 
   useEffect(() => {
     // When selectedModel changes (from dropdown), update generationSettings
     if (selectedModel !== generationSettings.model) {
       setGenerationSettings(prev => ({ ...prev, model: selectedModel as any }));
     }
-  }, [selectedModel]);
+  }, [selectedModel, generationSettings.model]);
 
   // Load initialImageUrl when provided (for Generate with AI workflow)
   useEffect(() => {
@@ -808,9 +810,17 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
   };
 
   const handleGenerateWithPrompt = async (customPrompt?: string, useImage?: boolean, imageUrl?: string) => {
+    // Prevent parallel generation requests using synchronous ref (no stale closure issues)
+    if (generatingRef.current) {
+      console.log('[GENERATE] Already generating, ignoring duplicate request');
+      return;
+    }
+    generatingRef.current = true;
+    
     const promptToUse = (customPrompt ?? prompt).trim();
     const canGenerate = user || devNoAuth;
     if (!promptToUse || !canGenerate) {
+      generatingRef.current = false;
       if (!canGenerate) { 
         setShowLoginPrompt(true);
         return; 
@@ -829,12 +839,32 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
     }
 
     const sid = await ensureSession();
-    if (!sid) return;
+    if (!sid) {
+      generatingRef.current = false;
+      return;
+    }
+
+    // Optimistically update session title from prompt (Bug 3 fix)
+    if (promptToUse && promptToUse !== "New chat") {
+      const newTitle = promptToUse.slice(0, 50) + (promptToUse.length > 50 ? "..." : "");
+      setChatSessions(prev => prev.map(s => 
+        s.id === sid && s.title === "New chat" 
+          ? { ...s, title: newTitle } 
+          : s
+      ));
+    }
 
     setLoading(true);
+    
+    // Capture and immediately clear the attached image to prevent stale data
+    const currentAttachedImage = attachedImage;
+    if (attachedImage) {
+      setAttachedImage(null); // Clear immediately so subsequent calls don't reuse it
+    }
+    
     startGeneration(promptToUse, sid);
     
-    // Use the specified image or attached image
+    // Use the captured image reference (not the state which may have changed)
     let imageToSend: File | null = null;
     let imageBase64: string | null = null;
     let userMessageAttachedUrl: string | null = null;
@@ -853,13 +883,14 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
         console.error('[REMIX] Failed to load image for remix:', error);
         toast.error("Could not load image for remix");
         setLoading(false);
+        generatingRef.current = false;
         return;
       }
-    } else if (attachedImage?.file) {
-      console.log('[UPLOAD] Using attached file:', attachedImage.file.name, 'size:', attachedImage.file.size);
-      imageToSend = attachedImage.file;
+    } else if (currentAttachedImage?.file) {
+      console.log('[UPLOAD] Using captured file:', currentAttachedImage.file.name, 'size:', currentAttachedImage.file.size);
+      imageToSend = currentAttachedImage.file;
       imageBase64 = await fileToBase64(imageToSend);
-      userMessageAttachedUrl = attachedImage.preview;
+      userMessageAttachedUrl = currentAttachedImage.preview;
     }
     
     // Fetch thinking steps to show reasoning (after image is processed)
@@ -938,6 +969,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
     } finally {
       setLoading(false);
       stopGeneration();
+      generatingRef.current = false; // Release the synchronous lock
     }
   };
 
@@ -1893,11 +1925,18 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                 setSessionId(id);
                 setSidebarOpen(false);
               }}
-              onDeleteSession={(id) => {
-                setChatSessions(chatSessions.filter(s => s.id !== id));
-                if (sessionId === id) {
-                  setSessionId(null);
-                  setMessagesMap(new Map());
+              onDeleteSession={async (id) => {
+                try {
+                  await deleteSession(token, id);
+                  setChatSessions(chatSessions.filter(s => s.id !== id));
+                  if (sessionId === id) {
+                    setSessionId(null);
+                    setMessagesMap(new Map());
+                  }
+                  toast.success("Chat deleted");
+                } catch (err) {
+                  console.error('Failed to delete session:', err);
+                  toast.error("Failed to delete chat");
                 }
               }}
               onSettingsChange={(settings) => setGenerationSettings(settings)}

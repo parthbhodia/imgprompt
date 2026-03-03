@@ -86,11 +86,29 @@ def _upload_image_to_replicate(image_base64: str) -> str:
     print(f"[FLUX_UPLOAD] Starting image upload, base64 length: {len(image_base64)}")
     raw, media_type = _data_url_to_bytes(image_base64)
     print(f"[FLUX_UPLOAD] Decoded bytes: {len(raw)}, media_type: {media_type}")
+    
+    # Log original dimensions before resize
+    try:
+        from PIL import Image
+        img = Image.open(io.BytesIO(raw))
+        print(f"[FLUX_UPLOAD] Original dimensions before resize: {img.size[0]}x{img.size[1]}, mode={img.mode}")
+    except Exception as e:
+        print(f"[FLUX_UPLOAD] Could not read original dimensions: {e}")
+    
     _validate_image_size(raw)
     # Resize to ensure dimensions divisible by patch size (Flux requirement)
     print(f"[FLUX_UPLOAD] Calling resize function...")
     raw = _resize_image_if_needed(raw)
     print(f"[FLUX_UPLOAD] After resize: {len(raw)} bytes")
+    
+    # Log final dimensions after resize
+    try:
+        from PIL import Image
+        img = Image.open(io.BytesIO(raw))
+        print(f"[FLUX_UPLOAD] Final dimensions after resize: {img.size[0]}x{img.size[1]}, mode={img.mode}")
+        print(f"[FLUX_UPLOAD] CHECK: {img.size[0]} % 16 = {img.size[0] % 16}, {img.size[1]} % 16 = {img.size[1] % 16}")
+    except Exception as e:
+        print(f"[FLUX_UPLOAD] Could not read final dimensions: {e}")
     media_type_to_ext = {
         "image/png": "png",
         "image/jpeg": "jpg",

@@ -802,9 +802,9 @@ async def generate_image(
             
             raw_bytes = base64.b64decode(img_data)
             img = Image.open(BytesIO(raw_bytes))
-            print(f"[GENERATE_ENDPOINT] Original image: {img.size[0]}x{img.size[1]}, mode={img.mode}, bytes={len(raw_bytes)}")
+            logger.info(f"[GENERATE_ENDPOINT] Session:{body.session_id[:8] if body.session_id else 'none'} Prompt:'{body.prompt[:30]}...' Image:{img.size[0]}x{img.size[1]}, mode={img.mode}, bytes={len(raw_bytes)}")
         except Exception as e:
-            print(f"[GENERATE_ENDPOINT] Failed to parse image: {e}")
+            logger.warning(f"[GENERATE_ENDPOINT] Failed to decode image: {e}")
 
     # Determine which model to use
     use_imagen = (body.model.startswith("gemini-") or body.model.startswith("imagen-")) and is_imagen_available()
@@ -1056,6 +1056,34 @@ def list_sessions(user_id: Annotated[str, Depends(get_current_user_id)]):
         )
         for row in (r.data or [])
     ]
+
+
+@app.delete("/sessions/{session_id}")
+def delete_session(
+    session_id: UUID,
+    user_id: Annotated[str, Depends(get_current_user_id)],
+):
+    """Delete a chat session and all its messages."""
+    supabase = get_supabase_admin()
+    
+    # Verify the session belongs to this user
+    session = (
+        supabase.table("chat_sessions")
+        .select("id")
+        .eq("id", str(session_id))
+        .eq("user_id", user_id)
+        .execute()
+    )
+    if not session.data:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    # Delete messages first (cascade will handle this if set up, but being explicit)
+    supabase.table("chat_messages").delete().eq("session_id", str(session_id)).execute()
+    
+    # Delete the session
+    supabase.table("chat_sessions").delete().eq("id", str(session_id)).execute()
+    
+    return {"success": True, "message": "Session deleted"}
 
 
 @app.get("/sessions/{session_id}/messages", response_model=list[MessageResponse])
