@@ -33,6 +33,9 @@ import {
   getThinkingSteps,
   getCreditHistory,
   syncCreditsFromStripe,
+  claimDailyLoginCredit,
+  claimShareCredit,
+  claimCommunityCredit,
   type MessageResponse,
   type SuggestResponse,
   type ChatInsightsResponse,
@@ -831,6 +834,36 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
     setCredits(result.credits);
   };
 
+  const handleClaimDaily = async () => {
+    if (!token) throw new Error("Not authenticated");
+    const result = await claimDailyLoginCredit(token);
+    if (result.success) {
+      setCredits(result.new_balance);
+    } else {
+      throw new Error(result.message || "Already claimed today");
+    }
+  };
+
+  const handleClaimShare = async () => {
+    if (!token) throw new Error("Not authenticated");
+    const result = await claimShareCredit(token);
+    if (result.success) {
+      setCredits(result.new_balance);
+    } else {
+      throw new Error(result.message || "Failed to claim share credit");
+    }
+  };
+
+  const handleClaimCommunity = async () => {
+    if (!token) throw new Error("Not authenticated");
+    const result = await claimCommunityCredit(token);
+    if (result.success) {
+      setCredits(result.new_balance);
+    } else {
+      throw new Error(result.message || "Failed to claim community credit");
+    }
+  };
+
   const applySuggestion = (text: string) => {
     setPrompt((p) => (p ? `${p} ${text}` : text));
   };
@@ -1425,6 +1458,9 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                     isLow={credits !== null && credits < 2}
                     isAdmin={isAdmin}
                     onSyncCredits={handleSyncCredits}
+                    onClaimDaily={handleClaimDaily}
+                    onClaimShare={handleClaimShare}
+                    onClaimCommunity={handleClaimCommunity}
                   />
                   {devNoAuth && !user && (
                     <span className="text-xs bg-amber-500/20 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded">
@@ -1481,6 +1517,9 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                     isLow={credits !== null && credits < 2}
                     isAdmin={isAdmin}
                     onSyncCredits={handleSyncCredits}
+                    onClaimDaily={handleClaimDaily}
+                    onClaimShare={handleClaimShare}
+                    onClaimCommunity={handleClaimCommunity}
                   />
                   {devNoAuth && !user && (
                     <span className="text-xs bg-amber-500/20 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded">

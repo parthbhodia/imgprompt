@@ -78,11 +78,11 @@ def deduct_credits(supabase: Client, user_id: str, amount: float,
         return False
     new_balance = current - amount
     
-    # Update credits with error handling
+    # Update credits with error handling - convert to int for database
     try:
         r = (
             supabase.table("profiles")
-            .update({"credits": new_balance})
+            .update({"credits": int(new_balance)})
             .eq("id", user_id)
             .execute()
         )
@@ -115,10 +115,10 @@ def add_credits(supabase: Client, user_id: str, amount: float,
     current = get_credits(supabase, user_id)
     new_balance = current + amount
     
-    # Update credits
+    # Update credits - convert to int for database
     r = (
         supabase.table("profiles")
-        .update({"credits": new_balance})
+        .update({"credits": int(new_balance)})
         .eq("id", user_id)
         .execute()
     )
@@ -167,18 +167,18 @@ def claim_daily_login(supabase: Client, user_id: str) -> tuple[bool, float]:
                 return False, float(data.get("credits", 0))
         
         # Grant daily login credit
-        new_balance = float(data.get("credits", 0)) + CreditEarnings.DAILY_LOGIN
+        new_balance = int(float(data.get("credits", 0)) + CreditEarnings.DAILY_LOGIN)
         
         # Try to update with last_daily_login, but don't fail if column doesn't exist
         try:
             supabase.table("profiles").update({
-                "credits": new_balance,
+                "credits": int(new_balance),
                 "last_daily_login": datetime.now().isoformat(),
             }).eq("id", user_id).execute()
         except:
             # Fallback: just update credits
             supabase.table("profiles").update({
-                "credits": new_balance,
+                "credits": int(new_balance),
             }).eq("id", user_id).execute()
         
         # Log transaction
@@ -218,10 +218,10 @@ def claim_share_credit(supabase: Client, user_id: str) -> tuple[bool, float]:
         return False, 0.0
     
     current = float(row.data[0].get("credits", 0))
-    new_balance = current + CreditEarnings.SHARE_CREATION
+    new_balance = int(current + CreditEarnings.SHARE_CREATION)
     
     supabase.table("profiles").update({
-        "credits": new_balance,
+        "credits": int(new_balance),
     }).eq("id", user_id).execute()
     
     # Log transaction
@@ -256,10 +256,10 @@ def claim_community_engagement(supabase: Client, user_id: str) -> tuple[bool, fl
         return False, 0.0
     
     current = float(row.data[0].get("credits", 0))
-    new_balance = current + CreditEarnings.COMMUNITY_ENGAGEMENT
+    new_balance = int(current + CreditEarnings.COMMUNITY_ENGAGEMENT)
     
     supabase.table("profiles").update({
-        "credits": new_balance,
+        "credits": int(new_balance),
     }).eq("id", user_id).execute()
     
     # Log transaction

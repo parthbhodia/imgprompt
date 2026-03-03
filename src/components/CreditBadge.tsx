@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Coins, TrendingUp, Gift, Share2, RefreshCw } from "lucide-react";
+import { Coins, TrendingUp, Gift, Share2, RefreshCw, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,15 +12,30 @@ import { toast } from "sonner";
 
 interface CreditBadgeProps {
   balance: number | null;
-  onEarnClick?: () => void;
+  onClaimDaily?: () => Promise<void>;
+  onClaimShare?: () => Promise<void>;
+  onClaimCommunity?: () => Promise<void>;
   isLow?: boolean;
   isAdmin?: boolean;
   onSyncCredits?: () => Promise<void>;
 }
 
-export function CreditBadge({ balance, onEarnClick, isLow = false, isAdmin = false, onSyncCredits }: CreditBadgeProps) {
+export function CreditBadge({ 
+  balance, 
+  onClaimDaily, 
+  onClaimShare,
+  onClaimCommunity,
+  isLow = false, 
+  isAdmin = false, 
+  onSyncCredits 
+}: CreditBadgeProps) {
   const [open, setOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [claiming, setClaiming] = useState<{daily: boolean; share: boolean; community: boolean}>({
+    daily: false,
+    share: false,
+    community: false
+  });
 
   if (balance === null) return null;
 
@@ -40,6 +55,32 @@ export function CreditBadge({ balance, onEarnClick, isLow = false, isAdmin = fal
       setOpen(false);
     }
   };
+
+  const handleClaim = async (type: 'daily' | 'share' | 'community') => {
+    const handler = type === 'daily' ? onClaimDaily : type === 'share' ? onClaimShare : onClaimCommunity;
+    if (!handler) return;
+    
+    setClaiming(prev => ({ ...prev, [type]: true }));
+    try {
+      await handler();
+      const amount = type === 'daily' ? 1 : type === 'share' ? 1 : 0.5;
+      toast.success(`Claimed +${amount} credit${amount !== 1 ? 's' : ''}!`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to claim credit";
+      if (msg.includes("already claimed")) {
+        toast.info("You already claimed this today. Come back tomorrow!");
+      } else {
+        toast.error(msg);
+      }
+    } finally {
+      setClaiming(prev => ({ ...prev, [type]: false }));
+      setOpen(false);
+    }
+  };
+
+  const canClaimDaily = !!onClaimDaily;
+  const canClaimShare = !!onClaimShare;
+  const canClaimCommunity = !!onClaimCommunity;
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -97,14 +138,21 @@ export function CreditBadge({ balance, onEarnClick, isLow = false, isAdmin = fal
           <div className="space-y-2">
             {/* Daily Login */}
             <button
-              onClick={() => {
-                onEarnClick?.();
-                setOpen(false);
-              }}
-              className="w-full text-left px-3 py-2 rounded-lg hover:bg-muted/50 transition-colors text-sm"
+              onClick={() => handleClaim('daily')}
+              disabled={!canClaimDaily || claiming.daily}
+              className={cn(
+                "w-full text-left px-3 py-2 rounded-lg transition-colors text-sm",
+                canClaimDaily 
+                  ? "hover:bg-muted/50 cursor-pointer" 
+                  : "opacity-60 cursor-not-allowed bg-muted/30"
+              )}
             >
               <div className="flex items-start gap-2">
-                <Gift className="h-4 w-4 mt-0.5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                {claiming.daily ? (
+                  <Loader2 className="h-4 w-4 mt-0.5 text-green-600 dark:text-green-400 flex-shrink-0 animate-spin" />
+                ) : (
+                  <Gift className="h-4 w-4 mt-0.5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                )}
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-xs">Daily Login</p>
                   <p className="text-[10px] text-muted-foreground">+1 credit per day</p>
@@ -116,9 +164,22 @@ export function CreditBadge({ balance, onEarnClick, isLow = false, isAdmin = fal
             </button>
 
             {/* Share Creation */}
-            <div className="px-3 py-2 rounded-lg bg-muted/30 text-sm">
+            <button
+              onClick={() => handleClaim('share')}
+              disabled={!canClaimShare || claiming.share}
+              className={cn(
+                "w-full text-left px-3 py-2 rounded-lg transition-colors text-sm",
+                canClaimShare 
+                  ? "hover:bg-muted/50 cursor-pointer" 
+                  : "opacity-60 cursor-not-allowed bg-muted/30"
+              )}
+            >
               <div className="flex items-start gap-2">
-                <Share2 className="h-4 w-4 mt-0.5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                {claiming.share ? (
+                  <Loader2 className="h-4 w-4 mt-0.5 text-blue-600 dark:text-blue-400 flex-shrink-0 animate-spin" />
+                ) : (
+                  <Share2 className="h-4 w-4 mt-0.5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                )}
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-xs">Share Creation</p>
                   <p className="text-[10px] text-muted-foreground">+1 credit per share</p>
@@ -127,12 +188,25 @@ export function CreditBadge({ balance, onEarnClick, isLow = false, isAdmin = fal
                   +1
                 </span>
               </div>
-            </div>
+            </button>
 
             {/* Community Engagement */}
-            <div className="px-3 py-2 rounded-lg bg-muted/30 text-sm">
+            <button
+              onClick={() => handleClaim('community')}
+              disabled={!canClaimCommunity || claiming.community}
+              className={cn(
+                "w-full text-left px-3 py-2 rounded-lg transition-colors text-sm",
+                canClaimCommunity 
+                  ? "hover:bg-muted/50 cursor-pointer" 
+                  : "opacity-60 cursor-not-allowed bg-muted/30"
+              )}
+            >
               <div className="flex items-start gap-2">
-                <TrendingUp className="h-4 w-4 mt-0.5 text-purple-600 dark:text-purple-400 flex-shrink-0" />
+                {claiming.community ? (
+                  <Loader2 className="h-4 w-4 mt-0.5 text-purple-600 dark:text-purple-400 flex-shrink-0 animate-spin" />
+                ) : (
+                  <TrendingUp className="h-4 w-4 mt-0.5 text-purple-600 dark:text-purple-400 flex-shrink-0" />
+                )}
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-xs">Community Engagement</p>
                   <p className="text-[10px] text-muted-foreground">+0.5 credit per action</p>
@@ -141,7 +215,7 @@ export function CreditBadge({ balance, onEarnClick, isLow = false, isAdmin = fal
                   +0.5
                 </span>
               </div>
-            </div>
+            </button>
           </div>
         </div>
 
