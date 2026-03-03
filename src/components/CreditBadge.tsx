@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Coins, TrendingUp, Gift, Share2 } from "lucide-react";
+import { Coins, TrendingUp, Gift, Share2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -8,20 +8,38 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface CreditBadgeProps {
   balance: number | null;
   onEarnClick?: () => void;
   isLow?: boolean;
+  isAdmin?: boolean;
+  onSyncCredits?: () => Promise<void>;
 }
 
-export function CreditBadge({ balance, onEarnClick, isLow = false }: CreditBadgeProps) {
+export function CreditBadge({ balance, onEarnClick, isLow = false, isAdmin = false, onSyncCredits }: CreditBadgeProps) {
   const [open, setOpen] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
   if (balance === null) return null;
 
   const displayBalance = balance.toFixed(1);
   const isVeryLow = balance < 1;
+
+  const handleSync = async () => {
+    if (!onSyncCredits) return;
+    setSyncing(true);
+    try {
+      await onSyncCredits();
+      toast.success("Credits synced from Stripe successfully");
+    } catch (err) {
+      toast.error("Failed to sync credits from Stripe");
+    } finally {
+      setSyncing(false);
+      setOpen(false);
+    }
+  };
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -128,6 +146,26 @@ export function CreditBadge({ balance, onEarnClick, isLow = false }: CreditBadge
         </div>
 
         <DropdownMenuSeparator />
+
+        {/* Admin Only - Sync Credits */}
+        {isAdmin && onSyncCredits && (
+          <>
+            <div className="px-4 py-2">
+              <button
+                onClick={handleSync}
+                disabled={syncing}
+                className="w-full text-left px-3 py-2 rounded-lg hover:bg-muted/50 transition-colors text-sm flex items-center gap-2"
+              >
+                <RefreshCw className={cn("h-4 w-4 text-blue-600 dark:text-blue-400", syncing && "animate-spin")} />
+                <div className="flex-1">
+                  <p className="font-medium text-xs">Sync Credits from Stripe</p>
+                  <p className="text-[10px] text-muted-foreground">Update balance from subscription</p>
+                </div>
+              </button>
+            </div>
+            <DropdownMenuSeparator />
+          </>
+        )}
 
         {/* Generation Costs */}
         <div className="px-4 py-3 space-y-2">

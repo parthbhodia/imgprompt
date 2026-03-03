@@ -32,6 +32,7 @@ import {
   getConversationContext,
   getThinkingSteps,
   getCreditHistory,
+  syncCreditsFromStripe,
   type MessageResponse,
   type SuggestResponse,
   type ChatInsightsResponse,
@@ -825,6 +826,12 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
     handleGenerateWithPrompt();
   };
 
+  const handleSyncCredits = async () => {
+    if (!token) return;
+    const result = await syncCreditsFromStripe(token);
+    setCredits(result.credits);
+  };
+
   const applySuggestion = (text: string) => {
     setPrompt((p) => (p ? `${p} ${text}` : text));
   };
@@ -1417,6 +1424,8 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                   <CreditBadge
                     balance={credits}
                     isLow={credits !== null && credits < 2}
+                    isAdmin={isAdmin}
+                    onSyncCredits={handleSyncCredits}
                   />
                   {devNoAuth && !user && (
                     <span className="text-xs bg-amber-500/20 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded">
@@ -1483,6 +1492,8 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                   <CreditBadge
                     balance={credits}
                     isLow={credits !== null && credits < 2}
+                    isAdmin={isAdmin}
+                    onSyncCredits={handleSyncCredits}
                   />
                   {devNoAuth && !user && (
                     <span className="text-xs bg-amber-500/20 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded">
