@@ -9,7 +9,7 @@ import logging
 import os
 import requests
 from typing import Annotated, Optional
-from uuid import UUID
+from uuid import UUID, uuid4
 from datetime import datetime
 
 from fastapi import FastAPI, Depends, HTTPException, Request, status, Query
