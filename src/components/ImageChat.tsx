@@ -1927,7 +1927,11 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
               }}
               onDeleteSession={async (id) => {
                 try {
-                  await deleteSession(token, id);
+                  // Only delete from backend if user is logged in (has token)
+                  // Dev mode sessions only exist in frontend state
+                  if (token) {
+                    await deleteSession(token, id);
+                  }
                   setChatSessions(chatSessions.filter(s => s.id !== id));
                   if (sessionId === id) {
                     setSessionId(null);
