@@ -13,6 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sparkles, Send, Coins, Loader2, LogIn, Lightbulb,
   ImagePlus, X, Wand2, Maximize2, Minimize2, Download, Share2, RotateCcw, Shuffle, ChevronDown,
+  MoreVertical, Copy, RefreshCw, Edit3, Palette, Settings, HelpCircle, History, BookmarkPlus
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -36,6 +37,7 @@ import { PromptFrameworkBuilder } from "./PromptFrameworkBuilder";
 import { PromptGuidePanel } from "./PromptGuidePanel";
 import { PresetTags } from "./PresetTags";
 import { StyleLibrary } from "./StyleLibrary";
+import { CreditDisplay } from "./CreditDisplay";
 
 const PLACEHOLDER = "Describe the image you want to create...";
 
@@ -65,6 +67,8 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
   const [conversationContext, setConversationContext] = useState<ConversationContextResponse | null>(null);
   const [inputFullscreen, setInputFullscreen] = useState(false);
   const [welcomeExpanded, setWelcomeExpanded] = useState(false);
+  const [showTools, setShowTools] = useState(false);
+  const [activeMessageId, setActiveMessageId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -272,7 +276,7 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
     }
   };
 
-  const handleGenerateWithPrompt = async (customPrompt?: string) => {
+  const handleGenerateWithPrompt = async (customPrompt?: string, useImage?: boolean, imageUrl?: string) => {
     const promptToUse = (customPrompt ?? prompt).trim();
     const canGenerate = user || devNoAuth;
     if (!promptToUse || !canGenerate) {
@@ -285,9 +289,31 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
     if (!sid) return;
 
     setLoading(true);
-    const imageToSend = attachedImage?.file ?? null;
-    const imageBase64 = imageToSend ? await fileToBase64(imageToSend) : null;
-    const userMessageAttachedUrl = attachedImage?.preview ?? null;
+    
+    // Use the specified image or attached image
+    let imageToSend: File | null = null;
+    let imageBase64: string | null = null;
+    let userMessageAttachedUrl: string | null = null;
+
+    if (useImage && imageUrl) {
+      // Convert image URL to base64 for remix
+      try {
+        const response = await fetch(imageUrl);
+        const blob = await response.blob();
+        imageToSend = new File([blob], 'remix-image.webp', { type: 'image/webp' });
+        imageBase64 = await fileToBase64(imageToSend);
+        userMessageAttachedUrl = imageUrl;
+      } catch (error) {
+        console.error('Failed to load image for remix:', error);
+        toast.error("Could not load image for remix");
+        setLoading(false);
+        return;
+      }
+    } else if (attachedImage?.file) {
+      imageToSend = attachedImage.file;
+      imageBase64 = await fileToBase64(imageToSend);
+      userMessageAttachedUrl = attachedImage.preview;
+    }
 
     try {
       const res = await generateImage(token ?? null, {
@@ -491,16 +517,7 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
                               </button>
                               <button
                                 type="button"
-                                onClick={() => handleGenerateWithPrompt(m.content)}
-                                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-muted/40 hover:bg-primary/10 text-xs font-medium transition-colors"
-                                title="Regenerate with same prompt"
-                              >
-                                <RotateCcw className="w-3.5 h-3.5" />
-                                <span className="hidden sm:inline">Regenerate</span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleGenerateWithPrompt(`${m.content}, different variation, remix`)}
+                                onClick={() => handleGenerateWithPrompt(`${m.content}, different variation, remix`, true, m.image_url!)}
                                 className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 text-xs font-medium transition-colors border border-purple-500/30"
                                 title="Generate a remix variation of this image"
                               >
@@ -789,12 +806,7 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
                   Create with AI
                 </h2>
                 <div className="flex items-center gap-2">
-                  {(user || devNoAuth) && credits !== null && (
-                    <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                      <Coins className="w-4 h-4" />
-                      {credits} credits
-                    </span>
-                  )}
+                  {user && <CreditDisplay compact={true} />}
                   {devNoAuth && !user && (
                     <span className="text-xs bg-amber-500/20 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded">
                       Dev (no sign-in)

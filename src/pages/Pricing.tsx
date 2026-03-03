@@ -16,6 +16,7 @@ import {
   type SubscriptionStatus,
   type PlanInfo,
 } from "@/lib/api";
+import { debugCredits, forceCreditRefresh } from "@/utils/creditDebug";
 
 const PLAN_UI_CONFIG: Record<string, { icon: typeof Zap; color: string; highlight: boolean; features: string[] }> = {
   starter: {
@@ -70,6 +71,7 @@ export default function Pricing() {
   const [plans, setPlans] = useState<PlanInfo[]>([]);
   const [plansLoading, setPlansLoading] = useState(true);
   const [syncLoading, setSyncLoading] = useState(false);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
 
   const token = session?.access_token ?? null;
 
@@ -122,7 +124,7 @@ export default function Pricing() {
   useEffect(() => {
     if (!token) return;
     getSubscriptionStatus(token)
-      .then(setStatus)
+      .then(setSubscriptionStatus)
       .catch(() => {});
   }, [token]);
 
@@ -237,6 +239,44 @@ export default function Pricing() {
             </div>
           )}
         </div>
+
+        {/* Emergency credit sync for active users */}
+        {plan && status === "active" && credits === 0 && (
+          <div className="mt-4 p-4 rounded-lg bg-red-500/10 border border-red-500/20">
+            <p className="text-sm font-medium text-red-600 dark:text-red-400 mb-2">
+              ⚠️ No credits detected for active {plan} plan
+            </p>
+            <p className="text-xs text-muted-foreground mb-3">
+              Your subscription is active but credits aren't showing. Try the emergency sync below.
+            </p>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={async () => {
+                setSyncLoading(true);
+                try {
+                  const result = await forceCreditRefresh(token);
+                  toast.success(`Emergency sync complete: ${result.credits} credits`, {
+                    duration: 5000,
+                  });
+                } catch (error) {
+                  toast.error("Emergency sync failed. Please contact support.");
+                } finally {
+                  setSyncLoading(false);
+                }
+              }}
+              disabled={syncLoading}
+              className="gap-2"
+            >
+              {syncLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Zap className="w-4 h-4" />
+              )}
+              Emergency Credit Sync
+            </Button>
+          </div>
+        )}
 
         {/* Plan cards */}
         {plansLoading ? (

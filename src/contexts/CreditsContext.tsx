@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import { getSubscriptionStatus, syncCreditsFromStripe, type SubscriptionStatus } from '@/lib/api';
 import { toast } from 'sonner';
@@ -32,42 +32,68 @@ export const CreditsProvider = ({ children }: CreditsProviderProps) => {
   const [plan, setPlan] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [lastUpdated, setLastUpdated] = useState<number | null>(null);
 
   const token = session?.access_token ?? null;
 
   // Refresh credits from the server
-  const refreshCredits = async () => {
+  const refreshCredits = useCallback(async () => {
     if (!token) return;
     
     try {
       setLoading(true);
-      const subscriptionStatus = await getSubscriptionStatus(token);
-      setCredits(subscriptionStatus.credits);
-      setPlan(subscriptionStatus.plan);
-      setStatus(subscriptionStatus.status);
+      const data = await getSubscriptionStatus(token);
+      setCredits(data.credits);
+      setPlan(data.plan);
+      setStatus(data.status);
+      setLastUpdated(Date.now());
     } catch (error) {
       console.error('Failed to refresh credits:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
-  // Sync credits from Stripe (more aggressive update)
-  const syncCredits = async () => {
+  // Sync credits from Stripe (more aggressive update with retries)
+  const syncCredits = async (): Promise<void> => {
     if (!token) return;
     
     try {
       setLoading(true);
-      const result = await syncCreditsFromStripe(token);
-      setCredits(result.credits);
-      setPlan(result.plan);
-      setStatus('active');
-      toast.success(`Credits synced! You now have ${result.credits} credits.`, {
-        duration: 3000,
-      });
+      
+      // Try multiple times with delays to handle webhook delays
+      let lastError: any = null;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          console.log(`Credit sync attempt ${attempt}...`);
+          const result = await syncCreditsFromStripe(token);
+          
+          // Validate the result
+          if (result.credits >= 0 && result.plan) {
+            setCredits(result.credits);
+            setPlan(result.plan);
+            setStatus(result.status);
+            setLastUpdated(Date.now());
+            console.log(`✅ Sync successful: ${result.credits} credits for ${result.plan} plan`);
+            return; // Return void instead of the result
+          }
+        } catch (error) {
+          lastError = error;
+          console.warn(`Sync attempt ${attempt} failed:`, error);
+          
+          // Wait before retry (with exponential backoff)
+          if (attempt < 3) {
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+          }
+        }
+      }
+      
+      // If all attempts failed, throw the last error
+      throw lastError;
     } catch (error) {
-      console.error('Failed to sync credits:', error);
+      console.error('Failed to sync credits after 3 attempts:', error);
       toast.error('Could not sync credits. Please try again.');
+      throw error;
     } finally {
       setLoading(false);
     }

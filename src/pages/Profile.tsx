@@ -27,6 +27,7 @@ import {
   syncCreditsFromStripe,
   type SubscriptionStatus,
 } from "@/lib/api";
+import { debugCredits, forceCreditRefresh, setupCreditDebug } from "@/utils/creditDebug";
 
 const PLAN_META: Record<
   string,
@@ -149,6 +150,45 @@ export default function Profile() {
       setSyncLoading(false);
     }
   };
+
+  const handleDebugCredits = async () => {
+    const token = session?.access_token ?? null;
+    if (!token) {
+      toast.error("Please sign in to debug credits");
+      return;
+    }
+    
+    try {
+      await debugCredits(token);
+    } catch (error) {
+      console.error('Debug failed:', error);
+    }
+  };
+
+  const handleForceRefresh = async () => {
+    const token = session?.access_token ?? null;
+    if (!token) {
+      toast.error("Please sign in to refresh credits");
+      return;
+    }
+    
+    setSyncLoading(true);
+    try {
+      const result = await forceCreditRefresh(token);
+      toast.success(`Force refresh complete: ${result.credits} credits`);
+    } catch (error) {
+      toast.error("Failed to force refresh credits");
+    } finally {
+      setSyncLoading(false);
+    }
+  };
+
+  // Setup debug tools in development
+  useEffect(() => {
+    if (import.meta.env.DEV && session?.access_token) {
+      setupCreditDebug(session.access_token);
+    }
+  }, [session?.access_token]);
 
   const planMeta = plan ? PLAN_META[plan] : null;
   const isActive = status === "active";
@@ -358,6 +398,27 @@ export default function Profile() {
                       )}
                       {isActive ? "Sync Credits from Stripe" : "Sync Subscription Now"}
                     </Button>
+                    {import.meta.env.DEV && (
+                      <div className="flex gap-2 mt-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={handleDebugCredits}
+                          className="gap-1 text-xs text-muted-foreground"
+                        >
+                          🐛 Debug
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={handleForceRefresh}
+                          disabled={syncLoading}
+                          className="gap-1 text-xs text-muted-foreground"
+                        >
+                          🔄 Force Refresh
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
