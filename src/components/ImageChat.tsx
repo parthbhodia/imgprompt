@@ -830,7 +830,15 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
                 variant="outline"
                 size="sm"
                 className="shrink-0 h-[44px] sm:h-[56px] aspect-square"
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => {
+                  console.log('Upload button clicked, fileInputRef:', fileInputRef.current);
+                  if (fileInputRef.current) {
+                    fileInputRef.current.click();
+                  } else {
+                    console.error('fileInputRef is null!');
+                    toast.error('Upload not ready, please try again');
+                  }
+                }}
                 aria-label="Upload image"
               >
                 <ImagePlus className="w-4 h-4 sm:w-5 sm:h-5" />
