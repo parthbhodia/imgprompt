@@ -12,7 +12,7 @@ from typing import Annotated, Optional
 from uuid import UUID
 from datetime import datetime
 
-from fastapi import FastAPI, Depends, HTTPException, Request, status
+from fastapi import FastAPI, Depends, HTTPException, Request, status, Query
 from fastapi.responses import JSONResponse
 
 logger = logging.getLogger(__name__)
