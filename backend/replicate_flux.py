@@ -5,6 +5,7 @@ import os
 import re
 import replicate
 from config import settings
+from PIL import Image
 
 # Ensure Replicate client can see the token (from env or backend .env)
 _token = os.environ.get("REPLICATE_API_TOKEN") or getattr(settings, "replicate_api_token", None) or ""
@@ -17,6 +18,38 @@ FLUX_IMG2IMG_MODEL = "bxclib2/flux_img2img:0ce45202d83c6bd379dfe58f4c0c41e6cadf9
 # Image limits: 5MB per image; dimension check (8000px) is enforced on the frontend.
 MAX_IMAGE_BYTES = 5 * 1024 * 1024
 MAX_IMAGES_PER_REQUEST = 1
+
+# Flux models require dimensions divisible by 8 (patch size)
+PATCH_SIZE = 8
+
+
+def _ensure_divisible_by_patch_size(width: int, height: int) -> tuple[int, int]:
+    """Ensure dimensions are divisible by patch size for model compatibility."""
+    new_width = (width // PATCH_SIZE) * PATCH_SIZE
+    new_height = (height // PATCH_SIZE) * PATCH_SIZE
+    # Ensure minimum size
+    new_width = max(PATCH_SIZE, new_width)
+    new_height = max(PATCH_SIZE, new_height)
+    return new_width, new_height
+
+
+def _resize_image_if_needed(raw: bytes) -> bytes:
+    """Resize image to ensure dimensions divisible by patch size."""
+    try:
+        img = Image.open(io.BytesIO(raw))
+        orig_width, orig_height = img.size
+        new_width, new_height = _ensure_divisible_by_patch_size(orig_width, orig_height)
+        
+        if (orig_width, orig_height) != (new_width, new_height):
+            img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+            buffer = io.BytesIO()
+            img_format = img.format if img.format else "WEBP"
+            img.save(buffer, format=img_format, quality=95)
+            return buffer.getvalue()
+    except Exception:
+        # If resizing fails, return original
+        pass
+    return raw
 
 
 def _data_url_to_bytes(data_url: str) -> tuple[bytes, str]:
@@ -42,6 +75,8 @@ def _upload_image_to_replicate(image_base64: str) -> str:
     """Upload image (data URL) to Replicate and return the file URL for use as model input. Enforces max 5MB."""
     raw, media_type = _data_url_to_bytes(image_base64)
     _validate_image_size(raw)
+    # Resize to ensure dimensions divisible by patch size (Flux requirement)
+    raw = _resize_image_if_needed(raw)
     media_type_to_ext = {
         "image/png": "png",
         "image/jpeg": "jpg",

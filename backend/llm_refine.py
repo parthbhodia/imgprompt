@@ -120,6 +120,18 @@ def analyze_conversation_context(messages: list[dict]) -> dict:
             timeout=5,
         )
         import json
+        # Handle cases where LLM returns markdown code blocks or extra text
+        content = content.strip()
+        # Extract JSON from markdown code blocks if present
+        if "```json" in content:
+            content = content.split("```json")[1].split("```")[0].strip()
+        elif "```" in content:
+            content = content.split("```")[1].split("```")[0].strip()
+        # Find the first JSON object (from first { to matching })
+        start_idx = content.find("{")
+        end_idx = content.rfind("}")
+        if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+            content = content[start_idx:end_idx+1]
         result = json.loads(content)
         return {
             "themes": result.get("themes", []),
@@ -159,6 +171,18 @@ def get_chat_insights(user_message: str, previous_prompts: list[str] | None = No
             timeout=5,
         )
         import json
+        # Handle cases where LLM returns markdown code blocks or extra text
+        content = content.strip()
+        # Extract JSON from markdown code blocks if present
+        if "```json" in content:
+            content = content.split("```json")[1].split("```")[0].strip()
+        elif "```" in content:
+            content = content.split("```")[1].split("```")[0].strip()
+        # Find the first JSON object (from first { to matching })
+        start_idx = content.find("{")
+        end_idx = content.rfind("}")
+        if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+            content = content[start_idx:end_idx+1]
         result = json.loads(content)
         return {
             "should_refine": result.get("should_refine", False),
