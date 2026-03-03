@@ -1359,7 +1359,10 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                   Create with AI
                 </h2>
                 <div className="flex items-center gap-2">
-                  {user && <CreditDisplay compact={true} />}
+                  <CreditBadge
+                    balance={credits}
+                    isLow={credits !== null && credits < 2}
+                  />
                   {devNoAuth && !user && (
                     <span className="text-xs bg-amber-500/20 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded">
                       Dev (no sign-in)
@@ -1404,12 +1407,10 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                   Create with AI
                 </h2>
                 <div className="flex items-center gap-3">
-                  {(user || devNoAuth) && credits !== null && (
-                    <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                      <Coins className="w-4 h-4" />
-                      {credits} credits
-                    </span>
-                  )}
+                  <CreditBadge
+                    balance={credits}
+                    isLow={credits !== null && credits < 2}
+                  />
                   {devNoAuth && !user && (
                     <span className="text-xs bg-amber-500/20 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded">
                       Dev (no sign-in)
