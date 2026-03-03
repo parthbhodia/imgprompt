@@ -276,7 +276,6 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
   const [chatInsights, setChatInsights] = useState<ChatInsightsResponse | null>(null);
   const [insightsLoading, setInsightsLoading] = useState(false);
   const [conversationContext, setConversationContext] = useState<ConversationContextResponse | null>(null);
-  const [inputFullscreen, setInputFullscreen] = useState(false);
   const [welcomeExpanded, setWelcomeExpanded] = useState(false);
   const [showTools, setShowTools] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
@@ -294,7 +293,24 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
     model: "gemini-3.1-flash-image-preview" as "replicate-flux" | "gemini-2.5-flash-image" | "gemini-3.1-flash-image-preview",
     quality: "standard" as "standard" | "hd",
   });
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-resize textarea function
+  const autoResizeTextarea = () => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    
+    // Reset height to auto to get the correct scrollHeight
+    textarea.style.height = 'auto';
+    
+    // Calculate new height (min 64px on mobile, 80px on desktop, max 200px)
+    const minHeight = window.innerWidth < 640 ? 64 : 80;
+    const maxHeight = 200;
+    const newHeight = Math.max(minHeight, Math.min(textarea.scrollHeight, maxHeight));
+    
+    textarea.style.height = `${newHeight}px`;
+  };
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<any>(null);
@@ -329,6 +345,8 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
         document.getElementById("ai-chat")?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 80);
     }
+    // Auto-resize after setting initial prompt
+    setTimeout(autoResizeTextarea, 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialPrompt]);
 
@@ -894,7 +912,9 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
   };
 
   const applySuggestion = (text: string) => {
-    setPrompt((p) => (p ? `${p} ${text}` : text));
+    const newPrompt = prompt ? `${prompt} ${text}` : text;
+    setPrompt(newPrompt);
+    setTimeout(autoResizeTextarea, 0);
   };
 
   const showSignInOnly = false; // Allow upload without login, check on send
@@ -1243,61 +1263,22 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
               </div>
             )}
 
-            {/* Input Row - Optimized for Mobile with Fullscreen on Focus */}
-            {inputFullscreen && (
-              <div className="fixed inset-0 z-50 bg-background flex flex-col animate-in fade-in duration-200">
-                <div className="flex-1 flex flex-col p-4 gap-3 overflow-hidden">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold">Write your prompt</h3>
-                    <button
-                      onClick={() => setInputFullscreen(false)}
-                      className="p-2 hover:bg-muted rounded-lg transition-colors"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
-                  <Textarea
-                    placeholder={PLACEHOLDER}
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleGenerate(); }
-                    }}
-                    className="flex-1 resize-none w-full text-base p-3"
-                    disabled={loading}
-                    autoFocus
-                  />
-                  <Button
-                    onClick={() => {
-                      setInputFullscreen(false);
-                      handleGenerate();
-                    }}
-                    disabled={loading || !prompt.trim() || (!devNoAuth && credits !== null && credits < 1)}
-                    className="w-full gap-2 h-12"
-                  >
-                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-                    <span>Generate</span>
-                  </Button>
-                </div>
-              </div>
-            )}
-
+            {/* Input Row - Auto-resizing Textarea */}
             <div className="flex gap-2 items-end">
               {/* Input Field */}
               <div className="flex-1 space-y-1">
                 <Textarea
+                  ref={textareaRef}
                   placeholder={PLACEHOLDER}
                   value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
+                  onChange={(e) => {
+                    setPrompt(e.target.value);
+                    setTimeout(autoResizeTextarea, 0);
+                  }}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleGenerate(); }
                   }}
-                  onClick={() => {
-                    if (window.innerWidth < 640) {
-                      setInputFullscreen(true);
-                    }
-                  }}
-                  className="min-h-[64px] sm:min-h-[80px] resize-none w-full text-sm cursor-pointer sm:cursor-auto"
+                  className="min-h-[64px] sm:min-h-[80px] max-h-[200px] resize-none w-full text-sm overflow-y-auto"
                   disabled={loading}
                   rows={2}
                 />
