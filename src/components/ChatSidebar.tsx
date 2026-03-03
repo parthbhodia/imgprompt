@@ -3,8 +3,6 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  Menu,
-  X,
   Plus,
   History,
   Settings,
@@ -48,65 +46,15 @@ export function ChatSidebar({
   onSettingsChange,
   credits,
 }: ChatSidebarProps) {
-  const [isOpen, setIsOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
-  const toggleSidebar = () => setIsOpen(!isOpen);
-  const closeSidebar = () => setIsOpen(false);
-
   return (
-    <>
-      {/* Mobile Hamburger Button */}
-      <div className="fixed top-4 left-4 z-40 md:hidden">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={toggleSidebar}
-          className="h-10 w-10"
-        >
-          {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </Button>
-      </div>
-
-      {/* Overlay for mobile */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={closeSidebar}
-            className="fixed inset-0 bg-black/50 z-30 md:hidden"
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Sidebar */}
-      <motion.aside
-        initial={false}
-        animate={{
-          x: isOpen ? 0 : "-100%",
-        }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className={cn(
-          "fixed left-0 top-0 h-screen w-64 bg-card border-r border-border z-40",
-          "md:relative md:translate-x-0 md:z-0",
-          "flex flex-col"
-        )}
-      >
+    <div className="flex flex-col h-full">
         {/* Header */}
         <div className="p-4 border-b border-border space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">VibeIMG</h2>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={closeSidebar}
-              className="md:hidden"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+            </div>
 
           {/* Credits Display */}
           {credits !== null && (
@@ -120,7 +68,6 @@ export function ChatSidebar({
           <Button
             onClick={() => {
               onNewChat();
-              closeSidebar();
             }}
             className="w-full gap-2"
           >
@@ -256,7 +203,6 @@ export function ChatSidebar({
                     <button
                       onClick={() => {
                         onSelectSession(session.id);
-                        closeSidebar();
                       }}
                       className={cn(
                         "w-full text-left px-3 py-2 rounded-lg text-sm transition-colors",
@@ -294,7 +240,6 @@ export function ChatSidebar({
         <div className="p-4 border-t border-border text-xs text-muted-foreground text-center">
           <p>VibeIMG © 2026</p>
         </div>
-      </motion.aside>
-    </>
+    </div>
   );
 }
