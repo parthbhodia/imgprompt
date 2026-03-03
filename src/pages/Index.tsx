@@ -124,7 +124,7 @@ const getInitialRouteState = (promptList: PromptWithAssets[]) => {
   const slideParam = params.get("slide");
   let promptId: number | null = null;
   let promptRecord: PromptWithAssets | undefined;
-  if (promptSlug) {
+  if (promptSlug && Array.isArray(promptList)) {
     promptRecord = promptList.find((prompt) => prompt.slug === promptSlug);
     if (promptRecord) {
       promptId = promptRecord.id;
