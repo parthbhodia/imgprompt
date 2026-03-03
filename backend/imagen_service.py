@@ -30,13 +30,15 @@ def _ensure_divisible_by_patch_size(width: int, height: int) -> Tuple[int, int]:
 def _resize_image_if_needed(pil_image: Image.Image) -> Image.Image:
     """Resize image to ensure dimensions divisible by patch size."""
     orig_width, orig_height = pil_image.size
+    print(f"[IMAGEN_RESIZE] Input image size: {orig_width}x{orig_height}")
     new_width, new_height = _ensure_divisible_by_patch_size(orig_width, orig_height)
+    print(f"[IMAGEN_RESIZE] Target size: {new_width}x{new_height} (divisible by {PATCH_SIZE})")
     
     if (orig_width, orig_height) != (new_width, new_height):
         pil_image = pil_image.resize((new_width, new_height), Image.Resampling.LANCZOS)
-        print(f"[IMAGEN_RESIZE] Resized image from {orig_width}x{orig_height} to {new_width}x{new_height}")
+        print(f"[IMAGEN_RESIZE] RESIZED to {pil_image.size[0]}x{pil_image.size[1]}")
     else:
-        print(f"[IMAGEN_RESIZE] No resize needed for {orig_width}x{orig_height}")
+        print(f"[IMAGEN_RESIZE] NO RESIZE needed - already compatible")
     
     return pil_image
 
@@ -137,10 +139,13 @@ def generate_imagen_edit(
             reference_image_base64 = reference_image_base64.split("base64,")[1]
         
         image_bytes = base64.b64decode(reference_image_base64)
+        print(f"[IMAGEN_EDIT] Decoded image bytes: {len(image_bytes)} bytes")
         
         # Convert to PIL Image and resize to ensure dimensions divisible by 8
         pil_image = Image.open(BytesIO(image_bytes))
+        print(f"[IMAGEN_EDIT] PIL Image opened: {pil_image.size[0]}x{pil_image.size[1]}, mode={pil_image.mode}")
         pil_image = _resize_image_if_needed(pil_image)
+        print(f"[IMAGEN_EDIT] After resize: {pil_image.size[0]}x{pil_image.size[1]}")
         
         # Use generate_content with image input
         response = client.models.generate_content(
