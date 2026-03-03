@@ -946,8 +946,8 @@ const Index = () => {
                       useImage: true,
                       isImg2Img: true,
                     }));
-                    // Navigate to chat
-                    window.location.href = "/";
+                    // Navigate to chat without page refresh
+                    navigate("/");
                   }}
                   likeCount={likeCounts[prompt.id] ?? 0}
                   isLiked={userLikes.has(prompt.id)}
