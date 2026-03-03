@@ -716,10 +716,51 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
 
   const fileToBase64 = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
+      // Resize image to ensure dimensions divisible by 16 for Flux compatibility
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const PATCH_SIZE = 16;
+        const origWidth = img.naturalWidth;
+        const origHeight = img.naturalHeight;
+        const newWidth = Math.floor(origWidth / PATCH_SIZE) * PATCH_SIZE;
+        const newHeight = Math.floor(origHeight / PATCH_SIZE) * PATCH_SIZE;
+        
+        if (newWidth !== origWidth || newHeight !== origHeight) {
+          console.log(`[FRONTEND_RESIZE] ${origWidth}x${origHeight} -> ${newWidth}x${newHeight}`);
+          const canvas = document.createElement('canvas');
+          canvas.width = newWidth;
+          canvas.height = newHeight;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            reject(new Error('Failed to get canvas context'));
+            return;
+          }
+          ctx.drawImage(img, 0, 0, newWidth, newHeight);
+          canvas.toBlob((blob) => {
+            if (!blob) {
+              reject(new Error('Canvas toBlob failed'));
+              return;
+            }
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          }, 'image/webp', 0.95);
+        } else {
+          // No resize needed, use original
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        }
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error('Failed to load image for resize'));
+      };
+      img.src = url;
     });
 
   const handleRefine = async () => {
