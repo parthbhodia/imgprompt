@@ -160,17 +160,28 @@ def run_flux_img2img(prompt: str, image_base64: str, *, num_outputs: int = 1, st
         guidance_scale: how strictly to follow prompt (higher=more adherence)
         num_inference_steps: quality vs speed (more steps=better quality but slower)
     """
-    _ensure_replicate_token()
-    image_url = _upload_image_to_replicate(image_base64)
-    # Model accepts image (required) and prompt (optional but important for control)
-    output = replicate.run(
-        FLUX_IMG2IMG_MODEL,
-        input={
-            "image": image_url, 
-            "prompt": prompt,
-            "strength": strength,
-            "guidance_scale": guidance_scale,
-            "num_inference_steps": num_inference_steps,
-        },
-    )
-    return _output_to_urls(output)
+    try:
+        print(f"[FLUX_IMG2IMG] Starting with prompt: {prompt[:50]}...")
+        _ensure_replicate_token()
+        print(f"[FLUX_IMG2IMG] Token valid, uploading image...")
+        image_url = _upload_image_to_replicate(image_base64)
+        print(f"[FLUX_IMG2IMG] Image uploaded: {image_url[:80]}...")
+        # Model accepts image (required) and prompt (optional but important for control)
+        print(f"[FLUX_IMG2IMG] Running model with strength={strength}, steps={num_inference_steps}")
+        output = replicate.run(
+            FLUX_IMG2IMG_MODEL,
+            input={
+                "image": image_url, 
+                "prompt": prompt,
+                "strength": strength,
+                "guidance_scale": guidance_scale,
+                "num_inference_steps": num_inference_steps,
+            },
+        )
+        print(f"[FLUX_IMG2IMG] Model output received")
+        return _output_to_urls(output)
+    except Exception as e:
+        print(f"[FLUX_IMG2IMG] ERROR: {type(e).__name__}: {str(e)[:200]}")
+        import traceback
+        traceback.print_exc()
+        raise
