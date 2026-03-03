@@ -892,7 +892,8 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
       console.log('[UPLOAD] Using captured file:', currentAttachedImage.file.name, 'size:', currentAttachedImage.file.size);
       imageToSend = currentAttachedImage.file;
       imageBase64 = await fileToBase64(imageToSend);
-      userMessageAttachedUrl = currentAttachedImage.preview;
+      // Use base64 data URL for chat display instead of blob URL (which expires)
+      userMessageAttachedUrl = imageBase64;
     }
     
     // Fetch thinking steps to show reasoning (after image is processed)
