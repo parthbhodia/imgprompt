@@ -140,13 +140,19 @@ def generate_imagen_edit(
         Data URI of the generated image
     """
     # Native Imagen models don't support image input - fall back to Gemini for edits
+    actual_model = model
     if _is_native_imagen_model(model):
-        logger.info(f"Model {model} doesn't support image editing, falling back to gemini-2.5-flash-image")
+        logger.warning(f"Model {model} doesn't support image editing, falling back to gemini-2.5-flash-image")
+        print(f"[IMAGEN_EDIT] Model swap: {model} -> gemini-2.5-flash-image (native Imagen doesn't support img2img)")
         model = "gemini-2.5-flash-image"
     client = _get_client()
     
     try:
-        logger.info(f"Generating image edit with {model}, prompt: {prompt[:100]}...")
+        # Anchor the prompt to the subject - ensure the model knows to edit THIS specific image
+        anchored_prompt = f"Edit this specific image as follows: {prompt}. Keep the original subject, person, and composition. Do not generate a new scene - transform the existing photo."
+        logger.info(f"Generating image edit with {model}, anchored prompt: {anched_prompt[:100]}...")
+        print(f"[IMAGEN_EDIT] Using model: {model} (requested: {actual_model})")
+        print(f"[IMAGEN_EDIT] Anchored prompt: {anched_prompt[:80]}...")
         
         # Decode base64 image
         if "base64," in reference_image_base64:
@@ -162,11 +168,12 @@ def generate_imagen_edit(
         print(f"[IMAGEN_EDIT] After resize: {pil_image.size[0]}x{pil_image.size[1]}")
         
         # Use generate_content with image input
-        print(f"[IMAGEN_EDIT] Calling generate_content with model={model}, prompt={prompt[:50]}...")
-        print(f"[IMAGEN_EDIT] Image type: {type(pil_image)}, size: {pil_image.size}")
+        # Image FIRST, then prompt - this tells model "edit this image" rather than "generate something like this"
+        print(f"[IMAGEN_EDIT] Calling generate_content with model={model}")
+        print(f"[IMAGEN_EDIT] Content order: [image, prompt] (image first = edit mode)")
         response = client.models.generate_content(
             model=model,
-            contents=[prompt, pil_image],
+            contents=[pil_image, anchored_prompt],  # Image FIRST, then prompt
             config=types.GenerateContentConfig(
                 response_modalities=["Image"],
             )
