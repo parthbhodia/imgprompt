@@ -437,7 +437,7 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
   const showSignInOnly = false; // Allow upload without login, check on send
 
   // ── Shared chat body (messages + input area) ──────────────────────────────
-  const chatContent = (
+  const renderChatContent = () => (
     <>
       {/* Login Prompt Dialog */}
       {showLoginPrompt && (
@@ -951,7 +951,7 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
             </div>
             {/* Body — responsive height */}
             <div className="flex flex-col h-[480px] sm:h-[580px] lg:h-[660px]">
-              {chatContent}
+              {renderChatContent()}
             </div>
           </div>
         </section>
@@ -1001,7 +1001,7 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
             {/* Chat body */}
             <div className="flex-1 min-h-0 w-full max-w-7xl mx-auto flex flex-col px-4 sm:px-8 py-4">
               <div className="flex-1 min-h-0 rounded-2xl border border-border/40 bg-card/50 overflow-hidden flex flex-col shadow-lg">
-                {chatContent}
+                {renderChatContent()}
               </div>
             </div>
           </div>
@@ -1042,7 +1042,7 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
             )}
           </SheetTitle>
         </SheetHeader>
-        {chatContent}
+        {renderChatContent()}
       </SheetContent>
     </Sheet>
   );
