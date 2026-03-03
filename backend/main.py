@@ -769,13 +769,29 @@ async def generate_image(
         raise HTTPException(status_code=502, detail="Image generation failed")
 
     image_url = urls[0]
+    
+    # Archive image to Supabase Storage FIRST (blocking, before returning response)
+    archived_url = None
+    try:
+        loop = asyncio.get_event_loop()
+        archived_url = await loop.run_in_executor(
+            None, 
+            lambda: archive_image_to_storage(supabase, user_id, image_url, str(uuid4()))
+        )
+        if archived_url:
+            logger.info(f"Image archived to Supabase: {archived_url}")
+            image_url = archived_url  # Use Supabase URL instead of Replicate
+        else:
+            logger.warning("Failed to archive image, using original URL")
+    except Exception as e:
+        logger.error(f"Error archiving image: {e}")
+        # Continue with original URL if archiving fails
 
     if not deduct_credits(supabase, user_id, cost):
         raise HTTPException(status_code=402, detail="Credit deduction failed")
 
     session_id = body.session_id
     message_id = None
-    archived_url = None
 
     if session_id and user_id != DEV_USER_ID:
         try:
@@ -791,7 +807,7 @@ async def generate_image(
                 .execute()
             )
             user_msg_id = msg_user.data[0]["id"] if msg_user.data else None
-            # Insert assistant message with image
+            # Insert assistant message with image (using archived URL if available)
             msg_asst = (
                 supabase.table("chat_messages")
                 .insert({
@@ -804,32 +820,13 @@ async def generate_image(
             )
             message_id = msg_asst.data[0]["id"] if msg_asst.data else None
             
-            # Archive image to Supabase Storage (async via executor)
+            # Cleanup old archives in background (non-blocking)
             if message_id:
                 try:
                     loop = asyncio.get_event_loop()
-                    archived_url = await loop.run_in_executor(
-                        None,
-                        lambda: archive_image_to_storage(supabase, user_id, image_url, message_id)
-                    )
-                    # If archived successfully, update DB and use storage URL
-                    if archived_url:
-                        # Update the message with archived URL
-                        supabase.table("chat_messages").update({"image_url": archived_url}).eq("id", message_id).execute()
-                        # Also update image_generations record later
-                        image_url = archived_url
-                        logger.info(f"Image archived successfully, using storage URL: {archived_url}")
-                    else:
-                        logger.warning(f"Image archival failed, keeping Replicate URL: {image_url}")
-                except Exception as archive_error:
-                    logger.error(f"Image archival error: {archive_error}")
-                    # Continue with Replicate URL if archiving fails
-                
-                # Cleanup old archives (fire and forget)
-                try:
-                    await loop.run_in_executor(None, lambda: cleanup_old_archives(supabase, user_id))
-                except Exception as cleanup_error:
-                    logger.warning(f"Archive cleanup error: {cleanup_error}")
+                    loop.run_in_executor(None, lambda: cleanup_old_archives(supabase, user_id))
+                except Exception as e:
+                    logger.warning(f"Failed to start cleanup task: {e}")
             
             # Record generation with the final URL (archived if available)
             try:
