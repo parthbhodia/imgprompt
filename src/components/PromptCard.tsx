@@ -51,7 +51,10 @@ export const PromptCard = ({
 
   const handleCopy = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    const text = slides[currentImageIndex].prompt;
+    const safeIndex = Math.min(currentImageIndex, slides.length - 1);
+    const slide = slides[safeIndex];
+    if (!slide) return;
+    const text = slide.prompt;
     try {
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(text);
@@ -78,7 +81,9 @@ export const PromptCard = ({
     return null;
   }
 
-  const currentSlide = slides[currentImageIndex];
+  // Ensure currentImageIndex is within bounds
+  const safeIndex = Math.min(currentImageIndex, slides.length - 1);
+  const currentSlide = slides[safeIndex];
   if (!currentSlide) {
     return null;
   }
