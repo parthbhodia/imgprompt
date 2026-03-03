@@ -38,21 +38,25 @@ def _resize_image_if_needed(raw: bytes) -> bytes:
     try:
         img = Image.open(io.BytesIO(raw))
         orig_width, orig_height = img.size
+        print(f"[FLUX_RESIZE] Input image size: {orig_width}x{orig_height}, mode={img.mode}")
         new_width, new_height = _ensure_divisible_by_patch_size(orig_width, orig_height)
+        print(f"[FLUX_RESIZE] Target size: {new_width}x{new_height} (divisible by {PATCH_SIZE})")
         
         if (orig_width, orig_height) != (new_width, new_height):
-            print(f"[IMAGE_RESIZE] Resizing image from {orig_width}x{orig_height} to {new_width}x{new_height}")
+            print(f"[FLUX_RESIZE] RESIZING from {orig_width}x{orig_height} to {new_width}x{new_height}")
             img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
             buffer = io.BytesIO()
             img_format = img.format if img.format else "WEBP"
             img.save(buffer, format=img_format, quality=95)
-            return buffer.getvalue()
+            result = buffer.getvalue()
+            print(f"[FLUX_RESIZE] Resized image bytes: {len(result)} bytes")
+            return result
         else:
-            print(f"[IMAGE_RESIZE] No resize needed for {orig_width}x{orig_height}")
+            print(f"[FLUX_RESIZE] NO RESIZE needed - already compatible")
     except Exception as e:
-        print(f"[IMAGE_RESIZE] Error during resize: {e}")
-        # If resizing fails, return original
-        pass
+        print(f"[FLUX_RESIZE] Error during resize: {e}")
+        import traceback
+        traceback.print_exc()
     return raw
 
 
@@ -77,10 +81,14 @@ def _validate_image_size(raw: bytes) -> None:
 
 def _upload_image_to_replicate(image_base64: str) -> str:
     """Upload image (data URL) to Replicate and return the file URL for use as model input. Enforces max 5MB."""
+    print(f"[FLUX_UPLOAD] Starting image upload, base64 length: {len(image_base64)}")
     raw, media_type = _data_url_to_bytes(image_base64)
+    print(f"[FLUX_UPLOAD] Decoded bytes: {len(raw)}, media_type: {media_type}")
     _validate_image_size(raw)
     # Resize to ensure dimensions divisible by patch size (Flux requirement)
+    print(f"[FLUX_UPLOAD] Calling resize function...")
     raw = _resize_image_if_needed(raw)
+    print(f"[FLUX_UPLOAD] After resize: {len(raw)} bytes")
     media_type_to_ext = {
         "image/png": "png",
         "image/jpeg": "jpg",
