@@ -108,9 +108,9 @@ def run_flux_img2img(prompt: str, image_base64: str, *, num_outputs: int = 1) ->
     """
     _ensure_replicate_token()
     image_url = _upload_image_to_replicate(image_base64)
-    # Model accepts image (required); prompt may not be in schema so pass image only
+    # Model accepts image (required) and prompt (optional but important for control)
     output = replicate.run(
         FLUX_IMG2IMG_MODEL,
-        input={"image": image_url},
+        input={"image": image_url, "prompt": prompt},
     )
     return _output_to_urls(output)

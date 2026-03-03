@@ -559,8 +559,15 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
                         />
                       )}
                       {m.content}
-                      <span className="text-xs text-muted-foreground/60">
-                        {new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      <span className="text-[10px] text-muted-foreground/50">
+                        {(() => {
+                          const msgDate = new Date(m.created_at);
+                          const today = new Date();
+                          const isToday = msgDate.toDateString() === today.toDateString();
+                          const timeStr = msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                          if (isToday) return timeStr;
+                          return `${msgDate.toLocaleDateString([], { month: 'short', day: 'numeric' })} ${timeStr}`;
+                        })()}
                       </span>
                     </div>
                     ) : (
