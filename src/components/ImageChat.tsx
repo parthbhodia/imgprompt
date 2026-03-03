@@ -1163,6 +1163,10 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                           src={(m as MessageResponse & { attached_image_url?: string }).attached_image_url}
                           alt="Attached"
                           className="rounded-lg max-h-32 w-auto object-cover"
+                          onError={(e) => {
+                            console.error('Failed to load attached image:', e);
+                            (e.target as HTMLImageElement).style.display = 'none';
+                          }}
                         />
                       )}
                       {m.content}
