@@ -335,11 +335,13 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
       return;
     }
 
-    // Check if image is required but not provided
+    // Check if image is suggested but not required - warn but don't block
     const validation = validateImageRequirement(promptToUse);
-    if (shouldBlockGeneration(validation, !!attachedImage)) {
-      toast.error("This prompt requires an uploaded image. Please attach an image first.");
-      return;
+    if (validation.requiresImage && !attachedImage) {
+      // Show warning but allow to proceed - backend/Grok will handle it
+      toast.info("Tip: This prompt works best with an uploaded image. Attach one for better results!", {
+        duration: 4000,
+      });
     }
 
     const sid = await ensureSession();
