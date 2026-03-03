@@ -1,9 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import * as React from "react";
-
-// Dynamic import for react-window to avoid TypeScript issues
-const reactWindow = require("react-window");
-const { VariableSizeList, AutoSizer } = reactWindow;
 import { useAuth } from "@/contexts/AuthContext";
 import { useGeneration } from "@/contexts/GenerationContext";
 import {
@@ -889,41 +885,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
               )}
 
               {/* Messages - chronological (oldest first, newest at bottom like ChatGPT) */}
-              {messages.length > 0 && VariableSizeList && (
-                <div style={{ flex: 1, minHeight: 0 }}>
-                  <AutoSizer>
-                    {({ height, width }: { height: number; width: number }) => (
-                      <VariableSizeList
-                        ref={listRef}
-                        height={height}
-                        itemCount={messages.length}
-                        itemSize={getItemSize}
-                        width={width}
-                        overscanCount={3}
-                      >
-                        {({ index, style }: { index: number; style: React.CSSProperties }) => {
-                          const m = messages[index];
-                          const isLast = index === messages.length - 1;
-                          return (
-                            <div style={{ ...style, paddingBottom: 12 }}>
-                              <MessageItem
-                                message={m}
-                                index={index}
-                                isLast={isLast}
-                                conversationContext={conversationContext}
-                                onRemix={handleGenerateWithPrompt}
-                                setItemSize={setItemSize}
-                              />
-                            </div>
-                          );
-                        }}
-                      </VariableSizeList>
-                    )}
-                  </AutoSizer>
-                </div>
-              )}
-              {/* Fallback for when react-window isn't loaded */}
-              {messages.length > 0 && !VariableSizeList && messages.map((m, index) => (
+              {messages.length > 0 && messages.map((m, index) => (
                 <div
                   key={m.id ? `${m.id}-${index}` : `${m.created_at}-${m.role}-${index}`}
                   className={cn("flex gap-2", m.role === "user" ? "justify-end" : "justify-start")}
