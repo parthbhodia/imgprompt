@@ -48,6 +48,7 @@ import { ChatSidebar } from "./ChatSidebar";
 import { CreditBadge } from "./CreditBadge";
 import { GenerationCostLabel } from "./GenerationCostLabel";
 import { GenerationRecapToast } from "./GenerationRecapToast";
+import { Menu } from "lucide-react";
 import { validateImageRequirement, getImageRequirementMessage, shouldBlockGeneration } from "@/utils/promptValidation";
 
 const PLACEHOLDER = "Describe the image you want to create...";
@@ -250,6 +251,13 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
   const [selectedModel, setSelectedModel] = useState<string>("gemini-3.1-flash-image-preview");
   const [showRecapToast, setShowRecapToast] = useState(false);
   const [recapData, setRecapData] = useState({ cost: 1, remaining: 0, type: "standard" as const });
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [chatSessions, setChatSessions] = useState<Array<{ id: string; title: string; timestamp: Date; messageCount: number }>>([]);
+  const [generationSettings, setGenerationSettings] = useState({
+    imageSize: "1024x1024" as "512x512" | "768x768" | "1024x1024" | "1024x576" | "576x1024",
+    model: "gemini-3.1-flash-image-preview" as "replicate-flux" | "gemini-2.5-flash-image" | "gemini-3.1-flash-image-preview",
+    quality: "standard" as "standard" | "hd",
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -1383,6 +1391,16 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                   <Button
                     variant="ghost"
                     size="icon"
+                    onClick={() => setSidebarOpen(true)}
+                    aria-label="Open sidebar"
+                    title="Open sidebar menu"
+                    className="w-8 h-8 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
+                  >
+                    <Menu className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={() => setFullscreen(true)}
                     aria-label="Expand to fullscreen"
                     title="Expand to fullscreen"
@@ -1460,6 +1478,36 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
           generationType={recapData.type}
           onClose={() => setShowRecapToast(false)}
         />
+
+        {/* Sidebar Sheet */}
+        <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+          <SheetContent side="left" className="flex flex-col w-full sm:max-w-xs p-0">
+            <ChatSidebar
+              sessions={chatSessions}
+              currentSessionId={sessionId}
+              settings={generationSettings}
+              onNewChat={() => {
+                setSessionId(null);
+                setMessagesMap(new Map());
+                setPrompt("");
+                setSidebarOpen(false);
+              }}
+              onSelectSession={(id) => {
+                setSessionId(id);
+                setSidebarOpen(false);
+              }}
+              onDeleteSession={(id) => {
+                setChatSessions(chatSessions.filter(s => s.id !== id));
+                if (sessionId === id) {
+                  setSessionId(null);
+                  setMessagesMap(new Map());
+                }
+              }}
+              onSettingsChange={(settings) => setGenerationSettings(settings)}
+              credits={credits}
+            />
+          </SheetContent>
+        </Sheet>
       </>
     );
   }
