@@ -944,12 +944,12 @@ def list_messages(
     if not session.data:
         raise HTTPException(status_code=404, detail="Session not found")
     
-    # Build query with pagination
+    # Build query with pagination - get latest messages first
     query = (
         supabase.table("chat_messages")
         .select("id, session_id, role, content, image_url, created_at")
         .eq("session_id", str(session_id))
-        .order("created_at", desc=False)
+        .order("created_at", desc=True)  # Latest first
     )
     
     # Apply pagination - if before_id provided, get messages before that one
