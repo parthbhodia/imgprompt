@@ -169,8 +169,14 @@ def generate_imagen_edit(
         
         # Use generate_content with image input
         # Image FIRST, then prompt - this tells model "edit this image" rather than "generate something like this"
-        print(f"[IMAGEN_EDIT] Calling generate_content with model={model}")
-        print(f"[IMAGEN_EDIT] Content order: [image, prompt] (image first = edit mode)")
+        print(f"[IMAGEN_EDIT] ====== REQUEST DETAILS ======")
+        print(f"[IMAGEN_EDIT] Model: {model}")
+        print(f"[IMAGEN_EDIT] Image size: {pil_image.size}")
+        print(f"[IMAGEN_EDIT] Image mode: {pil_image.mode}")
+        print(f"[IMAGEN_EDIT] Prompt: {anchored_prompt}")
+        print(f"[IMAGEN_EDIT] Content array: [PIL.Image, str] (image object first)")
+        print(f"[IMAGEN_EDIT] ====== CALLING GEMINI ======")
+        
         response = client.models.generate_content(
             model=model,
             contents=[pil_image, anchored_prompt],  # Image FIRST, then prompt
@@ -178,7 +184,17 @@ def generate_imagen_edit(
                 response_modalities=["Image"],
             )
         )
-        print(f"[IMAGEN_EDIT] Response received, parts: {len(response.parts) if response.parts else 0}")
+        
+        print(f"[IMAGEN_EDIT] ====== RESPONSE RECEIVED ======")
+        print(f"[IMAGEN_EDIT] Response type: {type(response)}")
+        print(f"[IMAGEN_EDIT] Has parts: {hasattr(response, 'parts')}")
+        if response.parts:
+            print(f"[IMAGEN_EDIT] Number of parts: {len(response.parts)}")
+            for i, part in enumerate(response.parts):
+                print(f"[IMAGEN_EDIT] Part {i}: inline_data={part.inline_data is not None}")
+        else:
+            print(f"[IMAGEN_EDIT] NO PARTS in response - this means no image was generated!")
+            print(f"[IMAGEN_EDIT] Response text (if any): {getattr(response, 'text', 'N/A')}")
         
         # Extract image from response parts
         for part in response.parts:
