@@ -193,17 +193,42 @@ def generate_imagen_edit(
     except Exception as e:
         error_msg = str(e)
         logger.error(f"Image edit failed: {e}")
-        print(f"[IMAGEN_EDIT] ERROR: {error_msg[:200]}")
+        print(f"[IMAGEN_EDIT] ERROR: {error_msg[:300]}")
+        print(f"[IMAGEN_EDIT] ERROR type: {type(e).__name__}")
         
-        # Check for content policy violations and provide dynamic suggestions
-        if "content" in error_msg.lower() and ("policy" in error_msg.lower() or "cannot be generated" in error_msg.lower()):
-            # Import here to avoid circular dependency
-            from llm_refine import get_content_policy_suggestions
-            suggestions = get_content_policy_suggestions(prompt)
-            raise RuntimeError(
-                f"Content policy violation: '{prompt}' cannot be processed. "
-                f"Try these alternatives: {', '.join(suggestions[:3])}"
-            )
+        # Check for content policy violations - broader detection
+        error_lower = error_msg.lower()
+        is_content_policy = (
+            "content" in error_lower and ("policy" in error_lower or "cannot be generated" in error_lower or "violat" in error_lower) or
+            "cannot be generated" in error_lower or
+            "blocked" in error_lower or
+            "safety" in error_lower or
+            "policy" in error_lower
+        )
+        
+        if is_content_policy:
+            print(f"[IMAGEN_EDIT] Content policy detected, getting suggestions for: {prompt[:50]}")
+            try:
+                # Import here to avoid circular dependency
+                from llm_refine import get_content_policy_suggestions
+                suggestions = get_content_policy_suggestions(prompt)
+                print(f"[IMAGEN_EDIT] Got {len(suggestions)} suggestions: {suggestions[:3]}")
+                raise RuntimeError(
+                    f"Content policy violation: '{prompt}' cannot be processed. "
+                    f"Try these alternatives: {', '.join(suggestions[:3])}"
+                )
+            except Exception as suggestion_error:
+                print(f"[IMAGEN_EDIT] Failed to get suggestions: {suggestion_error}")
+                # Fallback with hardcoded suggestions
+                fallback = [
+                    "age progression visualization",
+                    "artistic time-lapse style portrait", 
+                    "stylized character version"
+                ]
+                raise RuntimeError(
+                    f"Content policy violation: '{prompt}' cannot be processed. "
+                    f"Try these alternatives: {', '.join(fallback)}"
+                )
         
         raise RuntimeError(f"Image edit failed: {error_msg}")
 
