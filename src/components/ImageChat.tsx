@@ -731,6 +731,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
 
   const fileToBase64 = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
+      console.log(`[fileToBase64] Starting with file: ${file.name}, size: ${file.size}, type: ${file.type}`);
       // Resize image to ensure dimensions divisible by 16 for Flux compatibility
       const img = new Image();
       const url = URL.createObjectURL(file);
@@ -739,11 +740,12 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
         const PATCH_SIZE = 16;
         const origWidth = img.naturalWidth;
         const origHeight = img.naturalHeight;
+        console.log(`[fileToBase64] Image loaded: ${origWidth}x${origHeight}`);
         const newWidth = Math.floor(origWidth / PATCH_SIZE) * PATCH_SIZE;
         const newHeight = Math.floor(origHeight / PATCH_SIZE) * PATCH_SIZE;
         
         if (newWidth !== origWidth || newHeight !== origHeight) {
-          console.log(`[FRONTEND_RESIZE] ${origWidth}x${origHeight} -> ${newWidth}x${newHeight}`);
+          console.log(`[fileToBase64] RESIZING: ${origWidth}x${origHeight} -> ${newWidth}x${newHeight}`);
           const canvas = document.createElement('canvas');
           canvas.width = newWidth;
           canvas.height = newHeight;
@@ -758,15 +760,22 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
               reject(new Error('Canvas toBlob failed'));
               return;
             }
+            console.log(`[fileToBase64] Resized blob size: ${blob.size}`);
             const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
+            reader.onload = () => {
+              console.log(`[fileToBase64] Done - output base64 length: ${(reader.result as string).length}`);
+              resolve(reader.result as string);
+            };
             reader.onerror = reject;
             reader.readAsDataURL(blob);
           }, 'image/webp', 0.95);
         } else {
-          // No resize needed, use original
+          console.log(`[fileToBase64] NO resize needed, using original`);
           const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
+          reader.onload = () => {
+            console.log(`[fileToBase64] Done - output base64 length: ${(reader.result as string).length}`);
+            resolve(reader.result as string);
+          };
           reader.onerror = reject;
           reader.readAsDataURL(file);
         }
@@ -833,18 +842,21 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
     if (useImage && imageUrl) {
       // Convert image URL to base64 for remix
       try {
+        console.log('[REMIX] Fetching image from URL:', imageUrl.slice(0, 50));
         const response = await fetch(imageUrl);
         const blob = await response.blob();
+        console.log('[REMIX] Fetched blob size:', blob.size, 'type:', blob.type);
         imageToSend = new File([blob], 'remix-image.webp', { type: 'image/webp' });
         imageBase64 = await fileToBase64(imageToSend);
         userMessageAttachedUrl = imageUrl;
       } catch (error) {
-        console.error('Failed to load image for remix:', error);
+        console.error('[REMIX] Failed to load image for remix:', error);
         toast.error("Could not load image for remix");
         setLoading(false);
         return;
       }
     } else if (attachedImage?.file) {
+      console.log('[UPLOAD] Using attached file:', attachedImage.file.name, 'size:', attachedImage.file.size);
       imageToSend = attachedImage.file;
       imageBase64 = await fileToBase64(imageToSend);
       userMessageAttachedUrl = attachedImage.preview;
