@@ -174,6 +174,88 @@ export async function getCredits(token: string | null): Promise<CreditsResponse>
   return fetchApi<CreditsResponse>("/credits", { method: "GET", token });
 }
 
+// ============================================================================
+// CREDIT EARNING API
+// ============================================================================
+
+export type CreditStructureResponse = {
+  new_user_bonus: number;
+  costs: {
+    standard: number;
+    hd: number;
+    batch: number;
+  };
+  earnings: {
+    daily_login: number;
+    share_creation: number;
+    community_engagement: number;
+  };
+};
+
+export type CreditEarningResponse = {
+  success: boolean;
+  credits_earned: number;
+  new_balance: number;
+  message: string;
+};
+
+export type CreditTransaction = {
+  type: string;
+  amount: number;
+  balance_after: number;
+  created_at: string;
+};
+
+export type CreditHistoryResponse = {
+  transactions: CreditTransaction[];
+};
+
+export async function getCreditStructure(): Promise<CreditStructureResponse> {
+  const baseUrl = getBaseUrl();
+  const response = await fetch(`${baseUrl}/credits/structure`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch credit structure: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function claimDailyLoginCredit(
+  token: string | null
+): Promise<CreditEarningResponse> {
+  return fetchApi<CreditEarningResponse>("/credits/claim-daily", {
+    method: "POST",
+    token,
+  });
+}
+
+export async function claimShareCredit(
+  token: string | null
+): Promise<CreditEarningResponse> {
+  return fetchApi<CreditEarningResponse>("/credits/claim-share", {
+    method: "POST",
+    token,
+  });
+}
+
+export async function claimCommunityCredit(
+  token: string | null
+): Promise<CreditEarningResponse> {
+  return fetchApi<CreditEarningResponse>("/credits/claim-community", {
+    method: "POST",
+    token,
+  });
+}
+
+export async function getCreditHistory(
+  token: string | null,
+  limit: number = 50
+): Promise<CreditHistoryResponse> {
+  return fetchApi<CreditHistoryResponse>(`/credits/history?limit=${limit}`, {
+    method: "GET",
+    token,
+  });
+}
+
 export async function getSuggestions(
   token: string | null,
   options?: { limit?: number; category?: string }
