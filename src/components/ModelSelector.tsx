@@ -43,8 +43,10 @@ export function ModelSelector({ token, selectedModel, onSelectModel, disabled }:
     getModels(token)  // token can be null
       .then((data) => {
         console.log("Models API response:", data);
-        if (data.models && data.models.length > 0) {
-          setModels(data.models);
+        // Handle both: array directly OR {models: [...]} wrapper
+        const modelsArray = Array.isArray(data) ? data : data.models;
+        if (modelsArray && modelsArray.length > 0) {
+          setModels(modelsArray);
         } else {
           console.warn("No models returned from API, using fallback");
           // Use fallback if no models
