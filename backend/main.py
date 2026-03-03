@@ -811,6 +811,12 @@ async def generate_image(
     imagen_model = body.model if use_imagen else None
     logger.info(f"Using model: {imagen_model if use_imagen else 'Replicate Flux'}")
     
+    # When img2img is requested, require Imagen (Flux doesn't support proper img2img)
+    if body.image_base64 and not use_imagen:
+        raise HTTPException(
+            status_code=503,
+            detail="Image-to-image transformation requires Imagen. Please set GEMINI_API_KEY in your backend .env file."
+        )
     # Define helper functions outside try block for proper scope
     async def _run_imagen(p: str) -> list[str]:
         """Run Imagen in a thread pool with a 60s timeout."""
@@ -832,11 +838,7 @@ async def generate_image(
     
     async def _run_replicate(p: str) -> list[str]:
         """Run Replicate in a thread pool with a 180s timeout."""
-        if body.image_base64:
-            return await asyncio.wait_for(
-                asyncio.get_event_loop().run_in_executor(None, lambda: run_flux_img2img(p, body.image_base64)),
-                timeout=180,
-            )
+        # img2img is handled by Imagen only, this is text-to-image only
         return await asyncio.wait_for(
             asyncio.get_event_loop().run_in_executor(None, lambda: run_flux(p)),
             timeout=180,
