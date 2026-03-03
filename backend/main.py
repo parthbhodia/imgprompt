@@ -1287,6 +1287,207 @@ def payments_sync_credits(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# ============================================================================
+# USER FEEDBACK SYSTEM - Thumbs, Ratings, Reports
+# ============================================================================
+
+class FeedbackSubmitRequest(BaseModel):
+    message_id: str
+    feedback_type: str  # thumbs_up, thumbs_down, rating, report, suggestion
+    rating: Optional[int] = None  # 1-5 for ratings
+    categories: Optional[Dict[str, int]] = None  # {style_accuracy: 4, prompt_following: 5}
+    report_reason: Optional[str] = None  # inappropriate, low_quality, etc.
+    report_details: Optional[str] = None
+    improvement_suggestion: Optional[str] = None
+
+
+class FeedbackSubmitResponse(BaseModel):
+    success: bool
+    message: str
+
+
+class FeedbackStatsResponse(BaseModel):
+    thumbs_up: int
+    thumbs_down: int
+    total_ratings: int
+    average_rating: Optional[float]
+
+
+@app.post("/feedback/submit", response_model=FeedbackSubmitResponse)
+def submit_user_feedback(
+    body: FeedbackSubmitRequest,
+    user_id: Annotated[str, Depends(get_current_user_id)],
+):
+    """Submit feedback for a generated image (thumbs, rating, report)."""
+    from feedback_system import submit_feedback, FeedbackType, ReportReason
+    
+    supabase = get_supabase_admin()
+    
+    # Convert string to enum
+    try:
+        feedback_type = FeedbackType(body.feedback_type)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Invalid feedback_type: {body.feedback_type}")
+    
+    # Convert report reason if provided
+    report_reason = None
+    if body.report_reason:
+        try:
+            report_reason = ReportReason(body.report_reason)
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Invalid report_reason: {body.report_reason}")
+    
+    success = submit_feedback(
+        supabase=supabase,
+        user_id=user_id,
+        message_id=body.message_id,
+        feedback_type=feedback_type,
+        rating=body.rating,
+        categories=body.categories,
+        report_reason=report_reason,
+        report_details=body.report_details,
+        improvement_suggestion=body.improvement_suggestion,
+    )
+    
+    if success:
+        return FeedbackSubmitResponse(success=True, message="Feedback submitted successfully")
+    raise HTTPException(status_code=500, detail="Failed to submit feedback")
+
+
+@app.get("/feedback/stats/{message_id}", response_model=FeedbackStatsResponse)
+def get_feedback_stats_endpoint(
+    message_id: str,
+    user_id: Annotated[str, Depends(get_current_user_id)] = None,
+):
+    """Get aggregated feedback stats for a message (public endpoint)."""
+    from feedback_system import get_feedback_stats
+    
+    supabase = get_supabase_admin()
+    stats = get_feedback_stats(supabase, message_id)
+    
+    return FeedbackStatsResponse(**stats)
+
+
+@app.get("/feedback/history")
+def get_user_feedback_history_endpoint(
+    user_id: Annotated[str, Depends(get_current_user_id)],
+    limit: int = Query(50, ge=1, le=100),
+):
+    """Get current user's feedback history."""
+    from feedback_system import get_user_feedback_history
+    
+    supabase = get_supabase_admin()
+    history = get_user_feedback_history(supabase, user_id, limit)
+    
+    return {"feedback": history}
+
+
+# ============================================================================
+# INTELLIGENT PROMPT SUGGESTIONS - Context-aware, Trending, Style Completion
+# ============================================================================
+
+class PromptSuggestionsRequest(BaseModel):
+    conversation_history: List[Dict[str, Any]] = []
+    current_prompt: str = ""
+
+
+class PromptSuggestionsResponse(BaseModel):
+    suggestions: List[Dict[str, str]]
+
+
+class PromptEnhanceRequest(BaseModel):
+    prompt: str
+
+
+class PromptEnhanceResponse(BaseModel):
+    original: str
+    enhanced: str
+    suggested_additions: List[str]
+    trending_hashtags: List[str]
+    seasonal_suggestions: List[str]
+
+
+class StyleCompletionRequest(BaseModel):
+    partial_text: str
+
+
+class StyleCompletionResponse(BaseModel):
+    completions: List[str]
+
+
+@app.post("/prompts/suggestions", response_model=PromptSuggestionsResponse)
+def get_prompt_suggestions_endpoint(
+    body: PromptSuggestionsRequest,
+    user_id: Annotated[str, Depends(get_current_user_id)] = None,
+):
+    """Get context-aware prompt suggestions based on conversation history."""
+    from prompt_suggestions import get_context_aware_suggestions
+    
+    suggestions = get_context_aware_suggestions(
+        conversation_history=body.conversation_history,
+        current_prompt=body.current_prompt,
+    )
+    
+    return PromptSuggestionsResponse(suggestions=suggestions)
+
+
+@app.post("/prompts/enhance", response_model=PromptEnhanceResponse)
+def enhance_prompt_endpoint(
+    body: PromptEnhanceRequest,
+    user_id: Annotated[str, Depends(get_current_user_id)] = None,
+):
+    """Enhance a prompt with trending elements, quality boosters, and seasonal suggestions."""
+    from prompt_suggestions import enhance_prompt_with_trends
+    
+    result = enhance_prompt_with_trends(body.prompt)
+    
+    return PromptEnhanceResponse(**result)
+
+
+@app.post("/prompts/complete", response_model=StyleCompletionResponse)
+def style_completion_endpoint(
+    body: StyleCompletionRequest,
+    user_id: Annotated[str, Depends(get_current_user_id)] = None,
+):
+    """Get style completion suggestions for partial text (e.g., 'Make it more...')."""
+    from prompt_suggestions import get_style_completions
+    
+    completions = get_style_completions(body.partial_text)
+    
+    return StyleCompletionResponse(completions=completions)
+
+
+@app.get("/prompts/trending")
+def get_trending_elements_endpoint(
+    user_id: Annotated[str, Depends(get_current_user_id)] = None,
+):
+    """Get trending styles, hashtags, and seasonal elements."""
+    from prompt_suggestions import TRENDING_ELEMENTS
+    from datetime import datetime
+    
+    # Determine current season
+    month = datetime.now().month
+    if month in [3, 4, 5]:
+        season = "spring"
+    elif month in [6, 7, 8]:
+        season = "summer"
+    elif month in [9, 10, 11]:
+        season = "fall"
+    else:
+        season = "winter"
+    
+    return {
+        "styles": TRENDING_ELEMENTS["styles"][:10],
+        "hashtags": TRENDING_ELEMENTS["instagram_trends"],
+        "quality_boosters": TRENDING_ELEMENTS["quality_boosters"],
+        "seasonal": {
+            "current_season": season,
+            "elements": TRENDING_ELEMENTS["seasonal_elements"][season],
+        },
+        "updated_at": datetime.now().isoformat(),
+    }
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))
