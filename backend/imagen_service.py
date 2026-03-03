@@ -34,7 +34,9 @@ def _resize_image_if_needed(pil_image: Image.Image) -> Image.Image:
     
     if (orig_width, orig_height) != (new_width, new_height):
         pil_image = pil_image.resize((new_width, new_height), Image.Resampling.LANCZOS)
-        logger.info(f"Resized image from {orig_width}x{orig_height} to {new_width}x{new_height}")
+        print(f"[IMAGEN_RESIZE] Resized image from {orig_width}x{orig_height} to {new_width}x{new_height}")
+    else:
+        print(f"[IMAGEN_RESIZE] No resize needed for {orig_width}x{orig_height}")
     
     return pil_image
 

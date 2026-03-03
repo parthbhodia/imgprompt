@@ -41,12 +41,16 @@ def _resize_image_if_needed(raw: bytes) -> bytes:
         new_width, new_height = _ensure_divisible_by_patch_size(orig_width, orig_height)
         
         if (orig_width, orig_height) != (new_width, new_height):
+            print(f"[IMAGE_RESIZE] Resizing image from {orig_width}x{orig_height} to {new_width}x{new_height}")
             img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
             buffer = io.BytesIO()
             img_format = img.format if img.format else "WEBP"
             img.save(buffer, format=img_format, quality=95)
             return buffer.getvalue()
-    except Exception:
+        else:
+            print(f"[IMAGE_RESIZE] No resize needed for {orig_width}x{orig_height}")
+    except Exception as e:
+        print(f"[IMAGE_RESIZE] Error during resize: {e}")
         # If resizing fails, return original
         pass
     return raw
