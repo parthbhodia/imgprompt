@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     stripe_price_pro: str = ""
     app_url: str = "http://localhost:8080"
     credits_per_generation: int = 1
-    default_credits_new_user: int = 5
+    default_credits_new_user: int = 10
     # Dev only: allow API without sign-in when X-Dev-No-Auth: 1 header is sent (e.g. from localhost)
     allow_dev_no_auth: bool = False
 

@@ -399,6 +399,109 @@ def credits(user_id: Annotated[str, Depends(get_current_user_id)]):
     return CreditsResponse(credits=get_credits(supabase, user_id))
 
 
+# Credit earning and structure endpoints
+class CreditStructureResponse(BaseModel):
+    new_user_bonus: int
+    costs: dict
+    earnings: dict
+
+
+class CreditEarningResponse(BaseModel):
+    success: bool
+    credits_earned: float
+    new_balance: float
+    message: str
+
+
+class CreditHistoryResponse(BaseModel):
+    transactions: list[dict]
+
+
+@app.get("/credits/structure", response_model=CreditStructureResponse)
+def get_credit_structure():
+    """Get the credit structure: costs and earning methods."""
+    return CreditStructureResponse(
+        new_user_bonus=settings.default_credits_new_user,
+        costs={
+            "standard": settings.credits_per_generation,
+            "hd": settings.credits_hd_generation,
+            "batch": settings.credits_batch_generation,
+        },
+        earnings={
+            "daily_login": settings.credits_daily_login,
+            "share_creation": settings.credits_share_creation,
+            "community_engagement": settings.credits_community_engagement,
+        }
+    )
+
+
+@app.post("/credits/claim-daily", response_model=CreditEarningResponse)
+def claim_daily_login_credit(
+    user_id: Annotated[str, Depends(get_current_user_id)],
+):
+    """Claim daily login credit (1 credit per day)."""
+    from credits import claim_daily_login
+    supabase = get_supabase_admin()
+    success, new_balance = claim_daily_login(supabase, user_id)
+    if success:
+        return CreditEarningResponse(
+            success=True,
+            credits_earned=settings.credits_daily_login,
+            new_balance=new_balance,
+            message="Daily login credit claimed!"
+        )
+    return CreditEarningResponse(
+        success=False,
+        credits_earned=0,
+        new_balance=new_balance,
+        message="Daily login already claimed today. Come back tomorrow!"
+    )
+
+
+@app.post("/credits/claim-share", response_model=CreditEarningResponse)
+def claim_share_credit(
+    user_id: Annotated[str, Depends(get_current_user_id)],
+):
+    """Claim credit for sharing a creation (1 credit per share)."""
+    from credits import claim_share_credit
+    supabase = get_supabase_admin()
+    success, new_balance = claim_share_credit(supabase, user_id)
+    return CreditEarningResponse(
+        success=success,
+        credits_earned=settings.credits_share_creation if success else 0,
+        new_balance=new_balance,
+        message="Share credit claimed!" if success else "Failed to claim share credit."
+    )
+
+
+@app.post("/credits/claim-community", response_model=CreditEarningResponse)
+def claim_community_credit(
+    user_id: Annotated[str, Depends(get_current_user_id)],
+):
+    """Claim credit for community engagement (0.5 credits)."""
+    from credits import claim_community_engagement
+    supabase = get_supabase_admin()
+    success, new_balance = claim_community_engagement(supabase, user_id)
+    return CreditEarningResponse(
+        success=success,
+        credits_earned=settings.credits_community_engagement if success else 0,
+        new_balance=new_balance,
+        message="Community engagement credit claimed!" if success else "Failed to claim community credit."
+    )
+
+
+@app.get("/credits/history", response_model=CreditHistoryResponse)
+def get_user_credit_history(
+    user_id: Annotated[str, Depends(get_current_user_id)],
+    limit: int = Query(50, ge=1, le=100),
+):
+    """Get user's credit transaction history."""
+    from credits import get_credit_history
+    supabase = get_supabase_admin()
+    transactions = get_credit_history(supabase, user_id, limit)
+    return CreditHistoryResponse(transactions=transactions)
+
+
 class PlanInfo(BaseModel):
     slug: str
     label: str

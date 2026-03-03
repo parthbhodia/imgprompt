@@ -1,13 +1,33 @@
-"""Credit balance and deduction using Supabase profiles.credits."""
+"""Credit balance, deduction, earning, and history using Supabase profiles.credits."""
+from datetime import datetime, timedelta
+from typing import Literal, Optional
 from supabase import Client
 
 from config import settings
 from auth import DEV_USER_ID
 
+# Credit costs for different generation types
+class CreditCosts:
+    STANDARD = 1
+    HD = 2
+    BATCH = 3
 
-def get_credits(supabase: Client, user_id: str) -> int:
+# Credit earning amounts
+class CreditEarnings:
+    DAILY_LOGIN = 1
+    SHARE_CREATION = 1
+    COMMUNITY_ENGAGEMENT = 0.5
+
+CreditTransactionType = Literal[
+    "spend_standard", "spend_hd", "spend_batch",
+    "earn_daily_login", "earn_share", "earn_community",
+    "purchase", "bonus"
+]
+
+
+def get_credits(supabase: Client, user_id: str) -> float:
     if user_id == DEV_USER_ID:
-        return 100  # Dev no-auth: 100 credits for testing (no DB)
+        return 100.0  # Dev no-auth: 100 credits for testing
     row = (
         supabase.table("profiles")
         .select("credits")
@@ -15,46 +35,243 @@ def get_credits(supabase: Client, user_id: str) -> int:
         .execute()
     )
     if not row.data or len(row.data) == 0:
-        return 0
-    return int(row.data[0].get("credits", 0))
+        return 0.0
+    return float(row.data[0].get("credits", 0))
 
 
 def ensure_credits_column(supabase: Client, user_id: str) -> None:
     """Ensure profile exists and has credits column; init to default if missing."""
     if user_id == DEV_USER_ID:
-        return  # Dev no-auth: skip DB
+        return
     row = (
         supabase.table("profiles")
-        .select("credits")
+        .select("credits, last_daily_login")
         .eq("id", user_id)
         .execute()
     )
     if row.data and len(row.data) > 0:
         return
+    # New user - give welcome bonus
     supabase.table("profiles").upsert(
-        {"id": user_id, "credits": settings.default_credits_new_user},
+        {
+            "id": user_id, 
+            "credits_per_generation": 1,
+            "credits_hd_generation": 2,
+            "credits_batch_generation": 3,
+            "credits_daily_login": 1,
+            "credits_share_creation": 1,
+            "credits_community_engagement": 0.5,
+            "credits": settings.default_credits_new_user,
+            "last_daily_login": None,
+            "last_share_credit": None,
+        },
         on_conflict="id",
     ).execute()
 
 
-def deduct_credits(supabase: Client, user_id: str, amount: int = 1) -> bool:
+def deduct_credits(supabase: Client, user_id: str, amount: float, 
+                     transaction_type: CreditTransactionType = "spend_standard") -> bool:
     if user_id == DEV_USER_ID:
-        return True  # Dev no-auth: no-op, always allow
+        return True
     ensure_credits_column(supabase, user_id)
     current = get_credits(supabase, user_id)
     if current < amount:
         return False
     new_balance = current - amount
+    
+    # Update credits
     r = (
         supabase.table("profiles")
         .update({"credits": new_balance})
         .eq("id", user_id)
         .execute()
     )
+    
+    # Log transaction
+    try:
+        supabase.table("credit_transactions").insert({
+            "user_id": user_id,
+            "amount": -amount,
+            "type": transaction_type,
+            "balance_after": new_balance,
+        }).execute()
+    except:
+        pass  # Non-critical
+    
     return bool(r.data)
 
 
-def add_credits(supabase: Client, user_id: str, amount: int) -> None:
+def add_credits(supabase: Client, user_id: str, amount: float,
+                transaction_type: CreditTransactionType = "bonus") -> bool:
+    """Add credits to user balance with transaction logging."""
+    if user_id == DEV_USER_ID:
+        return True
     ensure_credits_column(supabase, user_id)
     current = get_credits(supabase, user_id)
-    supabase.table("profiles").update({"credits": current + amount}).eq("id", user_id).execute()
+    new_balance = current + amount
+    
+    # Update credits
+    r = (
+        supabase.table("profiles")
+        .update({"credits": new_balance})
+        .eq("id", user_id)
+        .execute()
+    )
+    
+    # Log transaction
+    try:
+        supabase.table("credit_transactions").insert({
+            "user_id": user_id,
+            "amount": amount,
+            "type": transaction_type,
+            "balance_after": new_balance,
+        }).execute()
+    except:
+        pass  # Non-critical
+    
+    return bool(r.data)
+
+
+def claim_daily_login(supabase: Client, user_id: str) -> tuple[bool, float]:
+    """Claim daily login credit. Returns (success, new_balance)."""
+    if user_id == DEV_USER_ID:
+        return True, 100.0
+    
+    ensure_credits_column(supabase, user_id)
+    
+    # Check last claim
+    row = (
+        supabase.table("profiles")
+        .select("last_daily_login, credits")
+        .eq("id", user_id)
+        .execute()
+    )
+    
+    if not row.data:
+        return False, 0.0
+    
+    data = row.data[0]
+    last_login = data.get("last_daily_login")
+    
+    # Check if already claimed today
+    if last_login:
+        last_date = datetime.fromisoformat(last_login.replace('Z', '+00:00'))
+        now = datetime.now(last_date.tzinfo)
+        if last_date.date() == now.date():
+            return False, float(data.get("credits", 0))
+    
+    # Grant daily login credit
+    new_balance = float(data.get("credits", 0)) + CreditEarnings.DAILY_LOGIN
+    
+    supabase.table("profiles").update({
+        "credits": new_balance,
+        "last_daily_login": datetime.now().isoformat(),
+    }).eq("id", user_id).execute()
+    
+    # Log transaction
+    try:
+        supabase.table("credit_transactions").insert({
+            "user_id": user_id,
+            "amount": CreditEarnings.DAILY_LOGIN,
+            "type": "earn_daily_login",
+            "balance_after": new_balance,
+        }).execute()
+    except:
+        pass
+    
+    return True, new_balance
+
+
+def claim_share_credit(supabase: Client, user_id: str) -> tuple[bool, float]:
+    """Claim credit for sharing a creation. Returns (success, new_balance)."""
+    if user_id == DEV_USER_ID:
+        return True, 100.0
+    
+    ensure_credits_column(supabase, user_id)
+    
+    row = (
+        supabase.table("profiles")
+        .select("credits")
+        .eq("id", user_id)
+        .execute()
+    )
+    
+    if not row.data:
+        return False, 0.0
+    
+    current = float(row.data[0].get("credits", 0))
+    new_balance = current + CreditEarnings.SHARE_CREATION
+    
+    supabase.table("profiles").update({
+        "credits": new_balance,
+    }).eq("id", user_id).execute()
+    
+    # Log transaction
+    try:
+        supabase.table("credit_transactions").insert({
+            "user_id": user_id,
+            "amount": CreditEarnings.SHARE_CREATION,
+            "type": "earn_share",
+            "balance_after": new_balance,
+        }).execute()
+    except:
+        pass
+    
+    return True, new_balance
+
+
+def claim_community_engagement(supabase: Client, user_id: str) -> tuple[bool, float]:
+    """Claim credit for community engagement. Returns (success, new_balance)."""
+    if user_id == DEV_USER_ID:
+        return True, 100.0
+    
+    ensure_credits_column(supabase, user_id)
+    
+    row = (
+        supabase.table("profiles")
+        .select("credits")
+        .eq("id", user_id)
+        .execute()
+    )
+    
+    if not row.data:
+        return False, 0.0
+    
+    current = float(row.data[0].get("credits", 0))
+    new_balance = current + CreditEarnings.COMMUNITY_ENGAGEMENT
+    
+    supabase.table("profiles").update({
+        "credits": new_balance,
+    }).eq("id", user_id).execute()
+    
+    # Log transaction
+    try:
+        supabase.table("credit_transactions").insert({
+            "user_id": user_id,
+            "amount": CreditEarnings.COMMUNITY_ENGAGEMENT,
+            "type": "earn_community",
+            "balance_after": new_balance,
+        }).execute()
+    except:
+        pass
+    
+    return True, new_balance
+
+
+def get_credit_history(supabase: Client, user_id: str, limit: int = 50):
+    """Get user's credit transaction history."""
+    if user_id == DEV_USER_ID:
+        return []
+    
+    try:
+        r = (
+            supabase.table("credit_transactions")
+            .select("type, amount, balance_after, created_at")
+            .eq("user_id", user_id)
+            .order("created_at", desc=True)
+            .limit(limit)
+            .execute()
+        )
+        return r.data or []
+    except:
+        return []
