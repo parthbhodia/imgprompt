@@ -195,15 +195,11 @@ def generate_imagen_edit(
         logger.error(f"Image edit failed: {e}")
         print(f"[IMAGEN_EDIT] ERROR: {error_msg[:200]}")
         
-        # Check for content policy violations and provide suggestions
+        # Check for content policy violations and provide dynamic suggestions
         if "content" in error_msg.lower() and ("policy" in error_msg.lower() or "cannot be generated" in error_msg.lower()):
-            suggestions = [
-                "age progression visualization",
-                "artistic time-lapse style portrait",
-                "stylized senior citizen version",
-                "add wrinkles and gray hair, keep same face",
-                "artistic aged character illustration"
-            ]
+            # Import here to avoid circular dependency
+            from llm_refine import get_content_policy_suggestions
+            suggestions = get_content_policy_suggestions(prompt)
             raise RuntimeError(
                 f"Content policy violation: '{prompt}' cannot be processed. "
                 f"Try these alternatives: {', '.join(suggestions[:3])}"
