@@ -566,3 +566,161 @@ export async function getThinkingSteps(
     body: JSON.stringify(body),
   });
 }
+
+// ============================================================================
+// FEEDBACK API
+// ============================================================================
+
+export type FeedbackSubmitRequest = {
+  message_id: string;
+  feedback_type: "thumbs_up" | "thumbs_down" | "rating" | "report" | "suggestion";
+  rating?: number; // 1-5
+  categories?: {
+    style_accuracy?: number;
+    prompt_following?: number;
+    overall_quality?: number;
+  };
+  report_reason?: "inappropriate" | "low_quality" | "not_matching_prompt" | "copyright" | "other";
+  report_details?: string;
+  improvement_suggestion?: string;
+};
+
+export type FeedbackSubmitResponse = {
+  success: boolean;
+  message: string;
+};
+
+export type FeedbackStatsResponse = {
+  thumbs_up: number;
+  thumbs_down: number;
+  total_ratings: number;
+  average_rating: number | null;
+};
+
+export type FeedbackHistoryItem = {
+  id: string;
+  message_id: string;
+  feedback_type: string;
+  rating?: number;
+  created_at: string;
+  chat_messages?: {
+    image_url: string;
+    content: string;
+  };
+};
+
+export async function submitFeedback(
+  token: string | null,
+  body: FeedbackSubmitRequest
+): Promise<FeedbackSubmitResponse> {
+  return fetchApi<FeedbackSubmitResponse>("/feedback/submit", {
+    method: "POST",
+    token,
+    body: JSON.stringify(body),
+  });
+}
+
+export async function getFeedbackStats(
+  token: string | null,
+  messageId: string
+): Promise<FeedbackStatsResponse> {
+  return fetchApi<FeedbackStatsResponse>(`/feedback/stats/${messageId}`, {
+    method: "GET",
+    token,
+  });
+}
+
+export async function getFeedbackHistory(
+  token: string | null,
+  limit: number = 50
+): Promise<{ feedback: FeedbackHistoryItem[] }> {
+  return fetchApi<{ feedback: FeedbackHistoryItem[] }>(`/feedback/history?limit=${limit}`, {
+    method: "GET",
+    token,
+  });
+}
+
+// ============================================================================
+// INTELLIGENT PROMPT SUGGESTIONS API
+// ============================================================================
+
+export type PromptSuggestion = {
+  type: "style" | "quality" | "variation" | "style_transfer" | "refinement";
+  text: string;
+  icon: string;
+  action?: string;
+};
+
+export type PromptSuggestionsRequest = {
+  conversation_history: Array<{ role: "user" | "assistant"; content: string }>;
+  current_prompt: string;
+};
+
+export type PromptSuggestionsResponse = {
+  suggestions: PromptSuggestion[];
+};
+
+export type PromptEnhanceResponse = {
+  original: string;
+  enhanced: string;
+  suggested_additions: string[];
+  trending_hashtags: string[];
+  seasonal_suggestions: string[];
+};
+
+export type StyleCompletionResponse = {
+  completions: string[];
+};
+
+export type TrendingElementsResponse = {
+  styles: string[];
+  hashtags: string[];
+  quality_boosters: string[];
+  seasonal: {
+    current_season: string;
+    elements: string[];
+  };
+  updated_at: string;
+};
+
+export async function getPromptSuggestions(
+  token: string | null,
+  body: PromptSuggestionsRequest
+): Promise<PromptSuggestionsResponse> {
+  return fetchApi<PromptSuggestionsResponse>("/prompts/suggestions", {
+    method: "POST",
+    token,
+    body: JSON.stringify(body),
+  });
+}
+
+export async function enhancePrompt(
+  token: string | null,
+  prompt: string
+): Promise<PromptEnhanceResponse> {
+  return fetchApi<PromptEnhanceResponse>("/prompts/enhance", {
+    method: "POST",
+    token,
+    body: JSON.stringify({ prompt }),
+  });
+}
+
+export async function getStyleCompletions(
+  token: string | null,
+  partialText: string
+): Promise<StyleCompletionResponse> {
+  return fetchApi<StyleCompletionResponse>("/prompts/complete", {
+    method: "POST",
+    token,
+    body: JSON.stringify({ partial_text: partialText }),
+  });
+}
+
+export async function getTrendingElements(): Promise<TrendingElementsResponse> {
+  const baseUrl = getBaseUrl();
+  const response = await fetch(`${baseUrl}/prompts/trending`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch trending elements: ${response.statusText}`);
+  }
+  return response.json();
+}
