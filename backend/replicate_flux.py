@@ -21,6 +21,7 @@ MAX_IMAGES_PER_REQUEST = 1
 
 # Flux models require dimensions divisible by 16 (not just 8) for VAE compatibility
 PATCH_SIZE = 16
+print(f"[FLUX_INIT] PATCH_SIZE = {PATCH_SIZE}")
 
 
 def _ensure_divisible_by_patch_size(width: int, height: int) -> tuple[int, int]:
@@ -30,6 +31,7 @@ def _ensure_divisible_by_patch_size(width: int, height: int) -> tuple[int, int]:
     # Ensure minimum size
     new_width = max(PATCH_SIZE, new_width)
     new_height = max(PATCH_SIZE, new_height)
+    print(f"[FLUX_MATH] {width}x{height} // {PATCH_SIZE} = {width // PATCH_SIZE}x{height // PATCH_SIZE} -> {new_width}x{new_height}")
     return new_width, new_height
 
 
