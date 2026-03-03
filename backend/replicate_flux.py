@@ -12,8 +12,8 @@ _token = os.environ.get("REPLICATE_API_TOKEN") or getattr(settings, "replicate_a
 if _token:
     os.environ["REPLICATE_API_TOKEN"] = _token
 
-# Model for img2img when user uploads an image (using official Flux 1.1 Pro Ultra which handles arbitrary sizes)
-FLUX_IMG2IMG_MODEL = "black-forest-labs/flux-1.1-pro-ultra"
+# Model for img2img - using Flux dev which properly supports image-to-image
+FLUX_IMG2IMG_MODEL = "black-forest-labs/flux-dev"
 
 # Image limits: 5MB per image; dimension check (8000px) is enforced on the frontend.
 MAX_IMAGE_BYTES = 5 * 1024 * 1024
