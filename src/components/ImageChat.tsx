@@ -220,8 +220,9 @@ interface ImageChatProps {
 }
 
 export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPromptConsumed }: ImageChatProps) {
-  const { user, session, signInWithGoogle } = useAuth();
+  const { user, session, signInWithGoogle, hasRole, profile } = useAuth();
   const { generationState, startGeneration, stopGeneration, getElapsedTime } = useGeneration();
+  const isAdmin = hasRole("admin");
   const [open, setOpen] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const [credits, setCredits] = useState<number | null>(null);
@@ -324,9 +325,9 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
     return () => window.removeEventListener("keydown", handleEsc);
   }, [fullscreen]);
 
-  // Load sessions and credit history from backend
+  // Load sessions and credit history from backend (admin only)
   useEffect(() => {
-    if (!user && !session) return;
+    if (!isAdmin || !session) return;
     
     const loadSessionsAndHistory = async () => {
       try {
@@ -341,17 +342,19 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
           messageCount: 0, // Will be updated when messages are loaded
         }));
         setChatSessions(formattedSessions);
+        console.log('Loaded sessions:', formattedSessions);
         
         // Load credit history
         const history = await getCreditHistory(token, 20);
         setCreditHistory(history.transactions || []);
+        console.log('Loaded credit history:', history.transactions);
       } catch (err) {
         console.error('Failed to load sessions or credit history:', err);
       }
     };
     
     loadSessionsAndHistory();
-  }, [user, session]);
+  }, [isAdmin, session]);
 
   // Load initialImageUrl when provided (for Generate with AI workflow)
   useEffect(() => {
@@ -1420,16 +1423,18 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                       Dev (no sign-in)
                     </span>
                   )}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setSidebarOpen(true)}
-                    aria-label="Open sidebar"
-                    title="Open sidebar menu"
-                    className="w-8 h-8 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
-                  >
-                    <Menu className="w-4 h-4" />
-                  </Button>
+                  {isAdmin && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setSidebarOpen(true)}
+                      aria-label="Open sidebar"
+                      title="Open sidebar menu (admin only)"
+                      className="w-8 h-8 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
+                    >
+                      <Menu className="w-4 h-4" />
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     size="icon"
