@@ -43,30 +43,29 @@ def ensure_credits_column(supabase: Client, user_id: str) -> None:
     """Ensure profile exists and has credits column; init to default if missing."""
     if user_id == DEV_USER_ID:
         return
-    row = (
-        supabase.table("profiles")
-        .select("credits, last_daily_login")
-        .eq("id", user_id)
-        .execute()
-    )
-    if row.data and len(row.data) > 0:
-        return
-    # New user - give welcome bonus
-    supabase.table("profiles").upsert(
-        {
-            "id": user_id, 
-            "credits_per_generation": 1,
-            "credits_hd_generation": 2,
-            "credits_batch_generation": 3,
-            "credits_daily_login": 1,
-            "credits_share_creation": 1,
-            "credits_community_engagement": 0.5,
-            "credits": settings.default_credits_new_user,
-            "last_daily_login": None,
-            "last_share_credit": None,
-        },
-        on_conflict="id",
-    ).execute()
+    try:
+        row = (
+            supabase.table("profiles")
+            .select("credits")
+            .eq("id", user_id)
+            .execute()
+        )
+        if row.data and len(row.data) > 0:
+            return
+    except Exception:
+        pass  # Column might not exist yet
+    
+    # New user - give welcome bonus (only set id and credits, other columns may not exist yet)
+    try:
+        supabase.table("profiles").upsert(
+            {
+                "id": user_id, 
+                "credits": settings.default_credits_new_user,
+            },
+            on_conflict="id",
+        ).execute()
+    except Exception as e:
+        print(f"Failed to create profile: {e}")
 
 
 def deduct_credits(supabase: Client, user_id: str, amount: float, 
@@ -139,47 +138,60 @@ def claim_daily_login(supabase: Client, user_id: str) -> tuple[bool, float]:
     
     ensure_credits_column(supabase, user_id)
     
-    # Check last claim
-    row = (
-        supabase.table("profiles")
-        .select("last_daily_login, credits")
-        .eq("id", user_id)
-        .execute()
-    )
-    
-    if not row.data:
-        return False, 0.0
-    
-    data = row.data[0]
-    last_login = data.get("last_daily_login")
-    
-    # Check if already claimed today
-    if last_login:
-        last_date = datetime.fromisoformat(last_login.replace('Z', '+00:00'))
-        now = datetime.now(last_date.tzinfo)
-        if last_date.date() == now.date():
-            return False, float(data.get("credits", 0))
-    
-    # Grant daily login credit
-    new_balance = float(data.get("credits", 0)) + CreditEarnings.DAILY_LOGIN
-    
-    supabase.table("profiles").update({
-        "credits": new_balance,
-        "last_daily_login": datetime.now().isoformat(),
-    }).eq("id", user_id).execute()
-    
-    # Log transaction
     try:
-        supabase.table("credit_transactions").insert({
-            "user_id": user_id,
-            "amount": CreditEarnings.DAILY_LOGIN,
-            "type": "earn_daily_login",
-            "balance_after": new_balance,
-        }).execute()
-    except:
-        pass
-    
-    return True, new_balance
+        # Check last claim - safely handle missing column
+        row = (
+            supabase.table("profiles")
+            .select("credits, last_daily_login")
+            .eq("id", user_id)
+            .execute()
+        )
+        
+        if not row.data:
+            return False, 0.0
+        
+        data = row.data[0]
+        last_login = data.get("last_daily_login")
+        
+        # Check if already claimed today
+        if last_login:
+            last_date = datetime.fromisoformat(last_login.replace('Z', '+00:00'))
+            now = datetime.now(last_date.tzinfo)
+            if last_date.date() == now.date():
+                return False, float(data.get("credits", 0))
+        
+        # Grant daily login credit
+        new_balance = float(data.get("credits", 0)) + CreditEarnings.DAILY_LOGIN
+        
+        # Try to update with last_daily_login, but don't fail if column doesn't exist
+        try:
+            supabase.table("profiles").update({
+                "credits": new_balance,
+                "last_daily_login": datetime.now().isoformat(),
+            }).eq("id", user_id).execute()
+        except:
+            # Fallback: just update credits
+            supabase.table("profiles").update({
+                "credits": new_balance,
+            }).eq("id", user_id).execute()
+        
+        # Log transaction
+        try:
+            supabase.table("credit_transactions").insert({
+                "user_id": user_id,
+                "amount": CreditEarnings.DAILY_LOGIN,
+                "type": "earn_daily_login",
+                "balance_after": new_balance,
+            }).execute()
+        except:
+            pass
+        
+        return True, new_balance
+    except Exception as e:
+        print(f"Claim daily login failed: {e}")
+        # Fallback: just get current credits
+        current = get_credits(supabase, user_id)
+        return False, current
 
 
 def claim_share_credit(supabase: Client, user_id: str) -> tuple[bool, float]:
