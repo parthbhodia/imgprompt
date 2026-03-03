@@ -1096,21 +1096,12 @@ const Index = () => {
         </DialogContent>
       </Dialog>
       <button
-        type="button"
-        onClick={() => document.getElementById("ai-chat")?.scrollIntoView({ behavior: "smooth", block: "start" })}
-        className="fixed bottom-6 left-6 z-50 flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold shadow-xl bg-gradient-to-r from-primary to-accent hover:scale-105 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
-        aria-label="Scroll to AI Image Chat"
-      >
-        <Sparkles className="w-5 h-5" />
-        <span className="hidden sm:inline">AI Image</span>
-      </button>
-      <button
         onClick={() => setIsFeedbackDialogOpen(true)}
-        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold text-white shadow-xl bg-gradient-to-r from-primary to-accent hover:scale-105 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
+        className="fixed bottom-4 right-4 z-50 flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold text-white shadow-lg bg-gradient-to-r from-pink-500 to-rose-500 hover:scale-105 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-pink-500 sm:bottom-6 sm:right-6 sm:px-4 sm:py-2.5 sm:text-sm"
         aria-label="Send feedback about ImgPrompt"
       >
-        <MessageCircle className="w-4 h-4" />
-        Feedback
+        <MessageCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+        <span className="hidden sm:inline">Feedback</span>
       </button>
       <Dialog open={isFeedbackDialogOpen} onOpenChange={setIsFeedbackDialogOpen}>
         <DialogContent className="sm:max-w-[720px] h-[80vh] flex flex-col">
