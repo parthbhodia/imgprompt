@@ -72,7 +72,7 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
   const [inputFullscreen, setInputFullscreen] = useState(false);
   const [welcomeExpanded, setWelcomeExpanded] = useState(false);
   const [showTools, setShowTools] = useState(false);
-  const [activeMessageId, setActiveMessageId] = useState<string | null>(null);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [promptValidation, setPromptValidation] = useState<{ show: boolean; message: string; blocksGeneration: boolean }>({ show: false, message: '', blocksGeneration: false });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -327,7 +327,10 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
     const promptToUse = (customPrompt ?? prompt).trim();
     const canGenerate = user || devNoAuth;
     if (!promptToUse || !canGenerate) {
-      if (!canGenerate) { toast.error("Sign in to generate images"); return; }
+      if (!canGenerate) { 
+        setShowLoginPrompt(true);
+        return; 
+      }
       toast.error("Enter a prompt");
       return;
     }
@@ -429,11 +432,46 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
     setPrompt((p) => (p ? `${p} ${text}` : text));
   };
 
-  const showSignInOnly = !user && !devNoAuth;
+  const showSignInOnly = false; // Allow upload without login, check on send
 
   // ── Shared chat body (messages + input area) ──────────────────────────────
   const chatContent = (
     <>
+      {/* Login Prompt Dialog */}
+      {showLoginPrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="bg-card border border-border rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="text-center space-y-4">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                <LogIn className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold">Sign in to Generate</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Create an account to generate AI images and save your creations.
+                </p>
+              </div>
+              <div className="flex flex-col gap-2 pt-2">
+                <Button 
+                  onClick={() => { setShowLoginPrompt(false); signInWithGoogle(window.location.href); }} 
+                  className="w-full gap-2"
+                >
+                  <LogIn className="w-4 h-4" />
+                  Sign in with Google
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  onClick={() => setShowLoginPrompt(false)}
+                  className="text-sm"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showSignInOnly ? (
         <div className="flex flex-col items-center justify-center flex-1 p-6 text-center gap-4">
           <p className="text-muted-foreground">
