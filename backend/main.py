@@ -39,7 +39,7 @@ from style_library import (
     build_style_parameters,
 )
 from thinking import generate_thinking_steps, update_thinking_step
-from imagen_service import generate_imagen, generate_imagen_edit, is_imagen_available
+from imagen_service import generate_imagen, generate_imagen_edit, is_imagen_available, get_imagen_models
 
 # Image archival helpers
 def archive_image_to_storage(supabase, user_id: str, image_url: str, message_id: str) -> Optional[str]:
@@ -196,7 +196,7 @@ class GenerateRequest(BaseModel):
     image_base64: str | None = None
     model: str = Field(
         default="replicate-flux",
-        pattern=r"^(replicate-flux|gemini-2\.5-flash-image|gemini-3\.1-flash-image-preview|gemini-3-pro-image-preview)$"
+        pattern=r"^(replicate-flux|imagen-4-fast-generate-001|imagen-4-generate-001|imagen-4-ultra-generate-001|gemini-2\.5-flash-image|gemini-3\.1-flash-image-preview|gemini-3-pro-image-preview)$"
     )
 
 
@@ -221,43 +221,22 @@ def list_models():
         ),
     ]
     
-    imagen_available = is_imagen_available()
-    logger.info(f"Imagen available check: {imagen_available}")
-    
-    if imagen_available:
-        logger.info("Adding Gemini Nano Banana models to available list")
-        # Nano Banana 2 - best all-around
-        models.append(
-            ModelInfo(
-                id="gemini-3.1-flash-image-preview",
-                name="Nano Banana 2",
-                provider="Google",
-                description="Best balance: performance, cost & latency. Great for most use cases.",
-                available=True,
+    # Add Imagen models from imagen_service
+    imagen_models = get_imagen_models()
+    if imagen_models:
+        logger.info(f"Adding {len(imagen_models)} Imagen models to available list")
+        for img_model in imagen_models:
+            models.append(
+                ModelInfo(
+                    id=img_model["id"],
+                    name=img_model["name"],
+                    provider=img_model["provider"],
+                    description=img_model["description"],
+                    available=True,
+                )
             )
-        )
-        # Nano Banana Pro - professional asset production
-        models.append(
-            ModelInfo(
-                id="gemini-3-pro-image-preview",
-                name="Nano Banana Pro",
-                provider="Google",
-                description="Professional quality with thinking mode. Up to 4K resolution, 14 reference images.",
-                available=True,
-            )
-        )
-        # Nano Banana - speed/efficiency
-        models.append(
-            ModelInfo(
-                id="gemini-2.5-flash-image",
-                name="Nano Banana",
-                provider="Google",
-                description="Fastest generation. Optimized for high-volume, low-latency tasks.",
-                available=True,
-            )
-        )
     else:
-        logger.warning("GEMINI_API_KEY not set - Gemini models unavailable")
+        logger.warning("GEMINI_API_KEY not set - Imagen models unavailable")
     
     logger.info(f"Returning {len(models)} models: {[m.id for m in models]}")
     return models
