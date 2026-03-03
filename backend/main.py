@@ -131,7 +131,10 @@ class GenerateRequest(BaseModel):
     prompt: str = Field(..., min_length=1, max_length=2000)
     session_id: str | None = None
     image_base64: str | None = None
-    model: str = Field(default="replicate-flux", pattern="^(replicate-flux|imagen-3)$")
+    model: str = Field(
+        default="replicate-flux",
+        pattern="^(replicate-flux|gemini-2\.5-flash-image|gemini-3\.1-flash-image-preview|gemini-3-pro-image-preview)$"
+    )
 
 
 class ModelInfo(BaseModel):
@@ -156,12 +159,33 @@ def list_models():
     ]
     
     if is_imagen_available():
+        # Nano Banana 2 - best all-around
         models.append(
             ModelInfo(
-                id="imagen-3",
-                name="Imagen 3",
+                id="gemini-3.1-flash-image-preview",
+                name="Nano Banana 2",
                 provider="Google",
-                description="Fast generation, great for portraits",
+                description="Best balance: performance, cost & latency. Great for most use cases.",
+                available=True,
+            )
+        )
+        # Nano Banana Pro - professional asset production
+        models.append(
+            ModelInfo(
+                id="gemini-3-pro-image-preview",
+                name="Nano Banana Pro",
+                provider="Google",
+                description="Professional quality with thinking mode. Up to 4K resolution, 14 reference images.",
+                available=True,
+            )
+        )
+        # Nano Banana - speed/efficiency
+        models.append(
+            ModelInfo(
+                id="gemini-2.5-flash-image",
+                name="Nano Banana",
+                provider="Google",
+                description="Fastest generation. Optimized for high-volume, low-latency tasks.",
                 available=True,
             )
         )
@@ -613,8 +637,9 @@ async def generate_image(
     safe_prompt = await asyncio.get_event_loop().run_in_executor(None, lambda: sanitize_for_replicate(prompt))
 
     # Determine which model to use
-    use_imagen = body.model == "imagen-3" and is_imagen_available()
-    logger.info(f"Using model: {'Imagen 3' if use_imagen else 'Replicate Flux'}")
+    use_imagen = body.model.startswith("gemini-") and is_imagen_available()
+    imagen_model = body.model if use_imagen else None
+    logger.info(f"Using model: {imagen_model if use_imagen else 'Replicate Flux'}")
     
     # Define helper functions outside try block for proper scope
     async def _run_imagen(p: str) -> list[str]:
@@ -623,14 +648,14 @@ async def generate_image(
             return await asyncio.wait_for(
                 asyncio.get_event_loop().run_in_executor(
                     None, 
-                    lambda: [generate_imagen_edit(p, body.image_base64)]
+                    lambda: [generate_imagen_edit(p, body.image_base64, model=imagen_model)]
                 ),
                 timeout=60,
             )
         return await asyncio.wait_for(
             asyncio.get_event_loop().run_in_executor(
                 None, 
-                lambda: [generate_imagen(p)]
+                lambda: [generate_imagen(p, model=imagen_model)]
             ),
             timeout=60,
         )

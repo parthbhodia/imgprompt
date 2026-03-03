@@ -7,7 +7,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getModels, type ModelInfo } from "@/lib/api";
-import { Cpu, Zap, ChevronDown } from "lucide-react";
+import { Cpu, Zap, Sparkles, Crown, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ModelSelectorProps {
@@ -16,6 +16,19 @@ interface ModelSelectorProps {
   onSelectModel: (modelId: string) => void;
   disabled?: boolean;
 }
+
+const modelIcons: Record<string, React.ReactNode> = {
+  "replicate-flux": <Cpu className="w-4 h-4 text-purple-500" />,
+  "gemini-2.5-flash-image": <Zap className="w-4 h-4 text-yellow-500" />,
+  "gemini-3.1-flash-image-preview": <Sparkles className="w-4 h-4 text-blue-500" />,
+  "gemini-3-pro-image-preview": <Crown className="w-4 h-4 text-amber-500" />,
+};
+
+const modelBadges: Record<string, string> = {
+  "gemini-2.5-flash-image": "Fastest",
+  "gemini-3.1-flash-image-preview": "Best Balance",
+  "gemini-3-pro-image-preview": "Pro Quality",
+};
 
 export function ModelSelector({ token, selectedModel, onSelectModel, disabled }: ModelSelectorProps) {
   const [models, setModels] = useState<ModelInfo[]>([]);
@@ -48,12 +61,14 @@ export function ModelSelector({ token, selectedModel, onSelectModel, disabled }:
   }, [token]);
 
   const selectedModelInfo = models.find((m) => m.id === selectedModel);
+  const selectedIcon = modelIcons[selectedModel] || <Cpu className="w-4 h-4" />;
+  const selectedBadge = modelBadges[selectedModel];
 
   // Don't show if only one model available
   if (models.length <= 1) {
     return (
       <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50 text-xs text-muted-foreground">
-        <Cpu className="w-3 h-3" />
+        {selectedIcon}
         <span>{selectedModelInfo?.name || "Flux"}</span>
       </div>
     );
@@ -68,51 +83,54 @@ export function ModelSelector({ token, selectedModel, onSelectModel, disabled }:
           disabled={disabled || loading}
           className={cn(
             "h-7 gap-1.5 px-2 text-xs",
-            selectedModel === "imagen-3" && "text-blue-600 hover:text-blue-700"
+            selectedModel.startsWith("gemini-") && "text-blue-600 hover:text-blue-700"
           )}
         >
-          {selectedModel === "imagen-3" ? (
-            <Zap className="w-3.5 h-3.5" />
-          ) : (
-            <Cpu className="w-3.5 h-3.5" />
-          )}
+          {selectedIcon}
           <span className="hidden sm:inline">{selectedModelInfo?.name || "Model"}</span>
+          {selectedBadge && (
+            <span className="hidden md:inline text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
+              {selectedBadge}
+            </span>
+          )}
           <ChevronDown className="w-3 h-3 opacity-50" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-56">
-        {models.map((model) => (
-          <DropdownMenuItem
-            key={model.id}
-            onClick={() => onSelectModel(model.id)}
-            className={cn(
-              "flex items-start gap-2 py-2",
-              selectedModel === model.id && "bg-accent"
-            )}
-          >
-            <div className="mt-0.5">
-              {model.id === "imagen-3" ? (
-                <Zap className="w-4 h-4 text-blue-500" />
-              ) : (
-                <Cpu className="w-4 h-4 text-purple-500" />
+      <DropdownMenuContent align="start" className="w-64">
+        {models.map((model, index) => {
+          const icon = modelIcons[model.id] || <Cpu className="w-4 h-4" />;
+          const badge = modelBadges[model.id];
+          const isSelected = selectedModel === model.id;
+          
+          return (
+            <DropdownMenuItem
+              key={model.id}
+              onClick={() => onSelectModel(model.id)}
+              className={cn(
+                "flex items-start gap-3 py-2.5",
+                isSelected && "bg-accent"
               )}
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center justify-between">
-                <span className="font-medium">{model.name}</span>
-                {selectedModel === model.id && (
-                  <span className="text-xs text-muted-foreground">Active</span>
-                )}
+            >
+              <div className="mt-0.5 shrink-0">{icon}</div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-medium text-sm">{model.name}</span>
+                  {badge && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary whitespace-nowrap">
+                      {badge}
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                  {model.description}
+                </p>
+                <span className="text-[10px] text-muted-foreground/60 mt-1">
+                  via {model.provider}
+                </span>
               </div>
-              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-                {model.description}
-              </p>
-              <span className="text-[10px] text-muted-foreground/60 mt-1">
-                via {model.provider}
-              </span>
-            </div>
-          </DropdownMenuItem>
-        ))}
+            </DropdownMenuItem>
+          );
+        })}
       </DropdownMenuContent>
     </DropdownMenu>
   );
