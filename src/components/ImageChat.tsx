@@ -1465,6 +1465,12 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
             role="dialog"
             aria-modal="true"
             aria-label="AI Image Generator fullscreen"
+            onClick={(e) => {
+              // Close fullscreen when clicking outside the chat content area
+              if (e.target === e.currentTarget) {
+                setFullscreen(false);
+              }
+            }}
           >
             {/* Top bar */}
             <div className="shrink-0 border-b border-border/50 bg-card/60 backdrop-blur-md px-4 sm:px-8 py-3.5">
@@ -1500,7 +1506,10 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
 
             {/* Chat body */}
             <div className="flex-1 min-h-0 w-full max-w-7xl mx-auto flex flex-col px-4 sm:px-8 py-4">
-              <div className="flex-1 min-h-0 rounded-2xl border border-border/40 bg-card/50 overflow-hidden flex flex-col shadow-lg">
+              <div 
+                className="flex-1 min-h-0 rounded-2xl border border-border/40 bg-card/50 overflow-hidden flex flex-col shadow-lg"
+                onClick={(e) => e.stopPropagation()}
+              >
                 {renderChatContent()}
               </div>
             </div>
