@@ -249,6 +249,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<any>(null);
   const sizeMap = useRef<Map<number, number>>(new Map());
+  const scrollPositionRef = useRef<number>(0);
   
   // Get item size for virtualization (estimated, then measured)
   const getItemSize = useCallback((index: number) => {
@@ -280,6 +281,23 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialPrompt]);
+
+  // Preserve scroll position when entering/exiting fullscreen
+  useEffect(() => {
+    if (fullscreen) {
+      // Save current scroll position before entering fullscreen
+      scrollPositionRef.current = window.scrollY || document.documentElement.scrollTop;
+      // Prevent body scroll in fullscreen
+      document.body.style.overflow = "hidden";
+    } else {
+      // Restore scroll position when exiting fullscreen
+      document.body.style.overflow = "";
+      window.scrollTo(0, scrollPositionRef.current);
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [fullscreen]);
 
   // Escape exits fullscreen
   useEffect(() => {
