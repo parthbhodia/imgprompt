@@ -162,6 +162,8 @@ def generate_imagen_edit(
         print(f"[IMAGEN_EDIT] After resize: {pil_image.size[0]}x{pil_image.size[1]}")
         
         # Use generate_content with image input
+        print(f"[IMAGEN_EDIT] Calling generate_content with model={model}, prompt={prompt[:50]}...")
+        print(f"[IMAGEN_EDIT] Image type: {type(pil_image)}, size: {pil_image.size}")
         response = client.models.generate_content(
             model=model,
             contents=[prompt, pil_image],
@@ -169,6 +171,7 @@ def generate_imagen_edit(
                 response_modalities=["Image"],
             )
         )
+        print(f"[IMAGEN_EDIT] Response received, parts: {len(response.parts) if response.parts else 0}")
         
         # Extract image from response parts
         for part in response.parts:
