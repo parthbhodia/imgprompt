@@ -856,6 +856,9 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
 
     setLoading(true);
     
+    // Clear validation immediately since we're proceeding with generation
+    setPromptValidation({ show: false, message: '', blocksGeneration: false });
+    
     // Capture and immediately clear the attached image to prevent stale data
     const currentAttachedImage = attachedImage;
     if (attachedImage) {
