@@ -41,7 +41,7 @@ const PRESET_CATEGORIES: PresetCategory[] = [
     description: "Portrait edits, cinematic headshots & face transformations",
     apiCategory: "portrait",
     color: "bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400",
-    image: "/src/assets/portrait-headshot-blonde.jpg",
+    image: "/portrait-headshot-blonde.jpg",
   },
   {
     id: "fantasy",
@@ -50,7 +50,7 @@ const PRESET_CATEGORIES: PresetCategory[] = [
     description: "Concept art, world-building & fantasy scenarios",
     apiCategory: "fantasy",
     color: "bg-purple-500/10 border-purple-500/20 text-purple-600 dark:text-purple-400",
-    image: "/src/assets/landscape-mountains.jpg",
+    image: "/landscape-mountains.jpg",
   },
   {
     id: "product",
@@ -59,7 +59,7 @@ const PRESET_CATEGORIES: PresetCategory[] = [
     description: "Commercial photography & product showcases",
     apiCategory: "product",
     color: "bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400",
-    image: "/src/assets/product-headphones.jpg",
+    image: "/product-headphones.jpg",
   },
   {
     id: "mood",
@@ -68,7 +68,7 @@ const PRESET_CATEGORIES: PresetCategory[] = [
     description: "Atmospheric, cinematic & moody scenes",
     apiCategory: "cinematic",
     color: "bg-slate-500/10 border-slate-500/20 text-slate-600 dark:text-slate-400",
-    image: "/src/assets/portrait-smoke.jpg",
+    image: "/portrait-smoke.jpg",
   },
 ];
 
