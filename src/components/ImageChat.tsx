@@ -15,7 +15,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Sparkles, Send, Coins, Loader2, LogIn, Lightbulb,
   ImagePlus, X, Wand2, Maximize2, Minimize2, Download, Share2, RotateCcw, Shuffle, ChevronDown, ChevronUp,
-  MoreVertical, Copy, RefreshCw, Edit3, Palette, Settings, HelpCircle, History, BookmarkPlus, AlertTriangle
+  MoreVertical, Copy, RefreshCw, Edit3, Palette, Settings, HelpCircle, History, BookmarkPlus, AlertTriangle, Check
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -33,6 +33,8 @@ import {
   type SuggestResponse,
   type ChatInsightsResponse,
   type ConversationContextResponse,
+  getThinkingSteps,
+  type ThinkingStep,
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { PromptFrameworkBuilder } from "./PromptFrameworkBuilder";
@@ -76,6 +78,8 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
   const [showTools, setShowTools] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [promptValidation, setPromptValidation] = useState<{ show: boolean; message: string; blocksGeneration: boolean }>({ show: false, message: '', blocksGeneration: false });
+  const [thinkingSteps, setThinkingSteps] = useState<ThinkingStep[]>([]);
+  const [showThinking, setShowThinking] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -412,6 +416,20 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
       imageBase64 = await fileToBase64(imageToSend);
       userMessageAttachedUrl = attachedImage.preview;
     }
+    
+    // Fetch thinking steps to show reasoning (after image is processed)
+    try {
+      const steps = await getThinkingSteps(token ?? null, {
+        prompt: promptToUse,
+        has_uploaded_image: !!imageBase64,
+        is_img2img: !!imageBase64,
+      });
+      setThinkingSteps(steps);
+      setShowThinking(true);
+    } catch {
+      // Silently fail - thinking is optional
+      setThinkingSteps([]);
+    }
 
     try {
       const res = await generateImage(token ?? null, {
@@ -733,13 +751,62 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
               ))}
               {loading && (
                 <div className="flex gap-2 justify-start">
-                  <div className="bg-muted/40 rounded-2xl px-4 py-3 space-y-2">
+                  <div className="bg-muted/40 rounded-2xl px-4 py-3 space-y-3 max-w-[90%]">
+                    {/* Thinking Header */}
+                    <button
+                      onClick={() => setShowThinking(!showThinking)}
+                      className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Generating your image...</span>
+                      <ChevronDown className={cn("w-3 h-3 transition-transform", showThinking && "rotate-180")} />
+                    </button>
+                    
+                    {/* Thinking Steps */}
+                    {showThinking && thinkingSteps.length > 0 && (
+                      <div className="space-y-2 border-t border-border/50 pt-2">
+                        {thinkingSteps.map((step, idx) => (
+                          <div key={step.id} className="flex items-start gap-2">
+                            <div className={cn(
+                              "w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5",
+                              step.status === "complete" && "bg-green-500/20 text-green-600",
+                              step.status === "active" && "bg-primary/20 text-primary animate-pulse",
+                              step.status === "pending" && "bg-muted text-muted-foreground"
+                            )}>
+                              {step.status === "complete" ? (
+                                <Check className="w-2.5 h-2.5" />
+                              ) : step.status === "active" ? (
+                                <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                              ) : (
+                                <div className="w-1.5 h-1.5 rounded-full bg-current" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className={cn(
+                                "text-xs font-medium",
+                                step.status === "complete" && "text-muted-foreground line-through",
+                                step.status === "active" && "text-primary",
+                                step.status === "pending" && "text-muted-foreground/50"
+                              )}>
+                                {step.title}
+                              </p>
+                              {step.status !== "pending" && (
+                                <p className="text-[10px] text-muted-foreground/70 mt-0.5 line-clamp-2">
+                                  {step.content}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* Simple Loading Animation */}
                     <div className="flex gap-1">
                       <div className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: '0ms' }} />
                       <div className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: '150ms' }} />
                       <div className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: '300ms' }} />
                     </div>
-                    <p className="text-xs text-muted-foreground">Generating your image...</p>
                   </div>
                 </div>
               )}

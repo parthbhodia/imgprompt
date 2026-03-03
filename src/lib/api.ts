@@ -434,3 +434,33 @@ export async function searchStyles(
     body: JSON.stringify({ query, category }),
   });
 }
+
+// ============================================================================
+// THINKING API
+// ============================================================================
+
+export type ThinkingStep = {
+  id: string;
+  title: string;
+  content: string;
+  status: "pending" | "active" | "complete";
+  icon: string;
+};
+
+export type ThinkingRequest = {
+  prompt: string;
+  has_uploaded_image?: boolean;
+  is_refinement?: boolean;
+  is_img2img?: boolean;
+};
+
+export async function getThinkingSteps(
+  token: string | null,
+  body: ThinkingRequest
+): Promise<ThinkingStep[]> {
+  return fetchApi<ThinkingStep[]>("/thinking/generate", {
+    method: "POST",
+    token,
+    body: JSON.stringify(body),
+  });
+}

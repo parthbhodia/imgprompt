@@ -38,6 +38,7 @@ from style_library import (
     get_categories, format_style_for_prompt, format_style_with_credit,
     build_style_parameters,
 )
+from thinking import generate_thinking_steps, update_thinking_step
 
 # Image archival helpers
 def archive_image_to_storage(supabase, user_id: str, image_url: str, message_id: str) -> Optional[str]:
@@ -863,6 +864,33 @@ def my_generations(user_id: Annotated[str, Depends(get_current_user_id)]):
             for row in (r.data or [])
         ]
     }
+
+
+class ThinkingRequest(BaseModel):
+    prompt: str
+    has_uploaded_image: bool = False
+    is_refinement: bool = False
+    is_img2img: bool = False
+
+
+class ThinkingStep(BaseModel):
+    id: str
+    title: str
+    content: str
+    status: str  # "pending", "active", "complete"
+    icon: str
+
+
+@app.post("/thinking/generate", response_model=list[ThinkingStep])
+def get_thinking_steps(body: ThinkingRequest):
+    """Generate thinking/reasoning steps for image generation."""
+    steps = generate_thinking_steps(
+        prompt=body.prompt,
+        has_uploaded_image=body.has_uploaded_image,
+        is_refinement=body.is_refinement,
+        is_img2img=body.is_img2img,
+    )
+    return steps
 
 
 @app.get("/payments/plans")
