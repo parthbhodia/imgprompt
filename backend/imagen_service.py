@@ -13,8 +13,8 @@ logger = logging.getLogger(__name__)
 # Initialize Gemini client
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
-# Imagen models require dimensions divisible by 8 (patch size)
-PATCH_SIZE = 8
+# Imagen models require dimensions divisible by 16 for best compatibility
+PATCH_SIZE = 16
 
 
 def _ensure_divisible_by_patch_size(width: int, height: int) -> Tuple[int, int]:
@@ -141,7 +141,7 @@ def generate_imagen_edit(
         image_bytes = base64.b64decode(reference_image_base64)
         print(f"[IMAGEN_EDIT] Decoded image bytes: {len(image_bytes)} bytes")
         
-        # Convert to PIL Image and resize to ensure dimensions divisible by 8
+        # Convert to PIL Image and resize to ensure dimensions divisible by 16
         pil_image = Image.open(BytesIO(image_bytes))
         print(f"[IMAGEN_EDIT] PIL Image opened: {pil_image.size[0]}x{pil_image.size[1]}, mode={pil_image.mode}")
         pil_image = _resize_image_if_needed(pil_image)

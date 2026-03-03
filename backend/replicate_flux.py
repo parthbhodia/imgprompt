@@ -19,8 +19,8 @@ FLUX_IMG2IMG_MODEL = "bxclib2/flux_img2img:0ce45202d83c6bd379dfe58f4c0c41e6cadf9
 MAX_IMAGE_BYTES = 5 * 1024 * 1024
 MAX_IMAGES_PER_REQUEST = 1
 
-# Flux models require dimensions divisible by 8 (patch size)
-PATCH_SIZE = 8
+# Flux models require dimensions divisible by 16 (not just 8) for VAE compatibility
+PATCH_SIZE = 16
 
 
 def _ensure_divisible_by_patch_size(width: int, height: int) -> tuple[int, int]:
