@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCredits } from "@/contexts/CreditsContext";
 import { Button } from "@/components/ui/button";
 import { Footer } from "@/components/Footer";
 import {
@@ -56,37 +57,55 @@ const PLAN_META: Record<
 
 export default function Profile() {
   const { user, session, signOut } = useAuth();
+  const { credits, plan, status, loading: creditsLoading, syncCredits } = useCredits();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [sub, setSub] = useState<SubscriptionStatus | null>(null);
-  const [loadingSub, setLoadingSub] = useState(true);
   const [portalLoading, setPortalLoading] = useState(false);
   const [upgradeLoading, setUpgradeLoading] = useState<string | null>(null);
   const [syncLoading, setSyncLoading] = useState(false);
 
-  // Show success toast when returning from Stripe checkout
+  // Handle successful payment and sync credits automatically
   useEffect(() => {
     const success = searchParams.get("success");
     const canceled = searchParams.get("canceled");
+    
     if (success === "true") {
-      toast.success("Subscription activated! Your credits have been added. Refresh to see the latest amount.", { duration: 5000 });
+      toast.success("Payment successful! Syncing your credits...", {
+        duration: 3000,
+      });
+      
+      // Automatically sync credits from Stripe using global context
+      setSyncLoading(true);
+      syncCredits()
+        .then(() => {
+          toast.success(`Credits synced! You now have ${credits} credits.`, {
+            duration: 5000,
+          });
+        })
+        .catch((error) => {
+          console.error("Failed to sync credits:", error);
+          toast.error("Payment successful, but couldn't sync credits automatically. Please click 'Sync Credits' button.", {
+            duration: 6000,
+          });
+        })
+        .finally(() => {
+          setSyncLoading(false);
+          // Clean up URL parameters
+          window.history.replaceState({}, document.title, window.location.pathname);
+        });
     } else if (canceled === "true") {
       toast.info("Checkout was canceled. No charges were made.");
+      // Clean up URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
-  }, [searchParams]);
+  }, [searchParams, syncCredits, credits]);
 
   useEffect(() => {
     if (!user) {
       navigate("/");
       return;
     }
-    const token = session?.access_token ?? null;
-    setLoadingSub(true);
-    getSubscriptionStatus(token)
-      .then(setSub)
-      .catch(() => setSub(null))
-      .finally(() => setLoadingSub(false));
-  }, [user, session, navigate]);
+  }, [user, navigate]);
 
   const handlePortal = async () => {
     setPortalLoading(true);
@@ -122,14 +141,8 @@ export default function Profile() {
   const handleSyncCredits = async () => {
     setSyncLoading(true);
     try {
-      const token = session?.access_token ?? null;
-      const result = await syncCreditsFromStripe(token);
-      toast.success(`Synced ${result.credits} credits from Stripe! (Plan: ${result.plan})`);
-      setSub((prev) =>
-        prev
-          ? { ...prev, credits: result.credits }
-          : { plan: result.plan, status: "active", credits: result.credits }
-      );
+      await syncCredits();
+      toast.success(`Synced ${credits} credits from Stripe! (Plan: ${plan})`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not sync credits");
     } finally {
@@ -137,8 +150,8 @@ export default function Profile() {
     }
   };
 
-  const planMeta = sub?.plan ? PLAN_META[sub.plan] : null;
-  const isActive = sub?.status === "active";
+  const planMeta = plan ? PLAN_META[plan] : null;
+  const isActive = status === "active";
   const avatar =
     user?.user_metadata?.avatar_url as string | undefined;
   const displayName =
@@ -209,7 +222,7 @@ export default function Profile() {
             Subscription &amp; Credits
           </h2>
 
-          {loadingSub ? (
+          {creditsLoading ? (
             <div className="flex items-center gap-2 text-muted-foreground">
               <Loader2 className="w-4 h-4 animate-spin" />
               Loading…
@@ -222,14 +235,14 @@ export default function Profile() {
                   <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">
                     Credits remaining
                   </p>
-                  <p className="text-3xl font-bold">{sub?.credits ?? 0}</p>
+                  <p className="text-3xl font-bold">{credits}</p>
                   <p className="text-xs text-muted-foreground">1 credit = 1 generated image</p>
                 </div>
                 <div className="flex flex-col items-end gap-2">
                   <Zap className="w-10 h-10 text-primary opacity-60" />
-                  {!isActive && (sub?.credits ?? 0) < 5 && (
+                  {!isActive && credits < 5 && (
                     <Button
-                      size="xs"
+                      size="sm"
                       onClick={() => handleUpgrade("starter")}
                       disabled={upgradeLoading !== null}
                       className="gap-1.5 text-xs"

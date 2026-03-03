@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCredits } from "@/contexts/CreditsContext";
 import { Button } from "@/components/ui/button";
 import { Footer } from "@/components/Footer";
 import { Loader2, Check, Zap, Star, Rocket, ArrowLeft, Settings } from "lucide-react";
@@ -11,6 +12,7 @@ import {
   openCustomerPortal,
   getSubscriptionStatus,
   getPlans,
+  syncCreditsFromStripe,
   type SubscriptionStatus,
   type PlanInfo,
 } from "@/lib/api";
@@ -61,12 +63,13 @@ type PlanSlug = keyof typeof PLAN_UI_CONFIG;
 
 export default function Pricing() {
   const { user, session } = useAuth();
+  const { credits, plan, status, loading: creditsLoading, syncCredits } = useCredits();
   const [searchParams] = useSearchParams();
   const [loadingPlan, setLoadingPlan] = useState<PlanSlug | null>(null);
   const [portalLoading, setPortalLoading] = useState(false);
-  const [status, setStatus] = useState<SubscriptionStatus | null>(null);
   const [plans, setPlans] = useState<PlanInfo[]>([]);
   const [plansLoading, setPlansLoading] = useState(true);
+  const [syncLoading, setSyncLoading] = useState(false);
 
   const token = session?.access_token ?? null;
 
@@ -81,17 +84,40 @@ export default function Pricing() {
       .finally(() => setPlansLoading(false));
   }, []);
 
+  // Handle successful payment and sync credits automatically
   useEffect(() => {
     if (searchParams.get("success") === "true") {
       const plan = searchParams.get("plan") ?? "";
-      toast.success(`Subscription activated! Your credits have been topped up.`, {
-        duration: 6000,
+      toast.success("Payment successful! Syncing your credits...", {
+        duration: 3000,
       });
+      
+      // Automatically sync credits from Stripe using global context
+      setSyncLoading(true);
+      syncCredits()
+        .then(() => {
+          toast.success(`Credits synced! You now have ${credits} credits.`, {
+            duration: 5000,
+          });
+        })
+        .catch((error) => {
+          console.error("Failed to sync credits:", error);
+          toast.error("Payment successful, but couldn't sync credits automatically. Please click 'Sync Credits'.", {
+            duration: 6000,
+          });
+        })
+        .finally(() => {
+          setSyncLoading(false);
+          // Clean up URL parameters
+          window.history.replaceState({}, document.title, window.location.pathname);
+        });
     }
     if (searchParams.get("canceled") === "true") {
       toast.info("Checkout canceled. No charge was made.");
+      // Clean up URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
-  }, [searchParams]);
+  }, [searchParams, syncCredits, credits]);
 
   useEffect(() => {
     if (!token) return;
@@ -133,8 +159,8 @@ export default function Pricing() {
     }
   };
 
-  const activePlan = status?.plan ?? null;
-  const activeStatus = status?.status ?? null;
+  const activePlan = plan;
+  const activeStatus = status;
 
   return (
     <div className="min-h-screen bg-background">
@@ -169,16 +195,45 @@ export default function Pricing() {
           <p className="text-muted-foreground text-lg max-w-xl mx-auto">
             Credits refresh every month. Generate stunning images with Flux 1.1 Pro — each image uses 1 credit.
           </p>
-          {status && (
+          {!creditsLoading && (
             <div className="mt-6 inline-flex items-center gap-2 bg-muted rounded-full px-4 py-1.5 text-sm">
               <span className="text-muted-foreground">Current balance:</span>
-              <span className="font-semibold">{status.credits} credits</span>
-              {activePlan && activeStatus === "active" && (
+              <span className="font-semibold">{credits} credits</span>
+              {plan && status === "active" && (
                 <>
                   <span className="text-muted-foreground">·</span>
-                  <span className="capitalize text-primary font-medium">{activePlan} plan</span>
+                  <span className="capitalize text-primary font-medium">{plan} plan</span>
                 </>
               )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSyncLoading(true);
+                  syncCredits()
+                    .then(() => {
+                      toast.success(`Credits synced! You now have ${credits} credits.`, {
+                        duration: 3000,
+                      });
+                    })
+                    .catch((error) => {
+                      console.error("Failed to sync credits:", error);
+                      toast.error("Could not sync credits. Please try again.");
+                    })
+                    .finally(() => {
+                      setSyncLoading(false);
+                    });
+                }}
+                disabled={syncLoading}
+                className="h-6 px-2 text-xs gap-1"
+              >
+                {syncLoading ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <Settings className="w-3 h-3" />
+                )}
+                Sync
+              </Button>
             </div>
           )}
         </div>

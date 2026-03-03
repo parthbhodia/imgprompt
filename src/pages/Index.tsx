@@ -5,6 +5,7 @@ import { PromptCard } from "@/components/PromptCard";
 import { CategoryFilter } from "@/components/CategoryFilter";
 import { ImageChat } from "@/components/ImageChat";
 import { Footer } from "@/components/Footer";
+import { CreditDisplay } from "@/components/CreditDisplay";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -569,6 +570,9 @@ const Index = () => {
                     <Heart className="w-4 h-4 text-rose-500 fill-rose-500" />
                     <span className="hidden sm:inline">My Favorites</span>
                   </Button>
+                  <div className="hidden md:block">
+                    <CreditDisplay compact={true} />
+                  </div>
                 </>
               )}
 

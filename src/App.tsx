@@ -7,6 +7,8 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "./contexts/AuthContext";
 import { LikesProvider } from "./contexts/LikesContext";
+import { CreditsProvider } from "./contexts/CreditsContext";
+import { CreditNotification } from "./components/CreditNotification";
 import { ProtectedRoute } from "./components/admin/ProtectedRoute";
 import { AdminLayout } from "./components/admin/AdminLayout";
 import AdminLogin from "./pages/admin/AdminLogin";
@@ -41,9 +43,11 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <LikesProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
+        <CreditsProvider>
+          <TooltipProvider>
+            <CreditNotification />
+            <Toaster />
+            <Sonner />
         <BrowserRouter basename={basename}>
           <Routes>
             {/* Public site */}
@@ -133,7 +137,8 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
-      </TooltipProvider>
+          </TooltipProvider>
+        </CreditsProvider>
       </LikesProvider>
     </AuthProvider>
   </QueryClientProvider>
