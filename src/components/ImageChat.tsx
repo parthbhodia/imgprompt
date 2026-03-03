@@ -115,7 +115,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
 
   // Load initialImageUrl when provided (for Generate with AI workflow)
   useEffect(() => {
-    if (!initialImageUrl) return;
+    if (!initialImageUrl || !initialImageUrl.startsWith('http')) return;
     
     fetch(initialImageUrl)
       .then(res => res.blob())
