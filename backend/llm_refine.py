@@ -196,58 +196,15 @@ def get_chat_insights(user_message: str, previous_prompts: list[str] | None = No
 
 def get_content_policy_suggestions(blocked_prompt: str) -> list[str]:
     """
-    Generate alternative phrasings for a prompt that hit content policy filters.
-    Uses xAI/Groq to create dynamic suggestions. Falls back to defaults if LLM unavailable.
+    Return safe alternative phrasings for content policy violations.
+    Uses static suggestions that work across all prompt types.
     """
-    if not settings.xai_api_key and not settings.groq_api_key:
-        # Fallback to static suggestions
-        return [
-            "age progression visualization",
-            "artistic time-lapse style portrait",
-            "stylized character version",
-        ]
-
-    system_prompt = (
-        "You are an expert at rephrasing image generation prompts to avoid content policy violations "
-        "while preserving the user's intent. The user's prompt was blocked. "
-        "Generate 3-5 alternative phrasings that achieve the same visual result but use safer language. "
-        "Focus on: artistic/educational framing, avoiding direct physical transformation words, "
-        "using 'visualization', 'interpretation', 'stylized' instead of direct commands. "
-        "Respond with ONLY a JSON array of strings, no other text."
-    )
-
-    try:
-        content = chat_completion(
-            [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": f"Blocked prompt: '{blocked_prompt}'. Generate alternative phrasings."},
-            ],
-            max_tokens=200,
-            temperature=0.7,
-            timeout=5,
-        )
-        import json
-        content = content.strip()
-        # Extract JSON array
-        if "```json" in content:
-            content = content.split("```json")[1].split("```")[0].strip()
-        elif "```" in content:
-            content = content.split("```")[1].split("```")[0].strip()
-        start_idx = content.find("[")
-        end_idx = content.rfind("]")
-        if start_idx != -1 and end_idx != -1:
-            suggestions = json.loads(content[start_idx:end_idx+1])
-            if isinstance(suggestions, list) and len(suggestions) > 0:
-                return suggestions[:5]
-    except Exception as e:
-        logger.warning(f"Failed to generate dynamic suggestions: {e}")
-
-    # Fallback defaults
+    # Static suggestions that work for any transformation request
     return [
-        "age progression visualization",
-        "artistic time-lapse style portrait",
-        "stylized character version",
-        "artistic interpretation with modified features",
-        "visual transformation keeping core identity",
+        "artistic stylized interpretation",
+        "digital illustration version", 
+        "concept art transformation",
+        "fantasy art style render",
+        "creative artistic visualization",
     ]
 
