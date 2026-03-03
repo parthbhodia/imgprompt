@@ -696,11 +696,25 @@ async def generate_image(
         )
     
     urls: list[str] = []
+    fallback_to_flux = False
     
     try:
         if use_imagen:
-            urls = await _run_imagen(safe_prompt)
-        else:
+            try:
+                urls = await _run_imagen(safe_prompt)
+            except Exception as imagen_error:
+                msg = str(imagen_error)
+                # Check if it's a rate limit (429) or quota exceeded error
+                if "429" in msg or "RESOURCE_EXHAUSTED" in msg or "quota" in msg.lower():
+                    logger.warning(f"Gemini rate limit hit, falling back to Flux: {msg}")
+                    fallback_to_flux = True
+                else:
+                    # Re-raise if it's not a rate limit
+                    raise
+        
+        # If not using imagen, or if imagen failed with rate limit
+        if not use_imagen or fallback_to_flux:
+            logger.info(f"Using Flux (fallback={fallback_to_flux})")
             urls = await _run_replicate(safe_prompt)
             
     except asyncio.TimeoutError:
