@@ -79,8 +79,8 @@ const Favorites = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const selectedPrompt = selectedPromptId
-    ? favoritePrompts.find((p) => p.id === selectedPromptId) ??
-      allPrompts.find((p) => p.id === selectedPromptId) ??
+    ? favoritePrompts?.find((p) => p.id === selectedPromptId) ??
+      allPrompts?.find((p) => p.id === selectedPromptId) ??
       null
     : null;
   const selectedSlide = selectedPrompt
