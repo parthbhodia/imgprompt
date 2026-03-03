@@ -377,9 +377,9 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
     return () => window.removeEventListener("keydown", handleEsc);
   }, [fullscreen]);
 
-  // Load sessions and credit history from backend (admin only)
+  // Load sessions and credit history from backend (all logged-in users)
   useEffect(() => {
-    if (!isAdmin || !session) return;
+    if (!session) return;
     
     const loadSessionsAndHistory = async () => {
       try {
@@ -406,7 +406,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
     };
     
     loadSessionsAndHistory();
-  }, [isAdmin, session]);
+  }, [session]);
 
   // Load initialImageUrl when provided (for Generate with AI workflow)
   useEffect(() => {
