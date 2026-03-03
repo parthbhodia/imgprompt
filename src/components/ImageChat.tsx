@@ -16,7 +16,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Sparkles, Send, Coins, Loader2, LogIn, Lightbulb,
   ImagePlus, X, Wand2, Maximize2, Minimize2, Download, Share2, RotateCcw, Shuffle, ChevronDown, ChevronUp,
-  MoreVertical, Copy, RefreshCw, Edit3, Palette, Settings, HelpCircle, History, BookmarkPlus, AlertTriangle, Check
+  MoreVertical, Copy, RefreshCw, Edit3, Palette, Settings, HelpCircle, History, BookmarkPlus, AlertTriangle, Check, Plus
 } from "lucide-react";
 import { toast } from "sonner";
 import heic2any from "heic2any";
@@ -286,6 +286,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
   const [showRecapToast, setShowRecapToast] = useState(false);
   const [recapData, setRecapData] = useState({ cost: 1, remaining: 0, type: "standard" as const });
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showUtilitiesMenu, setShowUtilitiesMenu] = useState(false);
   const [chatSessions, setChatSessions] = useState<Array<{ id: string; title: string; timestamp: Date; messageCount: number }>>([]);
   const [creditHistory, setCreditHistory] = useState<any[]>([]);
   const [generationSettings, setGenerationSettings] = useState({
@@ -1265,6 +1266,81 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
 
             {/* Input Row - Auto-resizing Textarea */}
             <div className="flex gap-2 items-end">
+              {/* + Button for Mobile Utilities Menu */}
+              <div className="relative shrink-0 sm:hidden">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowUtilitiesMenu(!showUtilitiesMenu)}
+                  className="h-[44px] aspect-square rounded-full border-dashed border-2"
+                  aria-label="Open utilities menu"
+                >
+                  <Plus className="w-5 h-5" />
+                </Button>
+                
+                {/* Utilities Popover Menu - Mobile Only */}
+                {showUtilitiesMenu && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-40" 
+                      onClick={() => setShowUtilitiesMenu(false)}
+                    />
+                    <div className="absolute bottom-full left-0 mb-2 z-50 w-56 rounded-xl border border-border bg-card shadow-2xl p-2 space-y-1 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                      <p className="text-xs font-medium text-muted-foreground px-2 py-1">Tools</p>
+                      
+                      <button
+                        onClick={() => {
+                          fileInputRef.current?.click();
+                          setShowUtilitiesMenu(false);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-left"
+                      >
+                        <ImagePlus className="w-4 h-4 text-primary" />
+                        <span className="text-sm">Upload Image</span>
+                      </button>
+                      
+                      <button
+                        onClick={() => {
+                          handleRefine();
+                          setShowUtilitiesMenu(false);
+                        }}
+                        disabled={refining || loading || !prompt.trim()}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-left disabled:opacity-50"
+                      >
+                        <Wand2 className="w-4 h-4 text-purple-500" />
+                        <span className="text-sm">Refine Prompt</span>
+                      </button>
+                      
+                      <div className="border-t border-border my-1" />
+                      <p className="text-xs font-medium text-muted-foreground px-2 py-1">Library</p>
+                      
+                      <button
+                        onClick={() => {
+                          setShowTools(true);
+                          setShowUtilitiesMenu(false);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-left"
+                      >
+                        <Palette className="w-4 h-4 text-pink-500" />
+                        <span className="text-sm">Style Library</span>
+                      </button>
+                      
+                      <button
+                        onClick={() => {
+                          setWelcomeExpanded(true);
+                          setShowUtilitiesMenu(false);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-left"
+                      >
+                        <HelpCircle className="w-4 h-4 text-blue-500" />
+                        <span className="text-sm">Prompt Guide</span>
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+
               {/* Input Field */}
               <div className="flex-1 space-y-1">
                 <Textarea
