@@ -30,6 +30,7 @@ interface PresetCategory {
   description: string;
   apiCategory: string;
   color: string;
+  image: string;
 }
 
 const PRESET_CATEGORIES: PresetCategory[] = [
@@ -40,6 +41,7 @@ const PRESET_CATEGORIES: PresetCategory[] = [
     description: "Portrait edits, cinematic headshots & face transformations",
     apiCategory: "portrait",
     color: "bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400",
+    image: "/src/assets/portrait-headshot-blonde.jpg",
   },
   {
     id: "fantasy",
@@ -48,6 +50,7 @@ const PRESET_CATEGORIES: PresetCategory[] = [
     description: "Concept art, world-building & fantasy scenarios",
     apiCategory: "fantasy",
     color: "bg-purple-500/10 border-purple-500/20 text-purple-600 dark:text-purple-400",
+    image: "/src/assets/landscape-mountains.jpg",
   },
   {
     id: "product",
@@ -56,6 +59,7 @@ const PRESET_CATEGORIES: PresetCategory[] = [
     description: "Commercial photography & product showcases",
     apiCategory: "product",
     color: "bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400",
+    image: "/src/assets/product-headphones.jpg",
   },
   {
     id: "mood",
@@ -64,6 +68,7 @@ const PRESET_CATEGORIES: PresetCategory[] = [
     description: "Atmospheric, cinematic & moody scenes",
     apiCategory: "cinematic",
     color: "bg-slate-500/10 border-slate-500/20 text-slate-600 dark:text-slate-400",
+    image: "/src/assets/portrait-smoke.jpg",
   },
 ];
 
@@ -109,14 +114,19 @@ export function PresetTags({ onPresetSelected }: PresetTagsProps) {
             key={category.id}
             onClick={() => handleCategoryClick(category)}
             className={cn(
-              "flex items-center gap-1.5 rounded-full text-xs font-medium transition-all hover:scale-105 border cursor-pointer",
-              "p-2 sm:px-3 sm:py-1.5",
+              "flex items-center gap-1.5 rounded-full text-xs font-medium transition-all hover:scale-105 border cursor-pointer overflow-hidden",
+              "p-1 sm:px-2 sm:py-1",
               category.color
             )}
             title={category.name}
           >
+            <img
+              src={category.image}
+              alt={category.name}
+              className="w-5 h-5 rounded-full object-cover hidden sm:block"
+            />
             {category.icon}
-            <span className="hidden sm:inline">{category.name}</span>
+            <span className="hidden sm:inline pr-1">{category.name}</span>
           </button>
         ))}
       </div>
@@ -126,11 +136,20 @@ export function PresetTags({ onPresetSelected }: PresetTagsProps) {
         <Dialog open={!!selectedCategory} onOpenChange={() => setSelectedCategory(null)}>
           <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                {selectedCategory.icon}
-                {selectedCategory.name} Prompts
-              </DialogTitle>
-              <p className="text-sm text-muted-foreground">{selectedCategory.description}</p>
+              <div className="flex items-center gap-3 mb-2">
+                <img
+                  src={selectedCategory.image}
+                  alt={selectedCategory.name}
+                  className="w-12 h-12 rounded-lg object-cover border"
+                />
+                <div>
+                  <DialogTitle className="flex items-center gap-2">
+                    {selectedCategory.icon}
+                    {selectedCategory.name} Prompts
+                  </DialogTitle>
+                  <p className="text-sm text-muted-foreground">{selectedCategory.description}</p>
+                </div>
+              </div>
             </DialogHeader>
 
             {loading ? (
