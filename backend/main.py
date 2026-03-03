@@ -12,6 +12,10 @@ from typing import Annotated, Optional, Dict, List, Any
 from uuid import UUID, uuid4
 from datetime import datetime
 
+# Load .env file before other imports
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI, Depends, HTTPException, Request, status, Query
 from fastapi.responses import JSONResponse
 

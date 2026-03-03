@@ -13,6 +13,9 @@ logger = logging.getLogger(__name__)
 # Initialize Gemini client
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
+# Log Imagen availability on module load
+print(f"[IMAGEN_INIT] GEMINI_API_KEY present: {bool(GEMINI_API_KEY)} (length: {len(GEMINI_API_KEY)})")
+
 # Imagen models require dimensions divisible by 16 for best compatibility
 PATCH_SIZE = 16
 
