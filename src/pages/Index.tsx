@@ -850,32 +850,12 @@ const Index = () => {
                           {likeCounts[prompt.id] ?? 0}
                         </button>
                       </div>
-                      {/* Hover overlay CTA */}
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/card:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                        <button
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); setAiPrompt(firstSlide.prompt); }}
-                          className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur border border-white/40 text-white text-sm font-semibold hover:bg-white/30 transition-colors"
-                        >
-                          <Wand2 className="w-4 h-4" />
-                          Generate with AI
-                        </button>
-                      </div>
                     </div>
                     <p className="text-xs uppercase tracking-wide text-primary font-semibold mb-1">
                       {prompt.category}
                     </p>
                     <h3 className="text-lg font-semibold mb-2">{prompt.title}</h3>
-                    <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{firstSlide.prompt}</p>
-                    {/* Bottom always-visible CTA */}
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); setAiPrompt(firstSlide.prompt); }}
-                      className="mt-auto w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-gradient-to-r from-primary to-accent text-white text-sm font-semibold hover:opacity-90 active:scale-95 transition-all"
-                    >
-                      <Wand2 className="w-3.5 h-3.5" />
-                      Generate with AI
-                    </button>
+                    <p className="text-sm text-muted-foreground line-clamp-2">{firstSlide.prompt}</p>
                   </article>
                 );
               })}
