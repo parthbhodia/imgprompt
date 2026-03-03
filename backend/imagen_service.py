@@ -191,8 +191,18 @@ def generate_imagen_edit(
         raise RuntimeError("No image generated in response")
         
     except Exception as e:
+        error_msg = str(e)
         logger.error(f"Image edit failed: {e}")
-        raise RuntimeError(f"Image edit failed: {str(e)}")
+        print(f"[IMAGEN_EDIT] ERROR: {error_msg[:200]}")
+        
+        # Check for content policy violations
+        if "content" in error_msg.lower() and ("policy" in error_msg.lower() or "cannot be generated" in error_msg.lower()):
+            raise RuntimeError(
+                "Content policy: This transformation may violate safety guidelines. "
+                "Try rephrasing: use 'age progression visualization' or 'artistic time-lapse style' instead of direct age references."
+            )
+        
+        raise RuntimeError(f"Image edit failed: {error_msg}")
 
 
 def is_imagen_available() -> bool:
