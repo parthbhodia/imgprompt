@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGeneration } from "@/contexts/GenerationContext";
 import {
@@ -66,7 +66,13 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<MessageResponse[]>([]);
+  // Use Map for O(1) deduplication and efficient updates
+  const [messagesMap, setMessagesMap] = useState<Map<string, MessageResponse>>(new Map());
+  const messages = useMemo(() => {
+    return Array.from(messagesMap.values()).sort((a, b) => 
+      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    );
+  }, [messagesMap]);
   const [hasMoreMessages, setHasMoreMessages] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [suggestions, setSuggestions] = useState<SuggestResponse["suggestions"]>([]);
@@ -329,7 +335,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
     const isVisible = open || inline;
     if (!isVisible || !token || !sessionId) {
       if (!inline) {
-        setMessages([]);
+        setMessagesMap(new Map());
         setHasMoreMessages(false);
       }
       return;
@@ -337,12 +343,18 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
     // Load only recent 20 messages initially (API returns newest first, reverse to get oldest first)
     listMessages(token, sessionId, { limit: 20 })
       .then((msgs) => {
-        setMessages([...msgs].reverse()); // Reverse so oldest is first, newest at bottom
+        // Use Map for deduplication - convert array to Map
+        const msgsMap = new Map<string, MessageResponse>();
+        [...msgs].reverse().forEach(m => {
+          const key = m.id || `${m.created_at}-${m.role}`;
+          msgsMap.set(key, m);
+        });
+        setMessagesMap(msgsMap);
         // If we got 20 messages, there might be more
         setHasMoreMessages(msgs.length === 20);
       })
       .catch(() => {
-        setMessages([]);
+        setMessagesMap(new Map());
         setHasMoreMessages(false);
       });
   }, [open, inline, token, sessionId]);
@@ -359,8 +371,15 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
         beforeId: oldestMessageId 
       });
       if (olderMsgs.length > 0) {
-        // Prepend older messages (reversed to maintain chronological order)
-        setMessages((prev) => [...olderMsgs.reverse(), ...prev]);
+        // Prepend older messages to Map (reversed to maintain chronological order)
+        setMessagesMap((prev) => {
+          const next = new Map(prev);
+          [...olderMsgs].reverse().forEach(m => {
+            const key = m.id || `${m.created_at}-${m.role}`;
+            next.set(key, m);
+          });
+          return next;
+        });
         setHasMoreMessages(olderMsgs.length === 20);
       } else {
         setHasMoreMessages(false);
@@ -508,26 +527,30 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
         model: selectedModel as "replicate-flux" | "gemini-2.5-flash-image" | "gemini-3.1-flash-image-preview" | "gemini-3-pro-image-preview",
       });
       setCredits(res.credits_remaining);
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: "",
+      // Generate unique temp IDs for optimistic updates to avoid key collisions
+      const tempUserId = `temp-user-${Date.now()}`;
+      const tempAsstId = `temp-asst-${Date.now()}`;
+      setMessagesMap((prev) => {
+        const next = new Map(prev);
+        next.set(tempUserId, {
+          id: tempUserId,
           session_id: sid,
           role: "user",
           content: promptToUse,
           image_url: null,
           created_at: new Date().toISOString(),
           ...(userMessageAttachedUrl && { attached_image_url: userMessageAttachedUrl }),
-        },
-        {
-          id: res.message_id ?? "",
+        });
+        next.set(tempAsstId, {
+          id: res.message_id || tempAsstId,
           session_id: sid,
           role: "assistant",
           content: "",
           image_url: res.image_url,
           created_at: new Date().toISOString(),
-        },
-      ]);
+        });
+        return next;
+      });
       setPrompt("");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Generation failed";
@@ -692,9 +715,9 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
               )}
 
               {/* Messages - chronological (oldest first, newest at bottom like ChatGPT) */}
-              {messages.map((m) => (
+              {messages.map((m, index) => (
                 <div
-                  key={m.id || m.created_at}
+                  key={m.id ? `${m.id}-${index}` : `${m.created_at}-${m.role}-${index}`}
                   className={cn("flex gap-2", m.role === "user" ? "justify-end" : "justify-start")}
                 >
                   {m.role === "user" ? (
