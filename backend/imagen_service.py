@@ -1,5 +1,6 @@
 """Google Imagen 3 / Nano Banana image generation service."""
 import os
+import sys
 import logging
 import base64
 from io import BytesIO
@@ -15,6 +16,7 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
 # Log Imagen availability on module load
 print(f"[IMAGEN_INIT] GEMINI_API_KEY present: {bool(GEMINI_API_KEY)} (length: {len(GEMINI_API_KEY)})")
+sys.stdout.flush()
 
 # Imagen models require dimensions divisible by 16 for best compatibility
 PATCH_SIZE = 16
