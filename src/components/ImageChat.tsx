@@ -16,7 +16,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Sparkles, Send, Coins, Loader2, LogIn, Lightbulb,
   ImagePlus, X, Wand2, Maximize2, Minimize2, Download, Share2, RotateCcw, Shuffle, ChevronDown, ChevronUp,
-  MoreVertical, Copy, RefreshCw, Edit3, Palette, Settings, HelpCircle, History, BookmarkPlus, AlertTriangle, Check, Plus
+  MoreVertical, Copy, RefreshCw, Edit3, Palette, Settings, HelpCircle, History, BookmarkPlus, AlertTriangle, Check, Plus, Menu, Shield
 } from "lucide-react";
 import { toast } from "sonner";
 import heic2any from "heic2any";
@@ -287,6 +287,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
   const [recapData, setRecapData] = useState({ cost: 1, remaining: 0, type: "standard" as const });
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showUtilitiesMenu, setShowUtilitiesMenu] = useState(false);
+  const [showAdminMenu, setShowAdminMenu] = useState(false);
   const [chatSessions, setChatSessions] = useState<Array<{ id: string; title: string; timestamp: Date; messageCount: number }>>([]);
   const [creditHistory, setCreditHistory] = useState<any[]>([]);
   const [generationSettings, setGenerationSettings] = useState({
@@ -1571,6 +1572,61 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                   Create with AI
                 </h2>
                 <div className="flex items-center gap-2">
+                  {/* Admin Menu */}
+                  {isAdmin && (
+                    <div className="relative">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setShowAdminMenu(!showAdminMenu)}
+                        className="w-8 h-8 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
+                        title="Admin Menu"
+                      >
+                        <Shield className="w-4 h-4" />
+                      </Button>
+                      {showAdminMenu && (
+                        <>
+                          <div 
+                            className="fixed inset-0 z-40" 
+                            onClick={() => setShowAdminMenu(false)}
+                          />
+                          <div className="absolute right-0 top-full mt-2 z-50 w-48 rounded-xl border border-border bg-card shadow-2xl p-2 space-y-1 animate-in fade-in slide-in-from-top-2 duration-200">
+                            <p className="text-xs font-medium text-muted-foreground px-2 py-1">Admin</p>
+                            <a
+                              href="/admin"
+                              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-left text-sm"
+                            >
+                              <span>Dashboard</span>
+                            </a>
+                            <a
+                              href="/admin/prompts"
+                              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-left text-sm"
+                            >
+                              <span>Prompts</span>
+                            </a>
+                            <a
+                              href="/admin/categories"
+                              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-left text-sm"
+                            >
+                              <span>Categories</span>
+                            </a>
+                            <a
+                              href="/admin/platforms"
+                              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-left text-sm"
+                            >
+                              <span>Platforms</span>
+                            </a>
+                            <a
+                              href="/admin/users"
+                              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-left text-sm"
+                            >
+                              <span>Users</span>
+                            </a>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
                   <CreditBadge
                     balance={credits}
                     isLow={credits !== null && credits < 2}
@@ -1630,6 +1686,61 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                   Create with AI
                 </h2>
                 <div className="flex items-center gap-3">
+                  {/* Admin Menu */}
+                  {isAdmin && (
+                    <div className="relative">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setShowAdminMenu(!showAdminMenu)}
+                        className="w-8 h-8 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
+                        title="Admin Menu"
+                      >
+                        <Shield className="w-4 h-4" />
+                      </Button>
+                      {showAdminMenu && (
+                        <>
+                          <div 
+                            className="fixed inset-0 z-40" 
+                            onClick={() => setShowAdminMenu(false)}
+                          />
+                          <div className="absolute right-0 top-full mt-2 z-50 w-48 rounded-xl border border-border bg-card shadow-2xl p-2 space-y-1 animate-in fade-in slide-in-from-top-2 duration-200">
+                            <p className="text-xs font-medium text-muted-foreground px-2 py-1">Admin</p>
+                            <a
+                              href="/admin"
+                              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-left text-sm"
+                            >
+                              <span>Dashboard</span>
+                            </a>
+                            <a
+                              href="/admin/prompts"
+                              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-left text-sm"
+                            >
+                              <span>Prompts</span>
+                            </a>
+                            <a
+                              href="/admin/categories"
+                              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-left text-sm"
+                            >
+                              <span>Categories</span>
+                            </a>
+                            <a
+                              href="/admin/platforms"
+                              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-left text-sm"
+                            >
+                              <span>Platforms</span>
+                            </a>
+                            <a
+                              href="/admin/users"
+                              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-left text-sm"
+                            >
+                              <span>Users</span>
+                            </a>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
                   <CreditBadge
                     balance={credits}
                     isLow={credits !== null && credits < 2}
