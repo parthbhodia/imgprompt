@@ -52,8 +52,13 @@ const App = () => (
               <Sonner />
               <BrowserRouter basename={basename}>
                 <Routes>
-            <Route path="/pricing" element={<Pricing />} />
-            <Route path="/profile" element={<Profile />} />
+                  {/* Public site */}
+                  <Route path="/" element={<Index />} />
+                  <Route path="/gallery" element={<Gallery />} />
+                  <Route path="/favorites" element={<Favorites />} />
+                  <Route path="/creations" element={<Creations />} />
+                  <Route path="/pricing" element={<Pricing />} />
+                  <Route path="/profile" element={<Profile />} />
 
             {/* Admin – login (public) */}
             <Route path="/admin/login" element={<AdminLogin />} />
