@@ -50,6 +50,11 @@ def _get_client():
     return genai.Client(api_key=GEMINI_API_KEY)
 
 
+def _is_native_imagen_model(model: str) -> bool:
+    """Check if model is a native Imagen model (uses generate_images API)."""
+    return model.startswith("imagen-")
+
+
 def generate_imagen(
     prompt: str,
     *,
@@ -72,40 +77,40 @@ def generate_imagen(
     try:
         logger.info(f"Generating image with {model}, prompt: {prompt[:100]}...")
         
-        # Map aspect ratio
-        ratio_map = {
-            "1:1": "1:1",
-            "3:4": "3:4", 
-            "4:3": "4:3",
-            "9:16": "9:16",
-            "16:9": "16:9",
-        }
-        imagen_ratio = ratio_map.get(aspect_ratio, "1:1")
-        
-        # Use generate_content API (not generate_image)
-        response = client.models.generate_content(
-            model=model,
-            contents=[prompt],
-            config=types.GenerateContentConfig(
-                response_modalities=["Image"],
-                image_config=types.ImageConfig(
-                    aspect_ratio=imagen_ratio,
-                    # Lower steps to reduce resource load (default is usually higher)
-                    # Note: Gemini Nano Banana may ignore this, but we try anyway
+        if _is_native_imagen_model(model):
+            # Native Imagen 4 models use generate_images API
+            response = client.models.generate_images(
+                model=model,
+                prompt=prompt,
+                config=types.GenerateImagesConfig(
+                    number_of_images=1,
+                    aspect_ratio=aspect_ratio,
                 ),
             )
-        )
-        
-        # Extract image from response parts
-        for part in response.parts:
-            if part.inline_data is not None:
-                # Get image bytes and convert to base64
-                image_bytes = part.inline_data.data
-                mime_type = part.inline_data.mime_type or "image/png"
+            for generated_image in response.generated_images:
+                image_bytes = generated_image.image.image_bytes
                 base64_str = base64.b64encode(image_bytes).decode('utf-8')
-                return f"data:{mime_type};base64,{base64_str}"
-        
-        raise RuntimeError("No image generated in response")
+                return f"data:image/png;base64,{base64_str}"
+            raise RuntimeError("No image generated in response")
+        else:
+            # Gemini models use generate_content with Image modality
+            ratio_map = {"1:1": "1:1", "3:4": "3:4", "4:3": "4:3", "9:16": "9:16", "16:9": "16:9"}
+            imagen_ratio = ratio_map.get(aspect_ratio, "1:1")
+            response = client.models.generate_content(
+                model=model,
+                contents=[prompt],
+                config=types.GenerateContentConfig(
+                    response_modalities=["Image"],
+                    image_config=types.ImageConfig(aspect_ratio=imagen_ratio),
+                )
+            )
+            for part in response.parts:
+                if part.inline_data is not None:
+                    image_bytes = part.inline_data.data
+                    mime_type = part.inline_data.mime_type or "image/png"
+                    base64_str = base64.b64encode(image_bytes).decode('utf-8')
+                    return f"data:{mime_type};base64,{base64_str}"
+            raise RuntimeError("No image generated in response")
         
     except Exception as e:
         logger.error(f"Image generation failed: {e}")
@@ -120,15 +125,21 @@ def generate_imagen_edit(
 ) -> str:
     """
     Edit/transform an existing image using Google Imagen API.
+    Native Imagen models don't support image input via Google AI SDK,
+    so we always use gemini-2.5-flash-image for edits.
     
     Args:
         prompt: The transformation prompt
         reference_image_base64: Base64 encoded reference image
-        model: Model to use (default: imagen-4-fast-generate-001 for best rate limits)
+        model: Requested model (native Imagen models fall back to gemini-2.5-flash-image)
         
     Returns:
         Data URI of the generated image
     """
+    # Native Imagen models don't support image input - fall back to Gemini for edits
+    if _is_native_imagen_model(model):
+        logger.info(f"Model {model} doesn't support image editing, falling back to gemini-2.5-flash-image")
+        model = "gemini-2.5-flash-image"
     client = _get_client()
     
     try:

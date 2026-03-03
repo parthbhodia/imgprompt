@@ -140,9 +140,10 @@ export function ChatSidebar({
                     }
                     className="w-full px-2 py-1.5 rounded-md bg-muted border border-border text-sm"
                   >
-                    <option value="replicate-flux">Flux (Fast)</option>
-                    <option value="gemini-2.5-flash-image">Gemini 2.5 Flash</option>
-                    <option value="gemini-3.1-flash-image-preview">Gemini 3.1 Flash</option>
+                    <option value="imagen-4-fast-generate-001">Imagen 4 Fast</option>
+                    <option value="imagen-4-generate-001">Imagen 4</option>
+                    <option value="imagen-4-ultra-generate-001">Imagen 4 Ultra</option>
+                    <option value="gemini-2.5-flash-image">Nano Banana (Flash)</option>
                   </select>
                 </div>
 
@@ -213,9 +214,6 @@ export function ChatSidebar({
                       <MessageSquare className="h-3.5 w-3.5 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
                         <p className="truncate text-xs font-medium">{session.title}</p>
-                        <p className="text-[10px] text-muted-foreground">
-                          {session.messageCount} messages
-                        </p>
                       </div>
                     </button>
 

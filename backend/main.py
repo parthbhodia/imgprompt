@@ -957,6 +957,18 @@ async def generate_image(
                 .execute()
             )
             user_msg_id = msg_user.data[0]["id"] if msg_user.data else None
+            
+            # Auto-generate session title from first prompt
+            try:
+                session_row = supabase.table("chat_sessions").select("title").eq("id", str(session_uuid)).single().execute()
+                if session_row.data and session_row.data.get("title", "New chat") == "New chat":
+                    new_title = body.prompt[:50].strip()
+                    if len(body.prompt) > 50:
+                        new_title += "..."
+                    supabase.table("chat_sessions").update({"title": new_title}).eq("id", str(session_uuid)).execute()
+            except Exception as title_err:
+                logger.warning(f"Failed to update session title: {title_err}")
+            
             # Insert assistant message with image (using archived URL if available)
             msg_asst = (
                 supabase.table("chat_messages")
