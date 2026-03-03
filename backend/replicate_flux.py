@@ -12,7 +12,10 @@ _token = os.environ.get("REPLICATE_API_TOKEN") or getattr(settings, "replicate_a
 if _token:
     os.environ["REPLICATE_API_TOKEN"] = _token
 
-# Model for img2img - using Flux dev which supports image input for image-to-image
+# Model for text-to-image (no image upload)
+FLUX_TEXT2IMG_MODEL = "black-forest-labs/flux-1.1-pro-ultra"
+
+# Model for img2img (when user uploads an image) - Flux dev supports image input
 FLUX_IMG2IMG_MODEL = "black-forest-labs/flux-dev"
 
 # Image limits: 5MB per image; dimension check (8000px) is enforced on the frontend.
@@ -154,12 +157,11 @@ def _output_to_urls(output) -> list[str]:
 def run_flux(prompt: str, *, num_outputs: int = 1, guidance_scale: float = 3.5, num_inference_steps: int = 28) -> list[str]:
     """
     Run Flux text-to-image model and return list of image URLs.
-    Uses flux-schnell by default for speed; set FLUX_MODEL for flux-1.1-pro etc.
+    Uses flux-1.1-pro-ultra for best quality text-to-image generation.
     """
     _ensure_replicate_token()
-    model = settings.flux_model
     output = replicate.run(
-        model,
+        FLUX_TEXT2IMG_MODEL,
         input={
             "prompt": prompt,
             "num_outputs": num_outputs,
