@@ -19,6 +19,7 @@ import {
   MoreVertical, Copy, RefreshCw, Edit3, Palette, Settings, HelpCircle, History, BookmarkPlus, AlertTriangle, Check
 } from "lucide-react";
 import { toast } from "sonner";
+import heic2any from "heic2any";
 import {
   canUseDevNoAuth,
   getCredits,
@@ -55,6 +56,34 @@ import { CreditBadge } from "./CreditBadge";
 import { GenerationCostLabel } from "./GenerationCostLabel";
 import { GenerationRecapToast } from "./GenerationRecapToast";
 import { validateImageRequirement, getImageRequirementMessage, shouldBlockGeneration } from "@/utils/promptValidation";
+
+// Check if file is HEIC/HEIF format
+const isHeicFile = (file: File): boolean => {
+  const heicExtensions = ['.heic', '.heif'];
+  const heicTypes = ['image/heic', 'image/heif', 'image/heic-sequence', 'image/heif-sequence'];
+  const ext = file.name.toLowerCase();
+  return heicTypes.includes(file.type.toLowerCase()) || 
+         heicExtensions.some(e => ext.endsWith(e));
+};
+
+// Convert HEIC to JPEG
+const convertHeicToJpeg = async (file: File): Promise<File> => {
+  try {
+    const convertedBlob = await heic2any({
+      blob: file,
+      toType: 'image/jpeg',
+      quality: 0.9,
+    });
+    // heic2any returns a Blob or Blob[]
+    const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+    return new File([blob], file.name.replace(/\.heic$/i, '.jpg').replace(/\.heif$/i, '.jpg'), {
+      type: 'image/jpeg',
+    });
+  } catch (error) {
+    console.error('HEIC conversion failed:', error);
+    throw new Error('Failed to convert iPhone image. Please save as JPEG first.');
+  }
+};
 
 const PLACEHOLDER = "Describe the image you want to create...";
 
@@ -1301,15 +1330,44 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                 type="file"
                 accept="image/*"
                 className="hidden"
-                onChange={(e) => {
+                onChange={async (e) => {
                   const file = e.target.files?.[0];
-                  if (!file || !file.type.startsWith("image/")) return;
-                  if (file.size > MAX_IMAGE_BYTES) {
-                    toast.error(`Image must be under ${MAX_IMAGE_BYTES / (1024 * 1024)}MB (got ${(file.size / (1024 * 1024)).toFixed(1)}MB).`);
+                  if (!file) return;
+                  
+                  let processedFile = file;
+                  
+                  // Check if it's a HEIC/HEIF file and convert it
+                  if (isHeicFile(file)) {
+                    try {
+                      toast.loading("Converting iPhone image...", { id: "heic-convert" });
+                      processedFile = await convertHeicToJpeg(file);
+                      toast.success("Image converted!", { id: "heic-convert" });
+                    } catch (err) {
+                      toast.error("Failed to convert iPhone image. Please save as JPEG first.", { id: "heic-convert" });
+                      e.target.value = "";
+                      return;
+                    }
+                  }
+                  
+                  // Check for supported formats (after conversion)
+                  const supportedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+                  const isSupported = supportedTypes.some(type => 
+                    processedFile.type.toLowerCase().startsWith(type) || 
+                    processedFile.name.toLowerCase().endsWith(type.replace('image/', ''))
+                  );
+                  
+                  if (!isSupported) {
+                    toast.error(`Format not supported: ${processedFile.type || processedFile.name.split('.').pop()?.toUpperCase()}. Please use JPEG, PNG, WebP, or GIF.`);
                     e.target.value = "";
                     return;
                   }
-                  const url = URL.createObjectURL(file);
+                  
+                  if (processedFile.size > MAX_IMAGE_BYTES) {
+                    toast.error(`Image must be under ${MAX_IMAGE_BYTES / (1024 * 1024)}MB (got ${(processedFile.size / (1024 * 1024)).toFixed(1)}MB).`);
+                    e.target.value = "";
+                    return;
+                  }
+                  const url = URL.createObjectURL(processedFile);
                   const img = new Image();
                   img.onload = () => {
                     if (img.naturalWidth > MAX_IMAGE_DIMENSION_PX || img.naturalHeight > MAX_IMAGE_DIMENSION_PX) {
@@ -1319,15 +1377,18 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                     }
                     setAttachedImage((prev) => {
                       if (prev?.preview) URL.revokeObjectURL(prev.preview);
-                      return { file, preview: url };
+                      return { file: processedFile, preview: url };
                     });
                     // Clear validation since image is now attached
                     setPromptValidation({ show: false, message: '', blocksGeneration: false });
                     toast.success("Image attached!");
                   };
-                  img.onerror = () => { URL.revokeObjectURL(url); toast.error("Could not load image."); };
+                  img.onerror = () => { 
+                    URL.revokeObjectURL(url); 
+                    toast.error("Could not load image. Please try JPEG or PNG format.");
+                    e.target.value = "";
+                  };
                   img.src = url;
-                  e.target.value = "";
                 }}
               />
               <Button
