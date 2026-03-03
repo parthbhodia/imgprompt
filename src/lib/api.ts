@@ -227,9 +227,14 @@ export async function getMyGenerations(token: string | null): Promise<{ generati
 
 export async function listMessages(
   token: string | null,
-  sessionId: string
+  sessionId: string,
+  options?: { limit?: number; beforeId?: string }
 ): Promise<MessageResponse[]> {
-  return fetchApi<MessageResponse[]>(`/sessions/${sessionId}/messages`, {
+  const params = new URLSearchParams();
+  if (options?.limit) params.set("limit", String(options.limit));
+  if (options?.beforeId) params.set("before_id", options.beforeId);
+  const query = params.toString();
+  return fetchApi<MessageResponse[]>(`/sessions/${sessionId}/messages${query ? `?${query}` : ""}`, {
     method: "GET",
     token,
   });

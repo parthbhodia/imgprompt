@@ -775,6 +775,8 @@ def list_sessions(user_id: Annotated[str, Depends(get_current_user_id)]):
 def list_messages(
     session_id: UUID,
     user_id: Annotated[str, Depends(get_current_user_id)],
+    limit: int = Query(50, ge=1, le=200, description="Number of messages to return"),
+    before_id: Optional[str] = Query(None, description="Return messages before this message ID (for pagination)"),
 ):
     supabase = get_supabase_admin()
     session = (
@@ -786,13 +788,26 @@ def list_messages(
     )
     if not session.data:
         raise HTTPException(status_code=404, detail="Session not found")
-    r = (
+    
+    # Build query with pagination
+    query = (
         supabase.table("chat_messages")
         .select("id, session_id, role, content, image_url, created_at")
         .eq("session_id", str(session_id))
         .order("created_at", desc=False)
-        .execute()
     )
+    
+    # Apply pagination - if before_id provided, get messages before that one
+    if before_id:
+        # Get the created_at of the reference message
+        ref_msg = supabase.table("chat_messages").select("created_at").eq("id", before_id).execute()
+        if ref_msg.data:
+            query = query.lt("created_at", ref_msg.data[0]["created_at"])
+    
+    # Apply limit
+    query = query.limit(limit)
+    
+    r = query.execute()
     return [
         MessageResponse(
             id=row["id"],

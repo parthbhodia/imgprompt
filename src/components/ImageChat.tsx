@@ -14,7 +14,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Sparkles, Send, Coins, Loader2, LogIn, Lightbulb,
-  ImagePlus, X, Wand2, Maximize2, Minimize2, Download, Share2, RotateCcw, Shuffle, ChevronDown,
+  ImagePlus, X, Wand2, Maximize2, Minimize2, Download, Share2, RotateCcw, Shuffle, ChevronDown, ChevronUp,
   MoreVertical, Copy, RefreshCw, Edit3, Palette, Settings, HelpCircle, History, BookmarkPlus, AlertTriangle
 } from "lucide-react";
 import { toast } from "sonner";
@@ -63,6 +63,8 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<MessageResponse[]>([]);
+  const [hasMoreMessages, setHasMoreMessages] = useState(false);
+  const [loadingOlder, setLoadingOlder] = useState(false);
   const [suggestions, setSuggestions] = useState<SuggestResponse["suggestions"]>([]);
   const [attachedImage, setAttachedImage] = useState<{ file: File; preview: string } | null>(null);
   const [refining, setRefining] = useState(false);
@@ -249,17 +251,53 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
       .catch(() => {});
   }, [token]);
 
-  // Load messages whenever session is known and chat is visible
+  // Load messages with pagination - only get recent ones initially
   useEffect(() => {
     const isVisible = open || inline;
     if (!isVisible || !token || !sessionId) {
-      if (!inline) setMessages([]);
+      if (!inline) {
+        setMessages([]);
+        setHasMoreMessages(false);
+      }
       return;
     }
-    listMessages(token, sessionId)
-      .then(setMessages)
-      .catch(() => setMessages([]));
+    // Load only recent 20 messages initially
+    listMessages(token, sessionId, { limit: 20 })
+      .then((msgs) => {
+        setMessages(msgs);
+        // If we got 20 messages, there might be more
+        setHasMoreMessages(msgs.length === 20);
+      })
+      .catch(() => {
+        setMessages([]);
+        setHasMoreMessages(false);
+      });
   }, [open, inline, token, sessionId]);
+
+  // Load older messages when user clicks "View Older"
+  const loadOlderMessages = async () => {
+    if (!token || !sessionId || messages.length === 0) return;
+    setLoadingOlder(true);
+    try {
+      // Get the oldest message ID to load before it
+      const oldestMessageId = messages[0]?.id;
+      const olderMsgs = await listMessages(token, sessionId, { 
+        limit: 20, 
+        beforeId: oldestMessageId 
+      });
+      if (olderMsgs.length > 0) {
+        // Prepend older messages to the beginning
+        setMessages((prev) => [...olderMsgs, ...prev]);
+        setHasMoreMessages(olderMsgs.length === 20);
+      } else {
+        setHasMoreMessages(false);
+      }
+    } catch {
+      toast.error("Failed to load older messages");
+    } finally {
+      setLoadingOlder(false);
+    }
+  };
 
   // Auto-scroll chat to bottom on new messages
   useEffect(() => {
@@ -544,6 +582,27 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
                     </div>
                   </div>
                 )}
+
+              {/* View Older Messages Button */}
+              {hasMoreMessages && (
+                <div className="flex justify-center py-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={loadOlderMessages}
+                    disabled={loadingOlder}
+                    className="text-xs text-muted-foreground hover:text-primary"
+                  >
+                    {loadingOlder ? (
+                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                    ) : (
+                      <ChevronUp className="w-3 h-3 mr-1" />
+                    )}
+                    View older messages
+                  </Button>
+                </div>
+              )}
+
               {messages.map((m) => (
                 <div
                   key={m.id || m.created_at}
