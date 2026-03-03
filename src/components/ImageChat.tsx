@@ -115,16 +115,27 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
 
   // Load initialImageUrl when provided (for Generate with AI workflow)
   useEffect(() => {
-    if (!initialImageUrl || !initialImageUrl.startsWith('http')) return;
+    if (!initialImageUrl || !initialImageUrl.startsWith('http')) {
+      console.log('Skipping image load - invalid URL:', initialImageUrl);
+      return;
+    }
     
+    console.log('Loading image from URL:', initialImageUrl.slice(0, 50));
     fetch(initialImageUrl)
-      .then(res => res.blob())
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.blob();
+      })
       .then(blob => {
         const file = new File([blob], 'reference-image.webp', { type: 'image/webp' });
         const preview = URL.createObjectURL(file);
         setAttachedImage({ file, preview });
+        console.log('Image loaded successfully');
       })
-      .catch(err => console.error('Failed to load reference image:', err));
+      .catch(err => {
+        console.error('Failed to load reference image:', err);
+        // Don't crash - just log the error
+      });
   }, [initialImageUrl]);
 
   // Animate thinking steps dynamically - progress through pending → active → complete
