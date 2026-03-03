@@ -157,6 +157,7 @@ const slugifyCategory = (category: string) => {
 };
 
 const findCategoryFromSlug = (slug: string, categories: string[]) => {
+  if (!Array.isArray(categories)) return "All";
   return categories.find(cat => slugifyCategory(cat) === slug) || "All";
 };
 
@@ -202,7 +203,7 @@ const Index = () => {
   const navigate = useNavigate();
   const { user, signInWithGoogle, signOut } = useAuth();
   const { likeCounts, userLikes, userFavorites, toggleLike, toggleFavorite } = useLikes();
-  const selectedPrompt = selectedPromptId ? mergedPrompts.find((prompt) => prompt.id === selectedPromptId) ?? null : null;
+  const selectedPrompt = selectedPromptId && Array.isArray(mergedPrompts) ? mergedPrompts.find((prompt) => prompt.id === selectedPromptId) ?? null : null;
   const selectedSlide = selectedPrompt ? selectedPrompt.slides[currentSlideIndex] : null;
 
   useEffect(() => {
@@ -277,6 +278,7 @@ const Index = () => {
   }, [mergedPrompts]);
 
   const getPromptSlugById = (promptId: number) => {
+    if (!Array.isArray(mergedPrompts)) return null;
     const prompt = mergedPrompts.find((item) => item.id === promptId);
     return prompt?.slug ?? null;
   };
