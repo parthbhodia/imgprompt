@@ -1537,8 +1537,10 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                       if (prev?.preview) URL.revokeObjectURL(prev.preview);
                       return { file: processedFile, preview: url };
                     });
-                    // Clear validation since image is now attached
-                    setPromptValidation({ show: false, message: '', blocksGeneration: false });
+                    // Force immediate validation clear to prevent race condition
+                    requestAnimationFrame(() => {
+                      setPromptValidation({ show: false, message: '', blocksGeneration: false });
+                    });
                     toast.success("Image attached!");
                   };
                   img.onerror = () => { 
