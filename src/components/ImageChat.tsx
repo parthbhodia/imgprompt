@@ -107,10 +107,48 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
   // Escape exits fullscreen
   useEffect(() => {
     if (!fullscreen) return;
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") setFullscreen(false); };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    const handleEsc = (e: KeyboardEvent) => { if (e.key === "Escape") setFullscreen(false); };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
   }, [fullscreen]);
+
+  // Animate thinking steps dynamically - progress through pending → active → complete
+  useEffect(() => {
+    if (thinkingSteps.length === 0 || !loading) return;
+
+    // Start with all steps as pending
+    const animatedSteps = thinkingSteps.map(s => ({ ...s, status: "pending" as const }));
+    setThinkingSteps(animatedSteps);
+
+    let currentIndex = 0;
+    const interval = setInterval(() => {
+      setThinkingSteps(prev => {
+        if (currentIndex >= prev.length) {
+          clearInterval(interval);
+          return prev;
+        }
+
+        return prev.map((step, idx) => {
+          if (idx < currentIndex) {
+            // Previous steps are complete
+            return { ...step, status: "complete" };
+          } else if (idx === currentIndex) {
+            // Current step is active
+            return { ...step, status: "active" };
+          }
+          // Future steps are pending
+          return { ...step, status: "pending" };
+        });
+      });
+
+      currentIndex++;
+      if (currentIndex > animatedSteps.length) {
+        clearInterval(interval);
+      }
+    }, 1500); // 1.5 seconds per step
+
+    return () => clearInterval(interval);
+  }, [thinkingSteps.length, loading]);
 
   // Lock body scroll in fullscreen
   useEffect(() => {
@@ -790,7 +828,7 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
                             <div className="flex-1 min-w-0">
                               <p className={cn(
                                 "text-xs font-medium",
-                                step.status === "complete" && "text-muted-foreground line-through",
+                                step.status === "complete" && "text-muted-foreground",
                                 step.status === "active" && "text-primary",
                                 step.status === "pending" && "text-muted-foreground/50"
                               )}>
