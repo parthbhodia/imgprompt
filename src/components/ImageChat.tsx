@@ -408,6 +408,21 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
     loadSessionsAndHistory();
   }, [session]);
 
+  // Sync selectedModel with generationSettings.model (bidirectional sync)
+  useEffect(() => {
+    // When generationSettings changes (from sidebar), update selectedModel
+    if (generationSettings.model !== selectedModel) {
+      setSelectedModel(generationSettings.model);
+    }
+  }, [generationSettings.model]);
+
+  useEffect(() => {
+    // When selectedModel changes (from dropdown), update generationSettings
+    if (selectedModel !== generationSettings.model) {
+      setGenerationSettings(prev => ({ ...prev, model: selectedModel as any }));
+    }
+  }, [selectedModel]);
+
   // Load initialImageUrl when provided (for Generate with AI workflow)
   useEffect(() => {
     if (!initialImageUrl || !initialImageUrl.startsWith('http')) {
