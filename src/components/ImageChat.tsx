@@ -248,6 +248,8 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
   const [thinkingSteps, setThinkingSteps] = useState<ThinkingStep[]>([]);
   const [showThinking, setShowThinking] = useState(false);
   const [selectedModel, setSelectedModel] = useState<string>("gemini-3.1-flash-image-preview");
+  const [showRecapToast, setShowRecapToast] = useState(false);
+  const [recapData, setRecapData] = useState({ cost: 1, remaining: 0, type: "standard" as const });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -719,6 +721,15 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
         model: selectedModel as "replicate-flux" | "gemini-2.5-flash-image" | "gemini-3.1-flash-image-preview" | "gemini-3-pro-image-preview",
       });
       setCredits(res.credits_remaining);
+      
+      // Show recap toast
+      setRecapData({
+        cost: 1,
+        remaining: res.credits_remaining,
+        type: "standard",
+      });
+      setShowRecapToast(true);
+      
       // Generate unique temp IDs for optimistic updates to avoid key collisions
       const tempUserId = `temp-user-${Date.now()}`;
       const tempAsstId = `temp-asst-${Date.now()}`;
@@ -1261,10 +1272,11 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                 onClick={handleGenerate}
                 disabled={loading || !prompt.trim() || (!devNoAuth && credits !== null && credits < 1)}
                 size="sm"
-                className="shrink-0 h-[44px] sm:h-[56px] aspect-square bg-gradient-to-r from-primary to-accent hover:opacity-90"
+                className="shrink-0 h-[44px] sm:h-[56px] gap-1.5 bg-gradient-to-r from-primary to-accent hover:opacity-90"
                 aria-label="Generate image"
               >
                 {loading ? <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" /> : <Send className="w-4 h-4 sm:w-5 sm:h-5" />}
+                <GenerationCostLabel cost={1} userBalance={credits} className="hidden sm:flex" />
               </Button>
             </div>
 
@@ -1439,6 +1451,15 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
             </div>
           </div>
         )}
+        
+        {/* Recap Toast */}
+        <GenerationRecapToast
+          isVisible={showRecapToast}
+          creditsCost={recapData.cost}
+          creditsRemaining={recapData.remaining}
+          generationType={recapData.type}
+          onClose={() => setShowRecapToast(false)}
+        />
       </>
     );
   }
