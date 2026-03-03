@@ -678,29 +678,44 @@ async def generate_image(
             
             # Archive image to Supabase Storage (async via executor)
             if message_id:
-                loop = asyncio.get_event_loop()
-                archived_url = await loop.run_in_executor(
-                    None,
-                    lambda: archive_image_to_storage(supabase, user_id, image_url, message_id)
-                )
-                # If archived, use storage URL instead
-                if archived_url:
-                    supabase.table("chat_messages").update({"image_url": archived_url}).eq("id", message_id).execute()
-                    image_url = archived_url
+                try:
+                    loop = asyncio.get_event_loop()
+                    archived_url = await loop.run_in_executor(
+                        None,
+                        lambda: archive_image_to_storage(supabase, user_id, image_url, message_id)
+                    )
+                    # If archived successfully, update DB and use storage URL
+                    if archived_url:
+                        # Update the message with archived URL
+                        supabase.table("chat_messages").update({"image_url": archived_url}).eq("id", message_id).execute()
+                        # Also update image_generations record later
+                        image_url = archived_url
+                        logger.info(f"Image archived successfully, using storage URL: {archived_url}")
+                    else:
+                        logger.warning(f"Image archival failed, keeping Replicate URL: {image_url}")
+                except Exception as archive_error:
+                    logger.error(f"Image archival error: {archive_error}")
+                    # Continue with Replicate URL if archiving fails
                 
-                # Cleanup old archives
-                await loop.run_in_executor(None, lambda: cleanup_old_archives(supabase, user_id))
+                # Cleanup old archives (fire and forget)
+                try:
+                    await loop.run_in_executor(None, lambda: cleanup_old_archives(supabase, user_id))
+                except Exception as cleanup_error:
+                    logger.warning(f"Archive cleanup error: {cleanup_error}")
             
-            # Record generation
-            supabase.table("image_generations").insert({
-                "user_id": user_id,
-                "session_id": str(session_uuid),
-                "message_id": message_id,
-                "prompt": body.prompt,
-                "image_url": image_url,
-                "model": settings.flux_model,
-                "credits_used": cost,
-            }).execute()
+            # Record generation with the final URL (archived if available)
+            try:
+                supabase.table("image_generations").insert({
+                    "user_id": user_id,
+                    "session_id": str(session_uuid),
+                    "message_id": message_id,
+                    "prompt": body.prompt,
+                    "image_url": image_url,  # This will be archived URL if successful
+                    "model": settings.flux_model,
+                    "credits_used": cost,
+                }).execute()
+            except Exception as gen_error:
+                logger.warning(f"Failed to record generation: {gen_error}")
         except Exception as e:
             logger.warning(f"Failed to archive image: {e}")
 
