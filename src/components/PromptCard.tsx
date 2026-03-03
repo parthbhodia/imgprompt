@@ -79,6 +79,9 @@ export const PromptCard = ({
   }
 
   const currentSlide = slides[currentImageIndex];
+  if (!currentSlide) {
+    return null;
+  }
 
   return (
     <Card

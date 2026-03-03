@@ -53,10 +53,11 @@ const MAX_IMAGE_DIMENSION_PX = 8000;
 interface ImageChatProps {
   inline?: boolean;
   initialPrompt?: string;
+  initialImageUrl?: string;
   onPromptConsumed?: () => void;
 }
 
-export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: ImageChatProps) {
+export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPromptConsumed }: ImageChatProps) {
   const { user, session, signInWithGoogle } = useAuth();
   const { generationState, startGeneration, stopGeneration, getElapsedTime } = useGeneration();
   const [open, setOpen] = useState(false);
@@ -112,33 +113,19 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
     return () => window.removeEventListener("keydown", handleEsc);
   }, [fullscreen]);
 
-  // Load editData from localStorage (for Generate with AI workflow)
+  // Load initialImageUrl when provided (for Generate with AI workflow)
   useEffect(() => {
-    const editDataRaw = localStorage.getItem("editData");
-    if (!editDataRaw) return;
+    if (!initialImageUrl) return;
     
-    try {
-      const editData = JSON.parse(editDataRaw);
-      if (editData.prompt) {
-        setPrompt(editData.prompt);
-      }
-      if (editData.imageUrl) {
-        // Load the reference image as attached image
-        fetch(editData.imageUrl)
-          .then(res => res.blob())
-          .then(blob => {
-            const file = new File([blob], 'reference-image.webp', { type: 'image/webp' });
-            const preview = URL.createObjectURL(file);
-            setAttachedImage({ file, preview });
-          })
-          .catch(err => console.error('Failed to load reference image:', err));
-      }
-      // Clear the editData after loading
-      localStorage.removeItem("editData");
-    } catch (e) {
-      console.error('Failed to parse editData:', e);
-    }
-  }, []);
+    fetch(initialImageUrl)
+      .then(res => res.blob())
+      .then(blob => {
+        const file = new File([blob], 'reference-image.webp', { type: 'image/webp' });
+        const preview = URL.createObjectURL(file);
+        setAttachedImage({ file, preview });
+      })
+      .catch(err => console.error('Failed to load reference image:', err));
+  }, [initialImageUrl]);
 
   // Animate thinking steps dynamically - progress through pending → active → complete
   useEffect(() => {

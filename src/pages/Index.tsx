@@ -186,6 +186,7 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [visibleCount, setVisibleCount] = useState(6);
   const [aiPrompt, setAiPrompt] = useState("");
+  const [aiImageUrl, setAiImageUrl] = useState<string | undefined>(undefined);
   const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false);
   const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
   const [isPromptDialogOpen, setIsPromptDialogOpen] = useState(false);
@@ -674,7 +675,11 @@ const Index = () => {
         <ImageChat
           inline
           initialPrompt={aiPrompt}
-          onPromptConsumed={() => setAiPrompt("")}
+          initialImageUrl={aiImageUrl}
+          onPromptConsumed={() => {
+            setAiPrompt("");
+            setAiImageUrl(undefined);
+          }}
         />
 
         {/* Social media drops - Trending prompt highlights (Hidden) */}
@@ -939,15 +944,9 @@ const Index = () => {
                   platforms={prompt.platforms}
                   onOpen={() => openPromptModal(prompt.id)}
                   onGenerateWithAI={(promptText, imageUrl) => {
-                    // Store both prompt and image for img2img workflow
-                    localStorage.setItem("editData", JSON.stringify({
-                      prompt: promptText,
-                      imageUrl: imageUrl,
-                      useImage: true,
-                      isImg2Img: true,
-                    }));
-                    // Navigate to chat without page refresh
-                    navigate("/");
+                    // Set both prompt and image via React state
+                    setAiPrompt(promptText);
+                    setAiImageUrl(imageUrl);
                   }}
                   likeCount={likeCounts[prompt.id] ?? 0}
                   isLiked={userLikes.has(prompt.id)}
