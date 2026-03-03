@@ -222,6 +222,8 @@ const Index = () => {
   // Read chatPrompt from URL (from Creations page: Edit / Remix)
   useEffect(() => {
     const chatPrompt = searchParams.get('chatPrompt');
+    const editImage = searchParams.get('editImage');
+    
     if (chatPrompt) {
       try {
         const decoded = decodeURIComponent(chatPrompt);
@@ -234,6 +236,32 @@ const Index = () => {
       // Clear URL param to avoid re-applying on refresh
       const url = new URL(window.location.href);
       url.searchParams.delete('chatPrompt');
+      window.history.replaceState({}, '', url.toString());
+    }
+    
+    // Handle editImage from Creations page
+    if (editImage) {
+      const editData = localStorage.getItem("creations_edit_in_chat");
+      if (editData) {
+        try {
+          const { imageUrl, prompt } = JSON.parse(editData);
+          setAiPrompt(prompt || "");
+          // Store reference image for chat to use
+          localStorage.setItem("creations_reference_image", JSON.stringify({
+            url: imageUrl,
+            prompt: prompt,
+          }));
+          // Scroll to chat
+          setTimeout(() => document.getElementById("ai-chat")?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+          toast.success("Image loaded! Upload it in chat to edit.");
+        } catch {
+          toast.error("Could not load image for editing.");
+        }
+        localStorage.removeItem("creations_edit_in_chat");
+      }
+      // Clear URL param
+      const url = new URL(window.location.href);
+      url.searchParams.delete('editImage');
       window.history.replaceState({}, '', url.toString());
     }
   }, [searchParams]);

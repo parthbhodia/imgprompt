@@ -61,10 +61,17 @@ export default function Creations() {
     }
   };
 
-  // Navigate to chat with prompt (for editing the prompt)
-  const handleEditPrompt = (gen: GenerationRecord) => {
+  // Edit in Chat - opens chat with image and prompt
+  const handleEditInChat = (gen: GenerationRecord) => {
     setSelectedGen(null);
-    navigate(`/?chatPrompt=${encodeURIComponent(gen.content)}`);
+    // Store both image URL and prompt in localStorage for chat to pick up
+    localStorage.setItem("creations_edit_in_chat", JSON.stringify({
+      imageUrl: gen.image_url,
+      prompt: gen.content,
+      mode: "edit", // or "remix"
+    }));
+    navigate("/?editImage=true");
+    toast.success("Opening in chat...");
   };
 
   // Navigate to chat with image as reference (for img2img)
@@ -173,15 +180,24 @@ export default function Creations() {
                     />
 
                     {/* Overlay on hover */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/0 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-end p-3 gap-2">
-                      <p className="text-white text-xs line-clamp-2 leading-relaxed font-medium">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-end p-3 gap-2">
+                      <p className="text-white text-xs line-clamp-3 leading-relaxed font-medium">
                         {gen.content || "No prompt"}
                       </p>
                       <div className="flex gap-1">
                         <button
                           type="button"
+                          onClick={(e) => { e.stopPropagation(); handleEditInChat(gen); }}
+                          className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg bg-primary/80 hover:bg-primary text-white text-xs font-medium transition-colors"
+                          title="Edit in Chat"
+                        >
+                          <Edit className="w-3 h-3" />
+                          <span>Edit</span>
+                        </button>
+                        <button
+                          type="button"
                           onClick={(e) => { e.stopPropagation(); handleDownload(gen); }}
-                          className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white text-xs font-medium transition-colors"
+                          className="flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg bg-white/20 hover:bg-white/30 text-white text-xs font-medium transition-colors"
                           title="Download"
                         >
                           <Download className="w-3 h-3" />
@@ -189,7 +205,7 @@ export default function Creations() {
                         <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); handleShare(gen); }}
-                          className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white text-xs font-medium transition-colors"
+                          className="flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg bg-white/20 hover:bg-white/30 text-white text-xs font-medium transition-colors"
                           title="Share"
                         >
                           <Share2 className="w-3 h-3" />
@@ -244,13 +260,13 @@ export default function Creations() {
 
                 {/* Action buttons */}
                 <div className="space-y-3 mt-auto">
-                  {/* Edit Prompt */}
+                  {/* Edit in Chat */}
                   <Button
                     className="w-full gap-2 bg-gradient-to-r from-primary to-accent"
-                    onClick={() => handleEditPrompt(selectedGen)}
+                    onClick={() => handleEditInChat(selectedGen)}
                   >
                     <Edit className="w-4 h-4" />
-                    Edit Prompt in Chat
+                    Edit in Chat
                   </Button>
 
                   {/* Remix */}
