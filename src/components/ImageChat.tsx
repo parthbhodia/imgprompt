@@ -14,7 +14,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Sparkles, Send, Coins, Loader2, LogIn, Lightbulb,
-  ImagePlus, X, Wand2, Maximize2, Minimize2, Download, Share2, RotateCcw, Shuffle, ChevronDown,
+  ImagePlus, X, Wand2, Maximize2, Minimize2, Download, Share2, RotateCcw, Shuffle, ChevronDown, ChevronUp,
   MoreVertical, Copy, RefreshCw, Edit3, Palette, Settings, HelpCircle, History, BookmarkPlus, AlertTriangle, Check
 } from "lucide-react";
 import { toast } from "sonner";
@@ -671,9 +671,28 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                   </div>
                 )}
 
+              {/* View Older Messages Button */}
+              {hasMoreMessages && (
+                <div className="flex justify-center py-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={loadOlderMessages}
+                    disabled={loadingOlder}
+                    className="text-xs text-muted-foreground hover:text-primary"
+                  >
+                    {loadingOlder ? (
+                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                    ) : (
+                      <ChevronUp className="w-3 h-3 mr-1" />
+                    )}
+                    View older messages
+                  </Button>
+                </div>
+              )}
 
-              {/* Messages - latest first */}
-              {[...messages].reverse().map((m) => (
+              {/* Messages - chronological (oldest first, newest at bottom like ChatGPT) */}
+              {messages.map((m) => (
                 <div
                   key={m.id || m.created_at}
                   className={cn("flex gap-2", m.role === "user" ? "justify-end" : "justify-start")}
