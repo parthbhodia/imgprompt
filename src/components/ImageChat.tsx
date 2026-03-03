@@ -334,10 +334,10 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
       }
       return;
     }
-    // Load only recent 20 messages initially
+    // Load only recent 20 messages initially (API returns newest first, reverse to get oldest first)
     listMessages(token, sessionId, { limit: 20 })
       .then((msgs) => {
-        setMessages(msgs);
+        setMessages([...msgs].reverse()); // Reverse so oldest is first, newest at bottom
         // If we got 20 messages, there might be more
         setHasMoreMessages(msgs.length === 20);
       })
@@ -352,15 +352,15 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
     if (!token || !sessionId || messages.length === 0) return;
     setLoadingOlder(true);
     try {
-      // Get the oldest message ID to load before it
+      // Get the oldest message ID to load before it (oldest is at index 0)
       const oldestMessageId = messages[0]?.id;
       const olderMsgs = await listMessages(token, sessionId, { 
         limit: 20, 
         beforeId: oldestMessageId 
       });
       if (olderMsgs.length > 0) {
-        // Prepend older messages to the beginning
-        setMessages((prev) => [...olderMsgs, ...prev]);
+        // Prepend older messages (reversed to maintain chronological order)
+        setMessages((prev) => [...olderMsgs.reverse(), ...prev]);
         setHasMoreMessages(olderMsgs.length === 20);
       } else {
         setHasMoreMessages(false);
