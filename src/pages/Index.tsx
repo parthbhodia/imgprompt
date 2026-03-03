@@ -929,14 +929,15 @@ const Index = () => {
             <p className="text-sm text-amber-600 mb-4">Could not load prompts. Please try again later.</p>
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {visiblePrompts.map((prompt, index) => (
+            {visiblePrompts.filter(Boolean).map((prompt, index) => (
               <div
-                key={prompt.id}
-                id={`prompt-${prompt.id}`}
+                key={prompt?.id || index}
+                id={`prompt-${prompt?.id}`}
                 style={{
                   animationDelay: `${index * 100}ms`,
                 }}
               >
+                {prompt && prompt.slides && (
                 <PromptCard
                   slides={prompt.slides}
                   category={prompt.category}
@@ -960,6 +961,7 @@ const Index = () => {
                   onLike={() => handleLike(prompt.id)}
                   onFavorite={() => handleFavorite(prompt.id)}
                 />
+                )}
               </div>
             ))}
           </div>
