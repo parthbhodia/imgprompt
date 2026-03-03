@@ -141,6 +141,12 @@ def generate_imagen_edit(
     Returns:
         Data URI of the generated image
     """
+    # CRITICAL: Log entry to confirm this function is being called
+    print(f"\n[IMAGEN_EDIT] ========== FUNCTION ENTERED ==========")
+    print(f"[IMAGEN_EDIT] Prompt received: {prompt[:50]}...")
+    print(f"[IMAGEN_EDIT] Image data length: {len(reference_image_base64)} chars")
+    sys.stdout.flush()
+    
     # Native Imagen models don't support image input - fall back to Gemini for edits
     actual_model = model
     if _is_native_imagen_model(model):
