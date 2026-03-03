@@ -807,7 +807,7 @@ async def generate_image(
             print(f"[GENERATE_ENDPOINT] Failed to parse image: {e}")
 
     # Determine which model to use
-    use_imagen = body.model.startswith("gemini-") and is_imagen_available()
+    use_imagen = (body.model.startswith("gemini-") or body.model.startswith("imagen-")) and is_imagen_available()
     imagen_model = body.model if use_imagen else None
     logger.info(f"Using model: {imagen_model if use_imagen else 'Replicate Flux'}")
     
