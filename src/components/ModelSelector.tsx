@@ -61,12 +61,12 @@ export function ModelSelector({ token, selectedModel, onSelectModel, disabled }:
       });
   }, [token]);
 
-  const selectedModelInfo = models.find((m) => m.id === selectedModel);
+  const selectedModelInfo = models?.find((m) => m.id === selectedModel);
   const selectedIcon = modelIcons[selectedModel] || <Cpu className="w-4 h-4" />;
   const selectedBadge = modelBadges[selectedModel];
 
   // Don't show if only one model available
-  if (models.length <= 1) {
+  if (!models || models.length <= 1) {
     return (
       <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50 text-xs text-muted-foreground">
         {selectedIcon}
