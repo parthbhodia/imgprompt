@@ -110,6 +110,25 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
     return () => { document.body.style.overflow = ""; };
   }, [fullscreen]);
 
+  // Auto-scroll to bottom when messages change or loading state changes
+  useEffect(() => {
+    const scrollToBottom = () => {
+      if (scrollAreaRef.current) {
+        const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+        if (scrollContainer) {
+          scrollContainer.scrollTo({
+            top: scrollContainer.scrollHeight,
+            behavior: 'smooth'
+          });
+        }
+      }
+    };
+
+    // Small delay to ensure content has rendered
+    const timer = setTimeout(scrollToBottom, 100);
+    return () => clearTimeout(timer);
+  }, [messages, loading]);
+
   // Validate prompt for image requirements
   useEffect(() => {
     if (!prompt.trim()) {
@@ -574,7 +593,7 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
                                   <button
                                     key={idx}
                                     type="button"
-                                    onClick={() => handleGenerateWithPrompt(`${m.content}, ${variation}`)}
+                                    onClick={() => handleGenerateWithPrompt(`${m.content}, ${variation}`, true, m.image_url!)}
                                     className="text-left px-2 py-1 rounded-md text-xs bg-muted/40 hover:bg-primary/10 text-muted-foreground transition-colors truncate"
                                     title={variation}
                                   >
@@ -585,14 +604,14 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
                                 <>
                                   <button
                                     type="button"
-                                    onClick={() => handleGenerateWithPrompt(`${m.content}, different artistic style`)}
+                                    onClick={() => handleGenerateWithPrompt(`${m.content}, different artistic style`, true, m.image_url!)}
                                     className="text-left px-2 py-1 rounded-md text-xs bg-muted/40 hover:bg-primary/10 text-muted-foreground transition-colors"
                                   >
                                     Different artistic style
                                   </button>
                                   <button
                                     type="button"
-                                    onClick={() => handleGenerateWithPrompt(`${m.content}, cinematic lighting`)}
+                                    onClick={() => handleGenerateWithPrompt(`${m.content}, cinematic lighting`, true, m.image_url!)}
                                     className="text-left px-2 py-1 rounded-md text-xs bg-muted/40 hover:bg-primary/10 text-muted-foreground transition-colors"
                                   >
                                     Cinematic version
