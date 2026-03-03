@@ -146,6 +146,7 @@ def generate_imagen_edit(
     if _is_native_imagen_model(model):
         logger.warning(f"Model {model} doesn't support image editing, falling back to gemini-2.5-flash-image")
         print(f"[IMAGEN_EDIT] Model swap: {model} -> gemini-2.5-flash-image (native Imagen doesn't support img2img)")
+        sys.stdout.flush()
         model = "gemini-2.5-flash-image"
     client = _get_client()
     
@@ -154,7 +155,9 @@ def generate_imagen_edit(
         anchored_prompt = f"Edit this specific image as follows: {prompt}. Keep the original subject, person, and composition. Do not generate a new scene - transform the existing photo."
         logger.info(f"Generating image edit with {model}, anchored prompt: {anchored_prompt[:100]}...")
         print(f"[IMAGEN_EDIT] Using model: {model} (requested: {actual_model})")
+        sys.stdout.flush()
         print(f"[IMAGEN_EDIT] Anchored prompt: {anchored_prompt[:80]}...")
+        sys.stdout.flush()
         
         # Decode base64 image
         if "base64," in reference_image_base64:
@@ -162,22 +165,32 @@ def generate_imagen_edit(
         
         image_bytes = base64.b64decode(reference_image_base64)
         print(f"[IMAGEN_EDIT] Decoded image bytes: {len(image_bytes)} bytes")
+        sys.stdout.flush()
         
         # Convert to PIL Image and resize to ensure dimensions divisible by 16
         pil_image = Image.open(BytesIO(image_bytes))
         print(f"[IMAGEN_EDIT] PIL Image opened: {pil_image.size[0]}x{pil_image.size[1]}, mode={pil_image.mode}")
+        sys.stdout.flush()
         pil_image = _resize_image_if_needed(pil_image)
         print(f"[IMAGEN_EDIT] After resize: {pil_image.size[0]}x{pil_image.size[1]}")
+        sys.stdout.flush()
         
         # Use generate_content with image input
         # Image FIRST, then prompt - this tells model "edit this image" rather than "generate something like this"
         print(f"[IMAGEN_EDIT] ====== REQUEST DETAILS ======")
+        sys.stdout.flush()
         print(f"[IMAGEN_EDIT] Model: {model}")
+        sys.stdout.flush()
         print(f"[IMAGEN_EDIT] Image size: {pil_image.size}")
+        sys.stdout.flush()
         print(f"[IMAGEN_EDIT] Image mode: {pil_image.mode}")
+        sys.stdout.flush()
         print(f"[IMAGEN_EDIT] Prompt: {anchored_prompt}")
+        sys.stdout.flush()
         print(f"[IMAGEN_EDIT] Content array: [PIL.Image, str] (image object first)")
+        sys.stdout.flush()
         print(f"[IMAGEN_EDIT] ====== CALLING GEMINI ======")
+        sys.stdout.flush()
         
         response = client.models.generate_content(
             model=model,
