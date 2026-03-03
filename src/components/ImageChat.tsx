@@ -1354,23 +1354,29 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
           {/* Mobile-Optimized Input Area */}
           <div className="border-t bg-muted/30 shrink-0 space-y-2 p-3 sm:p-4">
             {/* Attached Image Preview */}
-            {attachedImage && (
-              <div className="relative inline-block">
-                <img
-                  src={attachedImage.preview}
-                  alt="Attached"
-                  className="h-12 w-12 sm:h-16 sm:w-16 object-cover rounded-lg border border-border"
-                />
-                <button
-                  type="button"
-                  onClick={() => setAttachedImage(null)}
-                  className="absolute -top-2 -right-2 rounded-full bg-destructive text-destructive-foreground p-0.5 hover:bg-destructive/90 shadow-lg"
-                  aria-label="Remove image"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </div>
-            )}
+            {(() => {
+              console.log('[DEBUG] attachedImage state:', attachedImage);
+              return attachedImage && (
+                <div className="relative inline-block">
+                  <img
+                    src={attachedImage.preview}
+                    alt="Attached"
+                    className="h-12 w-12 sm:h-16 sm:w-16 object-cover rounded-lg border border-border"
+                    onError={(e) => {
+                      console.error('[DEBUG] Failed to load attached image preview:', e);
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setAttachedImage(null)}
+                    className="absolute -top-2 -right-2 rounded-full bg-destructive text-destructive-foreground p-0.5 hover:bg-destructive/90 shadow-lg"
+                    aria-label="Remove image"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              );
+            })()}
 
             {/* Input Row - Auto-resizing Textarea */}
             <div className="flex gap-2 items-end">
@@ -1533,13 +1539,16 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                     return;
                   }
                   const url = URL.createObjectURL(processedFile);
+                  console.log('[DEBUG] Created blob URL:', url);
                   const img = new Image();
                   img.onload = () => {
+                    console.log('[DEBUG] Image loaded successfully:', img.naturalWidth, 'x', img.naturalHeight);
                     if (img.naturalWidth > MAX_IMAGE_DIMENSION_PX || img.naturalHeight > MAX_IMAGE_DIMENSION_PX) {
                       URL.revokeObjectURL(url);
                       toast.error(`Image dimensions must be at most ${MAX_IMAGE_DIMENSION_PX}px on each side (got ${img.naturalWidth}×${img.naturalHeight}).`);
                       return;
                     }
+                    console.log('[DEBUG] Setting attachedImage state');
                     setAttachedImage((prev) => {
                       if (prev?.preview) URL.revokeObjectURL(prev.preview);
                       return { file: processedFile, preview: url };
@@ -1551,6 +1560,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                     toast.success("Image attached!");
                   };
                   img.onerror = () => { 
+                    console.error('[DEBUG] Failed to load image');
                     URL.revokeObjectURL(url); 
                     toast.error("Could not load image. Please try JPEG or PNG format.");
                     e.target.value = "";
