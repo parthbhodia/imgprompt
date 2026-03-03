@@ -150,9 +150,9 @@ def generate_imagen_edit(
     try:
         # Anchor the prompt to the subject - ensure the model knows to edit THIS specific image
         anchored_prompt = f"Edit this specific image as follows: {prompt}. Keep the original subject, person, and composition. Do not generate a new scene - transform the existing photo."
-        logger.info(f"Generating image edit with {model}, anchored prompt: {anched_prompt[:100]}...")
+        logger.info(f"Generating image edit with {model}, anchored prompt: {anchored_prompt[:100]}...")
         print(f"[IMAGEN_EDIT] Using model: {model} (requested: {actual_model})")
-        print(f"[IMAGEN_EDIT] Anchored prompt: {anched_prompt[:80]}...")
+        print(f"[IMAGEN_EDIT] Anchored prompt: {anchored_prompt[:80]}...")
         
         # Decode base64 image
         if "base64," in reference_image_base64:
