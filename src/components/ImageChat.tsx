@@ -1,4 +1,9 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import * as React from "react";
+
+// Dynamic import for react-window to avoid TypeScript issues
+const reactWindow = require("react-window");
+const { VariableSizeList, AutoSizer } = reactWindow;
 import { useAuth } from "@/contexts/AuthContext";
 import { useGeneration } from "@/contexts/GenerationContext";
 import {
@@ -47,6 +52,160 @@ import { validateImageRequirement, getImageRequirementMessage, shouldBlockGenera
 
 const PLACEHOLDER = "Describe the image you want to create...";
 
+// Message item component that measures and reports its height
+interface MessageItemProps {
+  message: MessageResponse;
+  index: number;
+  isLast: boolean;
+  conversationContext: ConversationContextResponse | null;
+  onRemix: (customPrompt?: string, useImage?: boolean, imageUrl?: string) => Promise<void>;
+  setItemSize: (index: number, size: number) => void;
+}
+
+const MessageItem = React.memo(({ message, index, isLast, conversationContext, onRemix, setItemSize }: MessageItemProps) => {
+  const ref = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    if (ref.current) {
+      const height = ref.current.getBoundingClientRect().height;
+      setItemSize(index, height + 12); // +12 for padding
+    }
+  }, [index, setItemSize, message.content, message.image_url]);
+  
+  const m = message;
+  
+  return (
+    <div
+      ref={ref}
+      className={cn("flex gap-2", m.role === "user" ? "justify-end" : "justify-start")}
+    >
+      {m.role === "user" ? (
+        <div className="max-w-[85%] rounded-2xl bg-primary/15 px-4 py-2 text-sm space-y-2">
+          {(m as MessageResponse & { attached_image_url?: string }).attached_image_url && (
+            <img
+              src={(m as MessageResponse & { attached_image_url?: string }).attached_image_url}
+              alt="Attached"
+              className="rounded-lg max-h-32 w-auto object-cover"
+            />
+          )}
+          {m.content}
+          <span className="text-[10px] text-muted-foreground/50">
+            {(() => {
+              const msgDate = new Date(m.created_at);
+              const today = new Date();
+              const isToday = msgDate.toDateString() === today.toDateString();
+              const timeStr = msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              if (isToday) return timeStr;
+              return `${msgDate.toLocaleDateString([], { month: 'short', day: 'numeric' })} ${timeStr}`;
+            })()}
+          </span>
+        </div>
+      ) : (
+        <div className="max-w-[90%] space-y-2">
+          {m.image_url && (
+            <>
+              <a
+                href={m.image_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block rounded-xl overflow-hidden border border-border hover:border-primary/40 transition-colors"
+              >
+                <img src={m.image_url} alt="Generated" className="w-full h-auto object-cover" />
+              </a>
+              <div className="flex gap-1.5 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const link = document.createElement('a');
+                    link.href = m.image_url!;
+                    link.download = `vibeimg-${Date.now()}.webp`;
+                    link.click();
+                  }}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-muted/40 hover:bg-primary/10 text-xs font-medium transition-colors"
+                  title="Download image"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Download</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (navigator.share) {
+                      navigator.share({
+                        title: "VibeIMG - Generated Image",
+                        text: m.content,
+                        url: m.image_url,
+                      }).catch(() => {});
+                    } else {
+                      navigator.clipboard.writeText(m.image_url!);
+                      toast.success("Image link copied!");
+                    }
+                  }}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-muted/40 hover:bg-primary/10 text-xs font-medium transition-colors"
+                  title="Share image"
+                >
+                  <Share2 className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Share</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onRemix(`${m.content}, different variation, remix`, true, m.image_url!)}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 text-xs font-medium transition-colors border border-purple-500/30"
+                  title="Generate a remix variation of this image"
+                >
+                  <Shuffle className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Remix</span>
+                </button>
+              </div>
+            </>
+          )}
+          {isLast && conversationContext?.next_variations && conversationContext.next_variations.length > 0 && (
+            <div className="pt-2 border-t border-border/40 space-y-2">
+              <p className="text-xs font-medium text-muted-foreground">Try next:</p>
+              <div className="flex flex-col gap-1.5">
+                {conversationContext.next_variations.slice(0, 2).map((variation, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => onRemix(`${m.content}, ${variation}`, true, m.image_url!)}
+                    className="text-left px-2 py-1 rounded-md text-xs bg-muted/40 hover:bg-primary/10 text-muted-foreground transition-colors truncate"
+                    title={variation}
+                  >
+                    {variation}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {isLast && (!conversationContext?.next_variations || conversationContext.next_variations.length === 0) && (
+            <div className="pt-2 border-t border-border/40 space-y-2">
+              <p className="text-xs font-medium text-muted-foreground">Try next:</p>
+              <div className="flex flex-col gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => onRemix(`${m.content}, different artistic style`, true, m.image_url!)}
+                  className="text-left px-2 py-1 rounded-md text-xs bg-muted/40 hover:bg-primary/10 text-muted-foreground transition-colors"
+                >
+                  Different artistic style
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onRemix(`${m.content}, cinematic lighting`, true, m.image_url!)}
+                  className="text-left px-2 py-1 rounded-md text-xs bg-muted/40 hover:bg-primary/10 text-muted-foreground transition-colors"
+                >
+                  Cinematic version
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+});
+
+MessageItem.displayName = 'MessageItem';
+
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const MAX_IMAGE_DIMENSION_PX = 8000;
 
@@ -92,6 +251,21 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<any>(null);
+  const sizeMap = useRef<Map<number, number>>(new Map());
+  
+  // Get item size for virtualization (estimated, then measured)
+  const getItemSize = useCallback((index: number) => {
+    return sizeMap.current.get(index) || 200; // Default 200px
+  }, []);
+  
+  // Update size when item renders
+  const setItemSize = useCallback((index: number, size: number) => {
+    if (sizeMap.current.get(index) !== size) {
+      sizeMap.current.set(index, size);
+      listRef.current?.resetAfterIndex(index);
+    }
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -715,7 +889,41 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
               )}
 
               {/* Messages - chronological (oldest first, newest at bottom like ChatGPT) */}
-              {messages.map((m, index) => (
+              {messages.length > 0 && VariableSizeList && (
+                <div style={{ flex: 1, minHeight: 0 }}>
+                  <AutoSizer>
+                    {({ height, width }: { height: number; width: number }) => (
+                      <VariableSizeList
+                        ref={listRef}
+                        height={height}
+                        itemCount={messages.length}
+                        itemSize={getItemSize}
+                        width={width}
+                        overscanCount={3}
+                      >
+                        {({ index, style }: { index: number; style: React.CSSProperties }) => {
+                          const m = messages[index];
+                          const isLast = index === messages.length - 1;
+                          return (
+                            <div style={{ ...style, paddingBottom: 12 }}>
+                              <MessageItem
+                                message={m}
+                                index={index}
+                                isLast={isLast}
+                                conversationContext={conversationContext}
+                                onRemix={handleGenerateWithPrompt}
+                                setItemSize={setItemSize}
+                              />
+                            </div>
+                          );
+                        }}
+                      </VariableSizeList>
+                    )}
+                  </AutoSizer>
+                </div>
+              )}
+              {/* Fallback for when react-window isn't loaded */}
+              {messages.length > 0 && !VariableSizeList && messages.map((m, index) => (
                 <div
                   key={m.id ? `${m.id}-${index}` : `${m.created_at}-${m.role}-${index}`}
                   className={cn("flex gap-2", m.role === "user" ? "justify-end" : "justify-start")}
