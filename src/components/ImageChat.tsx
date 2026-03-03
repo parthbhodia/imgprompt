@@ -513,31 +513,31 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
     return () => clearTimeout(timer);
   }, [messages, loading]);
 
-  // Validate prompt for image requirements
-  useEffect(() => {
-    if (!prompt.trim()) {
-      setPromptValidation({ show: false, message: '', blocksGeneration: false });
-      return;
-    }
+  // Validate prompt for image requirements - DISABLED to remove warnings
+  // useEffect(() => {
+  //   if (!prompt.trim()) {
+  //     setPromptValidation({ show: false, message: '', blocksGeneration: false });
+  //     return;
+  //   }
 
-    const validation = validateImageRequirement(prompt);
-    const hasImage = !!attachedImage;
+  //   const validation = validateImageRequirement(prompt);
+  //   const hasImage = !!attachedImage;
     
-    // Only show validation warning if NO image is attached
-    if (validation.requiresImage && !hasImage) {
-      const blocksGeneration = validation.isStronglyRequired;
-      const message = getImageRequirementMessage(validation);
+  //   // Only show validation warning if NO image is attached
+  //   if (validation.requiresImage && !hasImage) {
+  //     const blocksGeneration = validation.isStronglyRequired;
+  //     const message = getImageRequirementMessage(validation);
       
-      setPromptValidation({
-        show: true,
-        message,
-        blocksGeneration,
-      });
-    } else {
-      // Clear validation if image is attached or no image required
-      setPromptValidation({ show: false, message: '', blocksGeneration: false });
-    }
-  }, [prompt, attachedImage]);
+  //     setPromptValidation({
+  //       show: true,
+  //       message,
+  //       blocksGeneration,
+  //     });
+  //   } else {
+  //     // Clear validation if image is attached or no image required
+  //     setPromptValidation({ show: false, message: '', blocksGeneration: false });
+  //   }
+  // }, [prompt, attachedImage]);
 
   // Debounce and fetch chat insights as user types
   useEffect(() => {
@@ -829,14 +829,13 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
       return;
     }
 
-    // Check if image is suggested but not required - warn but don't block
-    const validation = validateImageRequirement(promptToUse);
-    if (validation.requiresImage && !attachedImage) {
-      // Show warning but allow to proceed - backend/Grok will handle it
-      toast.info("Tip: This prompt works best with an uploaded image. Attach one for better results!", {
-        duration: 4000,
-      });
-    }
+    // Validation check disabled - removed annoying warnings
+    // const validation = validateImageRequirement(promptToUse);
+    // if (validation.requiresImage && !attachedImage) {
+    //   toast.info("Tip: This prompt works best with an uploaded image. Attach one for better results!", {
+    //     duration: 4000,
+    //   });
+    // }
 
     const sid = await ensureSession();
     if (!sid) {
