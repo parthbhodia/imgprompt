@@ -944,9 +944,15 @@ const Index = () => {
                   platforms={prompt.platforms}
                   onOpen={() => openPromptModal(prompt.id)}
                   onGenerateWithAI={(promptText, imageUrl) => {
-                    // Set both prompt and image via React state
-                    setAiPrompt(promptText);
-                    setAiImageUrl(imageUrl);
+                    console.log("Generate with AI clicked:", { promptText: promptText?.slice(0, 50), imageUrl: imageUrl?.slice(0, 50) });
+                    try {
+                      // Set both prompt and image via React state
+                      setAiPrompt(promptText);
+                      setAiImageUrl(imageUrl);
+                      console.log("State updated successfully");
+                    } catch (err) {
+                      console.error("Error in onGenerateWithAI:", err);
+                    }
                   }}
                   likeCount={likeCounts[prompt.id] ?? 0}
                   isLiked={userLikes.has(prompt.id)}
