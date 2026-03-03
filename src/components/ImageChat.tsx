@@ -966,6 +966,28 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
         toast.error("Image generation timed out — Replicate was too slow. Please try again.", { duration: 7000 });
       } else if (msg.includes("502") || msg.toLowerCase().includes("bad gateway")) {
         toast.error("Image generation failed (Replicate error). Please try again in a moment.", { duration: 7000 });
+      } else if (msg.toLowerCase().includes("content policy") || msg.toLowerCase().includes("cannot be processed")) {
+        // Content policy error with copyable suggestions
+        const suggestionsMatch = msg.match(/Try these alternatives: (.+)$/);
+        const suggestionsText = suggestionsMatch ? suggestionsMatch[1] : "age progression visualization, artistic time-lapse style portrait";
+        
+        toast.error(
+          <div className="space-y-2">
+            <p className="font-medium">{msg.split(". ")[0]}</p>
+            <p className="text-xs text-muted-foreground">{msg.split(". ").slice(1).join(". ")}</p>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(suggestionsText);
+                toast.success("Suggestions copied!");
+              }}
+              className="text-xs bg-primary/10 hover:bg-primary/20 text-primary px-2 py-1 rounded flex items-center gap-1 mt-1"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+              Copy suggestions
+            </button>
+          </div>,
+          { duration: 15000 }
+        );
       } else {
         toast.error(msg);
       }
