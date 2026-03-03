@@ -48,28 +48,58 @@ def archive_image_to_storage(supabase, user_id: str, image_url: str, message_id:
     Returns the permanent Storage URL or None if failed.
     """
     try:
+        logger.info(f"Starting image archival for user {user_id}, message {message_id}")
+        logger.info(f"Downloading from: {image_url[:50]}...")
+        
         # Download image from Replicate CDN
         response = requests.get(image_url, timeout=30)
         if response.status_code != 200:
-            logger.warning(f"Failed to download image from {image_url}")
+            logger.warning(f"Failed to download image from {image_url}: status {response.status_code}")
             return None
+        
+        logger.info(f"Downloaded {len(response.content)} bytes")
 
         # Upload to Supabase Storage
         bucket_name = "user-generations"
         file_path = f"{user_id}/{message_id}.webp"
         
-        supabase.storage.from_(bucket_name).upload(
-            file_path,
-            response.content,
-            {"content-type": "image/webp"}
-        )
+        logger.info(f"Uploading to bucket: {bucket_name}, path: {file_path}")
+        
+        try:
+            supabase.storage.from_(bucket_name).upload(
+                file_path,
+                response.content,
+                {"content-type": "image/webp"}
+            )
+            logger.info("Upload successful")
+        except Exception as upload_error:
+            logger.error(f"Supabase upload failed: {upload_error}")
+            # Try to create bucket if it doesn't exist
+            logger.info("Attempting to create bucket...")
+            try:
+                supabase.storage.create_bucket(
+                    bucket_name,
+                    {"public": True, "file_size_limit": 52428800}  # 50MB limit
+                )
+                logger.info(f"Created bucket {bucket_name}, retrying upload...")
+                supabase.storage.from_(bucket_name).upload(
+                    file_path,
+                    response.content,
+                    {"content-type": "image/webp"}
+                )
+                logger.info("Upload successful after creating bucket")
+            except Exception as create_error:
+                logger.error(f"Failed to create bucket or upload: {create_error}")
+                return None
         
         # Get public URL
         storage_url = supabase.storage.from_(bucket_name).get_public_url(file_path)
         logger.info(f"Image archived to storage: {storage_url}")
         return storage_url
     except Exception as e:
-        logger.warning(f"Failed to archive image to storage: {e}")
+        logger.error(f"Failed to archive image to storage: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
         return None
 
 
