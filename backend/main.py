@@ -166,9 +166,26 @@ app.add_middleware(
 def unhandled_exception_handler(request: Request, exc: Exception):
     """Return JSON for uncaught exceptions so frontend gets a proper error message."""
     logger.exception("Unhandled exception")
+    
+    # Determine origin for CORS headers
+    origin = request.headers.get("origin", "")
+    cors_origin = None
+    for allowed in CORS_ORIGINS:
+        if origin and (allowed == "*" or origin == allowed or origin.endswith(allowed.replace("https://", "").replace("http://", ""))):
+            cors_origin = origin if origin else allowed
+            break
+    if not cors_origin:
+        cors_origin = CORS_ORIGINS[0] if CORS_ORIGINS else "*"
+    
     return JSONResponse(
         status_code=500,
         content={"detail": str(exc) or "Internal server error"},
+        headers={
+            "Access-Control-Allow-Origin": cors_origin,
+            "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
+            "Access-Control-Allow-Headers": "*",
+        },
     )
 
 

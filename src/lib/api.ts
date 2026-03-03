@@ -137,6 +137,8 @@ export type StyleCategoriesResponse = {
 const isDevNoAuth = () =>
   import.meta.env.DEV && import.meta.env.VITE_DEV_NO_AUTH === "1";
 
+import { supabase } from "@/lib/supabase";
+
 async function fetchApi<T>(
   path: string,
   options: RequestInit & { token: string | null }
@@ -158,6 +160,27 @@ async function fetchApi<T>(
   } catch {
     throw new Error("Server is busy, please try again in a moment.");
   }
+  
+  // Handle 401 - try to refresh token once
+  if (res.status === 401 && token) {
+    try {
+      const { data: { session }, error } = await supabase.auth.refreshSession();
+      if (session?.access_token && !error) {
+        // Retry with new token
+        headers.Authorization = `Bearer ${session.access_token}`;
+        res = await fetch(url, { ...init, headers });
+        
+        // Update stored token if retry succeeds
+        if (res.ok) {
+          // Token refreshed successfully
+          console.log("Token refreshed successfully");
+        }
+      }
+    } catch (refreshError) {
+      console.error("Token refresh failed:", refreshError);
+    }
+  }
+  
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));
     throw new Error((err as { detail?: string }).detail || res.statusText);

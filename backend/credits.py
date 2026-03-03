@@ -78,13 +78,19 @@ def deduct_credits(supabase: Client, user_id: str, amount: float,
         return False
     new_balance = current - amount
     
-    # Update credits
-    r = (
-        supabase.table("profiles")
-        .update({"credits": new_balance})
-        .eq("id", user_id)
-        .execute()
-    )
+    # Update credits with error handling
+    try:
+        r = (
+            supabase.table("profiles")
+            .update({"credits": new_balance})
+            .eq("id", user_id)
+            .execute()
+        )
+    except Exception as e:
+        print(f"Failed to deduct credits for user {user_id}: {e}")
+        import traceback
+        print(traceback.format_exc())
+        return False
     
     # Log transaction
     try:
@@ -97,7 +103,7 @@ def deduct_credits(supabase: Client, user_id: str, amount: float,
     except:
         pass  # Non-critical
     
-    return bool(r.data)
+    return True
 
 
 def add_credits(supabase: Client, user_id: str, amount: float,
