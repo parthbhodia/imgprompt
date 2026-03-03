@@ -822,9 +822,33 @@ const Index = () => {
                         alt={prompt.title}
                         className="w-full h-full object-cover transition-transform duration-300 group-hover/card:scale-105"
                       />
-                      <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-1 rounded-full bg-black/60 backdrop-blur text-white text-xs font-semibold">
-                        <ThumbsUp className="w-3 h-3 fill-white" />
-                        {likeCounts[prompt.id] ?? 0}
+                      {/* Like and Favorite buttons */}
+                      <div className="absolute top-2 right-2 flex items-center gap-1">
+                        {/* Favorite button */}
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); handleFavorite(prompt.id); }}
+                          className={cn(
+                            "p-1.5 rounded-full bg-black/60 backdrop-blur text-white hover:bg-black/80 transition-colors",
+                            userFavorites.has(prompt.id) && "text-rose-500"
+                          )}
+                          aria-label={userFavorites.has(prompt.id) ? "Remove from favorites" : "Add to favorites"}
+                        >
+                          <Heart className={cn("w-3.5 h-3.5", userFavorites.has(prompt.id) && "fill-rose-500")} />
+                        </button>
+                        {/* Like button with count */}
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); handleLike(prompt.id); }}
+                          className={cn(
+                            "flex items-center gap-1 px-2 py-1 rounded-full bg-black/60 backdrop-blur text-white text-xs font-semibold hover:bg-black/80 transition-colors",
+                            userLikes.has(prompt.id) && "text-blue-400"
+                          )}
+                          aria-label={userLikes.has(prompt.id) ? "Unlike" : "Like"}
+                        >
+                          <ThumbsUp className={cn("w-3 h-3", userLikes.has(prompt.id) && "fill-blue-400")} />
+                          {likeCounts[prompt.id] ?? 0}
+                        </button>
                       </div>
                       {/* Hover overlay CTA */}
                       <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/card:opacity-100 transition-opacity duration-300 flex items-center justify-center">
