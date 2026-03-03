@@ -507,7 +507,7 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
         prompt: promptToUse,
         session_id: sid ?? undefined,
         image_base64: imageBase64 ?? undefined,
-        model: selectedModel as "replicate-flux" | "imagen-3",
+        model: selectedModel as "replicate-flux" | "gemini-2.5-flash-image" | "gemini-3.1-flash-image-preview" | "gemini-3-pro-image-preview",
       });
       setCredits(res.credits_remaining);
       setMessages((prev) => [
@@ -1165,7 +1165,10 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
               </div>
             </div>
             {/* Body — responsive height */}
-            <div className="flex flex-col h-[480px] sm:h-[580px] lg:h-[660px]">
+            <div 
+              className="flex flex-col h-[480px] sm:h-[580px] lg:h-[660px] cursor-pointer"
+              onClick={() => setFullscreen(true)}
+            >
               {renderChatContent()}
             </div>
           </div>
