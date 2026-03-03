@@ -1,7 +1,7 @@
 """Google Imagen 3 image generation service."""
 import os
 import logging
-import time
+import base64
 from typing import Optional
 from google import genai
 from google.genai import types
@@ -23,8 +23,6 @@ def generate_imagen(
     prompt: str,
     *,
     aspect_ratio: str = "1:1",
-    safety_filter_level: str = "block_some",
-    person_generation: str = "allow_adult",
 ) -> str:
     """
     Generate an image using Google Imagen 3 via Gemini API.
@@ -32,11 +30,9 @@ def generate_imagen(
     Args:
         prompt: The text prompt for image generation
         aspect_ratio: Image aspect ratio (1:1, 3:4, 4:3, 9:16, 16:9)
-        safety_filter_level: Content safety level
-        person_generation: Person generation policy
         
     Returns:
-        URL or data URI of the generated image
+        Data URI of the generated image
     """
     client = _get_client()
     
@@ -53,14 +49,12 @@ def generate_imagen(
         }
         imagen_ratio = ratio_map.get(aspect_ratio, "1:1")
         
-        # Generate image
+        # Generate image using new Google GenAI SDK
         response = client.models.generate_image(
             model='imagen-3.0-generate-002',
             prompt=prompt,
             config=types.GenerateImageConfig(
                 aspect_ratio=imagen_ratio,
-                safety_filter_level=safety_filter_level,
-                person_generation=person_generation,
                 number_of_images=1,
             )
         )
@@ -68,7 +62,6 @@ def generate_imagen(
         # Imagen returns bytes, convert to base64 for consistency
         if response.generated_images:
             image_bytes = response.generated_images[0].image.image_bytes
-            import base64
             base64_str = base64.b64encode(image_bytes).decode('utf-8')
             return f"data:image/png;base64,{base64_str}"
         
@@ -83,8 +76,7 @@ def generate_imagen_edit(
     prompt: str,
     reference_image_base64: str,
     *,
-    edit_mode: str = "inpainting",  # or "outpainting"
-    mask_dilation: float = 0.03,
+    edit_mode: str = "inpainting",
 ) -> str:
     """
     Edit/transform an existing image using Imagen 3.
@@ -93,10 +85,9 @@ def generate_imagen_edit(
         prompt: The transformation prompt
         reference_image_base64: Base64 encoded reference image
         edit_mode: Type of edit (inpainting for transformations)
-        mask_dilation: How much to extend the mask
         
     Returns:
-        URL or data URI of the generated image
+        Data URI of the generated image
     """
     client = _get_client()
     
@@ -104,20 +95,12 @@ def generate_imagen_edit(
         logger.info(f"Generating Imagen edit with prompt: {prompt[:100]}...")
         
         # Decode base64 image
-        import base64
-        from io import BytesIO
-        
-        # Remove data URL prefix if present
         if "base64," in reference_image_base64:
             reference_image_base64 = reference_image_base64.split("base64,")[1]
         
         image_bytes = base64.b64decode(reference_image_base64)
         
-        # For Imagen edit, we use the image generation with reference
-        # Note: Imagen 3 has different API for editing vs generating
-        # This is a simplified version - Imagen's edit API is more complex
-        
-        # Upload to temporary storage or inline
+        # Use Imagen with reference image
         response = client.models.generate_image(
             model='imagen-3.0-generate-002',
             prompt=prompt,
@@ -125,7 +108,7 @@ def generate_imagen_edit(
                 types.ReferenceImage(
                     reference_id=1,
                     reference_image=types.Image(image_bytes=image_bytes),
-                    reference_type="REFERENCE_TYPE_SUBJECT",  # or REFERENCE_TYPE_STYLE
+                    reference_type="REFERENCE_TYPE_SUBJECT",
                 )
             ],
             config=types.GenerateImageConfig(
