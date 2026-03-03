@@ -74,6 +74,10 @@ export const PromptCard = ({
     }
   };
 
+  if (!slides || slides.length === 0) {
+    return null;
+  }
+
   const currentSlide = slides[currentImageIndex];
 
   return (
