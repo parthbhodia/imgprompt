@@ -235,11 +235,11 @@ def generate_imagen_edit(
                 )
             except Exception as suggestion_error:
                 print(f"[IMAGEN_EDIT] Failed to get suggestions: {suggestion_error}")
-                # Fallback with hardcoded suggestions
+                # Fallback with generic suggestions that work for any prompt type
                 fallback = [
-                    "age progression visualization",
-                    "artistic time-lapse style portrait", 
-                    "stylized character version"
+                    "artistic stylized interpretation",
+                    "digital illustration version",
+                    "concept art transformation"
                 ]
                 raise RuntimeError(
                     f"Content policy violation: '{prompt}' cannot be processed. "
