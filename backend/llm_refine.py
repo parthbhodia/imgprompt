@@ -61,7 +61,7 @@ _IMG2IMG_SANITIZE_PROMPT = (
     "Rules:\n"
     "- Style words like 'cartoon', 'sketch', 'anime', 'painting' are SAFE - keep them\n"
     "- Do NOT replace 'photo' with 'digital painting' - user is transforming a real photo\n"
-    "- Always preserve: 'keeping the original person's face, pose, and likeness'\n"
+    "- Preserve: 'keeping original subject, composition, and key features' (avoid 'person/face')\n"
     "- Age progression rules apply only if explicitly describing two ages\n"
     "- Keep transformation-focused language, not generation-focused\n"
     "- Respond with ONLY the rewritten prompt — no explanation, no quotes."
