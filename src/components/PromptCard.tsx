@@ -188,6 +188,7 @@ export const PromptCard = ({
           size="sm"
           className="mt-auto w-full gap-2 bg-gradient-to-r from-primary to-accent text-white hover:opacity-90 transition-opacity"
           onClick={(e) => {
+            e.preventDefault();
             e.stopPropagation();
             onGenerateWithAI?.(currentSlide.prompt, currentSlide.image);
           }}
