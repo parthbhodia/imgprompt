@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useGeneration } from "@/contexts/GenerationContext";
 import {
   Sheet,
   SheetContent,
@@ -10,10 +11,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Sparkles, Send, Coins, Loader2, LogIn, Lightbulb,
   ImagePlus, X, Wand2, Maximize2, Minimize2, Download, Share2, RotateCcw, Shuffle, ChevronDown,
-  MoreVertical, Copy, RefreshCw, Edit3, Palette, Settings, HelpCircle, History, BookmarkPlus
+  MoreVertical, Copy, RefreshCw, Edit3, Palette, Settings, HelpCircle, History, BookmarkPlus, AlertTriangle
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -38,6 +40,7 @@ import { PromptGuidePanel } from "./PromptGuidePanel";
 import { PresetTags } from "./PresetTags";
 import { StyleLibrary } from "./StyleLibrary";
 import { CreditDisplay } from "./CreditDisplay";
+import { validateImageRequirement, getImageRequirementMessage, shouldBlockGeneration } from "@/utils/promptValidation";
 
 const PLACEHOLDER = "Describe the image you want to create...";
 
@@ -52,6 +55,7 @@ interface ImageChatProps {
 
 export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: ImageChatProps) {
   const { user, session, signInWithGoogle } = useAuth();
+  const { generationState, startGeneration, stopGeneration, getElapsedTime } = useGeneration();
   const [open, setOpen] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const [credits, setCredits] = useState<number | null>(null);
@@ -69,6 +73,7 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
   const [welcomeExpanded, setWelcomeExpanded] = useState(false);
   const [showTools, setShowTools] = useState(false);
   const [activeMessageId, setActiveMessageId] = useState<string | null>(null);
+  const [promptValidation, setPromptValidation] = useState<{ show: boolean; message: string; blocksGeneration: boolean }>({ show: false, message: '', blocksGeneration: false });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -104,6 +109,29 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
     document.body.style.overflow = fullscreen ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
   }, [fullscreen]);
+
+  // Validate prompt for image requirements
+  useEffect(() => {
+    if (!prompt.trim()) {
+      setPromptValidation({ show: false, message: '', blocksGeneration: false });
+      return;
+    }
+
+    const validation = validateImageRequirement(prompt);
+    if (validation.requiresImage) {
+      const hasImage = !!attachedImage;
+      const blocksGeneration = shouldBlockGeneration(validation, hasImage);
+      const message = getImageRequirementMessage(validation);
+      
+      setPromptValidation({
+        show: true,
+        message,
+        blocksGeneration,
+      });
+    } else {
+      setPromptValidation({ show: false, message: '', blocksGeneration: false });
+    }
+  }, [prompt, attachedImage]);
 
   // Debounce and fetch chat insights as user types
   useEffect(() => {
@@ -285,10 +313,18 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
       return;
     }
 
+    // Check if image is required but not provided
+    const validation = validateImageRequirement(promptToUse);
+    if (shouldBlockGeneration(validation, !!attachedImage)) {
+      toast.error("This prompt requires an uploaded image. Please attach an image first.");
+      return;
+    }
+
     const sid = await ensureSession();
     if (!sid) return;
 
     setLoading(true);
+    startGeneration(promptToUse, sid);
     
     // Use the specified image or attached image
     let imageToSend: File | null = null;
@@ -362,6 +398,7 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
       }
     } finally {
       setLoading(false);
+      stopGeneration();
     }
   };
 
@@ -664,6 +701,27 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
                   disabled={loading}
                   rows={2}
                 />
+
+                {/* Image Validation Alert */}
+                {promptValidation.show && (
+                  <Alert 
+                    variant={promptValidation.blocksGeneration ? "destructive" : "default"}
+                    className={`mt-2 ${promptValidation.blocksGeneration ? 'bg-red-50 border-red-200' : 'bg-amber-50 border-amber-200'}`}
+                  >
+                    <AlertTriangle className={`h-4 w-4 ${promptValidation.blocksGeneration ? 'text-red-600' : 'text-amber-600'}`} />
+                    <AlertDescription className={`text-xs ${promptValidation.blocksGeneration ? 'text-red-700' : 'text-amber-700'}`}>
+                      {promptValidation.message}
+                      {!attachedImage && !promptValidation.blocksGeneration && (
+                        <button
+                          onClick={() => fileInputRef.current?.click()}
+                          className="ml-2 underline font-medium hover:text-amber-800"
+                        >
+                          Upload an image
+                        </button>
+                      )}
+                    </AlertDescription>
+                  </Alert>
+                )}
               </div>
 
               {/* Image Upload Button */}

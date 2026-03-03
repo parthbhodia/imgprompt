@@ -8,6 +8,7 @@ import NotFound from "./pages/NotFound";
 import { AuthProvider } from "./contexts/AuthContext";
 import { LikesProvider } from "./contexts/LikesContext";
 import { CreditsProvider } from "./contexts/CreditsContext";
+import { GenerationProvider } from "./contexts/GenerationContext";
 import { CreditNotification } from "./components/CreditNotification";
 import { ProtectedRoute } from "./components/admin/ProtectedRoute";
 import { AdminLayout } from "./components/admin/AdminLayout";
@@ -44,17 +45,13 @@ const App = () => (
     <AuthProvider>
       <LikesProvider>
         <CreditsProvider>
-          <TooltipProvider>
-            <CreditNotification />
-            <Toaster />
-            <Sonner />
-        <BrowserRouter basename={basename}>
-          <Routes>
-            {/* Public site */}
-            <Route path="/" element={<Index />} />
-            <Route path="/gallery" element={<Gallery />} />
-            <Route path="/favorites" element={<Favorites />} />
-            <Route path="/creations" element={<Creations />} />
+          <GenerationProvider>
+            <TooltipProvider>
+              <CreditNotification />
+              <Toaster />
+              <Sonner />
+              <BrowserRouter basename={basename}>
+                <Routes>
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/profile" element={<Profile />} />
 
@@ -134,10 +131,11 @@ const App = () => (
             />
 
             {/* Catch-all */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-          </TooltipProvider>
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
+            </TooltipProvider>
+          </GenerationProvider>
         </CreditsProvider>
       </LikesProvider>
     </AuthProvider>
