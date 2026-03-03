@@ -816,6 +816,9 @@ export function ImageChat({ inline = false, initialPrompt, onPromptConsumed }: I
                       if (prev?.preview) URL.revokeObjectURL(prev.preview);
                       return { file, preview: url };
                     });
+                    // Clear validation since image is now attached
+                    setPromptValidation({ show: false, message: '', blocksGeneration: false });
+                    toast.success("Image attached!");
                   };
                   img.onerror = () => { URL.revokeObjectURL(url); toast.error("Could not load image."); };
                   img.src = url;
