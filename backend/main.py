@@ -107,12 +107,28 @@ app = FastAPI(
     version="1.0.0",
 )
 
+# CORS - Explicitly include all required origins
+CORS_ORIGINS = [
+    "https://vibeimg.xyz",
+    "https://www.vibeimg.xyz",
+    "http://localhost:8080",
+    "http://localhost:3000",
+    "http://localhost:5173",
+]
+
+# Add any additional origins from env var
+env_origins = os.environ.get("CORS_ORIGINS", "")
+if env_origins:
+    CORS_ORIGINS.extend([o.strip() for o in env_origins.split(",") if o.strip()])
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.environ.get("CORS_ORIGINS", "http://localhost:8080,https://vibeimg.xyz").split(","),
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=86400,  # Cache preflight for 24 hours
 )
 
 
