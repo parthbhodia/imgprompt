@@ -937,8 +937,14 @@ async def generate_image(
         logger.error(f"Error archiving image: {e}")
         # Continue with original URL if archiving fails
 
+    logger.info(f"About to deduct credits for user {user_id}. Current balance: {get_credits(supabase, user_id)}, cost: {cost}")
+    
     if not deduct_credits(supabase, user_id, cost):
-        raise HTTPException(status_code=402, detail="Credit deduction failed")
+        logger.error(f"Credit deduction failed for user {user_id} after image generation")
+        raise HTTPException(
+            status_code=402, 
+            detail="Credit deduction failed. Please refresh the page and try again. If this persists, contact support."
+        )
 
     session_id = body.session_id
     message_id = None

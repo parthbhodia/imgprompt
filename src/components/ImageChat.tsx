@@ -51,7 +51,6 @@ import { ChatSidebar } from "./ChatSidebar";
 import { CreditBadge } from "./CreditBadge";
 import { GenerationCostLabel } from "./GenerationCostLabel";
 import { GenerationRecapToast } from "./GenerationRecapToast";
-import { Menu } from "lucide-react";
 import { validateImageRequirement, getImageRequirementMessage, shouldBlockGeneration } from "@/utils/promptValidation";
 
 const PLACEHOLDER = "Describe the image you want to create...";
@@ -805,8 +804,8 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
         toast.error("Replicate's safety filter blocked this prompt. Try changing the style to 'digital painting' or 'illustration' and rephrase descriptions of people.", { duration: 10000 });
       } else if (msg.toLowerCase().includes("replicate") && msg.toLowerCase().includes("billing")) {
         toast.error("Your Replicate account has no billing credit. Top up at replicate.com/account/billing, then try again.", { duration: 10000 });
-      } else if (msg.includes("Insufficient credits") || msg.includes("402")) {
-        toast.error("Not enough credits. You need 1 credit per image.");
+      } else if (msg.includes("Insufficient credits") || msg.includes("402") || msg.toLowerCase().includes("credit deduction failed")) {
+        toast.error("Credit deduction failed. Please refresh the page and try again.");
       } else if (msg.toLowerCase().includes("high demand") || msg.includes("429")) {
         toast.error("We're experiencing high demand. Please wait a moment and try again.", { duration: 7000 });
       } else if (msg.toLowerCase().includes("timed out") || msg.includes("504")) {
@@ -1431,18 +1430,6 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                     <span className="text-xs bg-amber-500/20 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded">
                       Dev (no sign-in)
                     </span>
-                  )}
-                  {isAdmin && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setSidebarOpen(true)}
-                      aria-label="Open sidebar"
-                      title="Open sidebar menu (admin only)"
-                      className="w-8 h-8 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
-                    >
-                      <Menu className="w-4 h-4" />
-                    </Button>
                   )}
                   <Button
                     variant="ghost"
