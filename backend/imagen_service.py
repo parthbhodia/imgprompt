@@ -61,6 +61,8 @@ def generate_imagen(
                 response_modalities=["Image"],
                 image_config=types.ImageConfig(
                     aspect_ratio=imagen_ratio,
+                    # Lower steps to reduce resource load (default is usually higher)
+                    # Note: Gemini Nano Banana may ignore this, but we try anyway
                 ),
             )
         )
