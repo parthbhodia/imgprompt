@@ -1580,6 +1580,8 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                       setPromptValidation({ show: false, message: '', blocksGeneration: false });
                     });
                     toast.success("Image attached!");
+                    // Reset file input so same file can be selected again if needed
+                    e.target.value = "";
                   };
                   img.onerror = () => { 
                     console.error('[DEBUG] Failed to load image');
