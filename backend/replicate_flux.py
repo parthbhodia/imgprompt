@@ -26,6 +26,61 @@ MAX_IMAGES_PER_REQUEST = 1
 PATCH_SIZE = 16
 print(f"[FLUX_INIT] PATCH_SIZE = {PATCH_SIZE}")
 
+# Dynamic strength mapping for img2img based on prompt intent
+# Lower strength = preserve original more, higher = transform more
+STRENGTH_BY_INTENT = {
+    "background": 0.25,      # "make background sunny/darker/blurred" - preserve subject
+    "lighting": 0.30,        # "adjust lighting, add shadows" - subtle changes
+    "color": 0.35,           # "change colors" - moderate
+    "enhance": 0.20,         # "make it hd/sharper" - preserve everything, improve quality
+    "style": 0.55,           # "make it cartoon/anime/sketch" - allow style change
+    "default": 0.40,         # fallback - balanced
+}
+
+
+def get_strength_for_prompt(prompt: str) -> float:
+    """
+    Determine appropriate img2img strength based on prompt intent.
+    
+    Strength guide:
+    - 0.20-0.30: Background/lighting changes, subject fully preserved
+    - 0.40-0.55: Style transfer (cartoon, anime) - some transformation allowed
+    - 0.60+: Heavy transformation, subject identity may be lost
+    
+    Using 0.75 for background changes causes the model to rebuild the entire
+    image, replacing the subject with a random person.
+    """
+    p = prompt.lower()
+    
+    # Background/scene changes - low strength to preserve subject
+    if any(w in p for w in ["background", "sky", "sunny", "weather", "scene", "beach", "mountain", "city"]):
+        print(f"[FLUX_STRENGTH] Prompt '{prompt[:30]}...' detected as BACKGROUND -> strength=0.25")
+        return 0.25
+    
+    # Lighting adjustments - very subtle
+    if any(w in p for w in ["lighting", "light", "bright", "dark", "shadow", "glow", "sunlight", "golden hour"]):
+        print(f"[FLUX_STRENGTH] Prompt '{prompt[:30]}...' detected as LIGHTING -> strength=0.30")
+        return 0.30
+    
+    # Quality enhancements - minimal change, just improve details
+    if any(w in p for w in ["hd", "enhance", "sharpen", "quality", "4k", "8k", "high res", "clear", "crisp", "sharp"]):
+        print(f"[FLUX_STRENGTH] Prompt '{prompt[:30]}...' detected as ENHANCE -> strength=0.20")
+        return 0.20
+    
+    # Color adjustments - moderate
+    if any(w in p for w in ["color", "vibrant", "saturated", "warm", "cool tone", "sepia", "black and white", "monochrome"]):
+        print(f"[FLUX_STRENGTH] Prompt '{prompt[:30]}...' detected as COLOR -> strength=0.35")
+        return 0.35
+    
+    # Style transfers - allow more transformation
+    if any(w in p for w in ["cartoon", "anime", "sketch", "drawing", "painting", "art", "style", "oil", "watercolor", "comic", "pixar", "disney", "3d", "render", "cinematic", "vintage", "retro", "cyberpunk", "steampunk"]):
+        print(f"[FLUX_STRENGTH] Prompt '{prompt[:30]}...' detected as STYLE -> strength=0.55")
+        return 0.55
+    
+    # Default - balanced approach
+    print(f"[FLUX_STRENGTH] Prompt '{prompt[:30]}...' no specific intent -> default strength=0.40")
+    return 0.40
+
 
 def _ensure_divisible_by_patch_size(width: int, height: int) -> tuple[int, int]:
     """Ensure dimensions are divisible by patch size for model compatibility."""
@@ -172,17 +227,22 @@ def run_flux(prompt: str, *, num_outputs: int = 1, guidance_scale: float = 3.5, 
     return _output_to_urls(output)
 
 
-def run_flux_img2img(prompt: str, image_base64: str, *, num_outputs: int = 1, strength: float = 0.8, guidance_scale: float = 7.5, num_inference_steps: int = 28) -> list[str]:
+def run_flux_img2img(prompt: str, image_base64: str, *, num_outputs: int = 1, strength: float = None, guidance_scale: float = 7.5, num_inference_steps: int = 28) -> list[str]:
     """
     Run Flux img2img model using the user's uploaded image and prompt.
     Uploads the image to Replicate, then runs bxclib2/flux_img2img.
     
     Args:
-        strength: 0-1, how much to transform (0=original, 1=completely new)
+        strength: 0-1, how much to transform (0=original, 1=completely new).
+                  If None, automatically determined from prompt intent.
         guidance_scale: how strictly to follow prompt (higher=more adherence)
         num_inference_steps: quality vs speed (more steps=better quality but slower)
     """
     try:
+        # Auto-determine strength if not provided
+        if strength is None:
+            strength = get_strength_for_prompt(prompt)
+        
         print(f"[FLUX_IMG2IMG] Starting with prompt: {prompt[:50]}...")
         _ensure_replicate_token()
         print(f"[FLUX_IMG2IMG] Token valid, uploading image...")
@@ -213,17 +273,22 @@ def run_flux_img2img(prompt: str, image_base64: str, *, num_outputs: int = 1, st
 # Using Flux dev for img2img as it's more reliable on Replicate
 SD_IMG2IMG_MODEL = "black-forest-labs/flux-dev"
 
-def run_stable_diffusion_img2img(prompt: str, image_base64: str, *, num_outputs: int = 1, strength: float = 0.75, guidance_scale: float = 7.5, num_inference_steps: int = 50) -> list[str]:
+def run_stable_diffusion_img2img(prompt: str, image_base64: str, *, num_outputs: int = 1, strength: float = None, guidance_scale: float = 7.5, num_inference_steps: int = 50) -> list[str]:
     """
     Run Stable Diffusion XL img2img model.
     Better quality for style transfers and photo transformations.
     
     Args:
-        strength: 0-1, how much to transform (0=original, 1=completely new). Default 0.75
+        strength: 0-1, how much to transform (0=original, 1=completely new).
+                  If None, automatically determined from prompt intent.
         guidance_scale: how strictly to follow prompt. Default 7.5
         num_inference_steps: quality vs speed. Default 50 (higher = better quality)
     """
     try:
+        # Auto-determine strength if not provided
+        if strength is None:
+            strength = get_strength_for_prompt(prompt)
+        
         print(f"[SD_IMG2IMG] Starting with prompt: {prompt[:50]}...")
         _ensure_replicate_token()
         print(f"[SD_IMG2IMG] Token valid, uploading image...")
