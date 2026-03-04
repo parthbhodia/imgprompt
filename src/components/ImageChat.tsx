@@ -411,22 +411,14 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
     loadSessionsAndHistory();
   }, [session?.access_token]);
 
-  // Sync selectedModel with generationSettings.model (bidirectional sync)
+  // Sync selectedModel with generationSettings.model (one-way sync - generationSettings is source of truth)
   useEffect(() => {
     // When generationSettings changes (from sidebar), update selectedModel
     if (generationSettings.model !== selectedModel) {
-      console.log('[MODEL_SYNC] generationSettings.model changed:', generationSettings.model, '-> updating selectedModel from', selectedModel);
       setSelectedModel(generationSettings.model);
     }
-  }, [generationSettings.model, selectedModel]);
-
-  useEffect(() => {
-    // When selectedModel changes (from dropdown), update generationSettings
-    if (selectedModel !== generationSettings.model) {
-      console.log('[MODEL_SYNC] selectedModel changed:', selectedModel, '-> updating generationSettings');
-      setGenerationSettings(prev => ({ ...prev, model: selectedModel as any }));
-    }
-  }, [selectedModel, generationSettings.model]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [generationSettings.model]);
 
   // Load initialImageUrl when provided (for Generate with AI workflow)
   useEffect(() => {
@@ -739,7 +731,8 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
     if (!trimmed) return;
     setRefining(true);
     try {
-      const { refined } = await refinePrompt(token ?? null, trimmed);
+      // Pass hasReferenceImage flag - skip LLM refinement for img2img to avoid over-expansion
+      const { refined } = await refinePrompt(token ?? null, trimmed, !!attachedImage);
       setPrompt(refined);
       toast.success("Prompt refined");
     } catch (err: unknown) {
@@ -752,7 +745,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
     } finally {
       setRefining(false);
     }
-  }, [prompt, token]);
+  }, [prompt, token, attachedImage]);
 
   const handleGenerateWithPrompt = useCallback(async (customPrompt?: string, useImage?: boolean, imageUrl?: string) => {
     // Prevent parallel generation requests using synchronous ref (no stale closure issues)
@@ -1613,7 +1606,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                   <ModelSelector
                     token={token}
                     selectedModel={selectedModel}
-                    onSelectModel={setSelectedModel}
+                    onSelectModel={(model) => setGenerationSettings(prev => ({ ...prev, model: model as any }))}
                     disabled={loading}
                   />
                   <PromptFrameworkBuilder

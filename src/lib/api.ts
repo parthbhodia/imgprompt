@@ -375,12 +375,13 @@ export async function getConversationContext(
 
 export async function refinePrompt(
   token: string | null,
-  text: string
+  text: string,
+  hasReferenceImage: boolean = false
 ): Promise<{ refined: string }> {
   return fetchApi<{ refined: string }>("/refine-prompt", {
     method: "POST",
     token,
-    body: JSON.stringify({ text }),
+    body: JSON.stringify({ text, has_reference_image: hasReferenceImage }),
   });
 }
 

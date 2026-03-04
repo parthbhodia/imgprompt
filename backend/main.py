@@ -263,6 +263,7 @@ class SuggestResponse(BaseModel):
 
 class RefineRequest(BaseModel):
     text: str = Field(..., min_length=1, max_length=4000)
+    has_reference_image: bool = False  # If True, skip LLM refinement for img2img
 
 
 class RefineResponse(BaseModel):
@@ -703,7 +704,7 @@ def refine_prompt_endpoint(
             detail="Prompt refinement is not available (XAI_API_KEY or GROQ_API_KEY not set).",
         )
     try:
-        refined = refine_prompt(body.text)
+        refined = refine_prompt(body.text, has_reference_image=body.has_reference_image)
         return RefineResponse(refined=refined)
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e))

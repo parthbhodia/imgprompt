@@ -75,12 +75,18 @@ def refine_prompt(user_text: str, has_reference_image: bool = False) -> str:
     
     Args:
         user_text: The raw user input
-        has_reference_image: If True, use img2img-focused prompt that preserves transformation intent
+        has_reference_image: If True, skip LLM refinement - imagen_service handles preservation
     """
+    # Skip LLM refinement for img2img - user intent is clear and LLM over-expands it
+    # imagen_service.py handles preservation prefix + weak prompt expansion
+    if has_reference_image:
+        print(f"[REFINE] Skipping LLM refinement for img2img - passing user prompt directly: '{user_text[:50]}...'")
+        return user_text
+    
     if not settings.xai_api_key and not settings.groq_api_key:
         raise RuntimeError("Prompt refinement is not available (XAI_API_KEY or GROQ_API_KEY not set).")
 
-    system_prompt = _IMG2IMG_SYSTEM_PROMPT if has_reference_image else _SYSTEM_PROMPT
+    system_prompt = _SYSTEM_PROMPT
 
     try:
         refined = chat_completion(
