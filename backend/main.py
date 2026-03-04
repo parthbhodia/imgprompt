@@ -820,11 +820,13 @@ async def generate_image(
     imagen_model = body.model if use_imagen else None
     logger.info(f"Using model: {imagen_model if use_imagen else 'Replicate Flux'}")
     
-    # When img2img is requested, require Imagen (Flux doesn't support proper img2img)
-    if body.image_base64 and not use_imagen:
+    # When img2img is requested, we prefer Imagen but can fallback to Replicate Flux
+    # Both support img2img - Imagen via gemini-2.5-flash-image, Flux via flux-dev
+    use_img2img = bool(body.image_base64)
+    if use_img2img and not use_imagen and not settings.replicate_api_token:
         raise HTTPException(
             status_code=503,
-            detail="Image-to-image transformation requires Imagen. Please set GEMINI_API_KEY in your backend .env file."
+            detail="Image-to-image transformation requires either Imagen (GEMINI_API_KEY) or Replicate (REPLICATE_API_TOKEN). Please set one in your backend .env file."
         )
     # Define helper functions outside try block for proper scope
     async def _run_imagen(p: str) -> list[str]:
@@ -854,7 +856,18 @@ async def generate_image(
     
     async def _run_replicate(p: str) -> list[str]:
         """Run Replicate in a thread pool with a 180s timeout."""
-        # img2img is handled by Imagen only, this is text-to-image only
+        if body.image_base64:
+            print(f"[_RUN_REPLICATE] img2img mode - calling run_flux_img2img")
+            sys.stdout.flush()
+            return await asyncio.wait_for(
+                asyncio.get_event_loop().run_in_executor(
+                    None, 
+                    lambda: run_flux_img2img(p, body.image_base64)
+                ),
+                timeout=180,
+            )
+        print(f"[_RUN_REPLICATE] text2img mode - calling run_flux")
+        sys.stdout.flush()
         return await asyncio.wait_for(
             asyncio.get_event_loop().run_in_executor(None, lambda: run_flux(p)),
             timeout=180,
@@ -886,7 +899,8 @@ async def generate_image(
                     raise
         
         if not use_imagen or fallback_to_flux:
-            logger.info(f"Using Flux (fallback={fallback_to_flux})")
+            print(f"[GENERATE_ENDPOINT] Using Flux (fallback={fallback_to_flux}, img2img={bool(body.image_base64)})")
+            sys.stdout.flush()
             urls = await _run_replicate(safe_prompt)
             
     except asyncio.TimeoutError:
