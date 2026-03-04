@@ -172,6 +172,16 @@ def generate_imagen_edit(
         
         image_bytes = base64.b64decode(reference_image_base64)
         print(f"[IMAGEN_EDIT] Decoded image bytes: {len(image_bytes)} bytes")
+        
+        # DEBUG: Save received image to verify correct image is being processed
+        debug_path = "/tmp/debug_input_image.jpg"
+        try:
+            with open(debug_path, "wb") as f:
+                f.write(image_bytes)
+            print(f"[IMAGEN_EDIT] DEBUG: Saved input image to {debug_path}")
+        except Exception as save_err:
+            print(f"[IMAGEN_EDIT] DEBUG: Could not save image: {save_err}")
+        
         sys.stdout.flush()
         
         # Convert to PIL Image and resize to ensure dimensions divisible by 16
