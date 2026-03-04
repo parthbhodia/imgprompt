@@ -157,9 +157,14 @@ def generate_imagen_edit(
     client = _get_client()
     
     try:
-        # Anchor the prompt to the subject WITHOUT mentioning "person" to avoid content filters
-        # Use generic language that focuses on the transformation style
-        anchored_prompt = f"Transform this image: {prompt}. Preserve the original subject, composition, and key features."
+        # Enhanced anchoring for better identity preservation while transforming
+        # Include user's exact prompt but add specific preservation instructions
+        anchored_prompt = (
+            f"Edit this photo to show: {prompt}. "
+            f"CRITICAL: Keep the exact same person - same face, same hair, same skin tone, "
+            f"same pose angle. Maintain all visible accessories (jewelry, watch). "
+            f"Only change what's described in the edit instruction."
+        )
         logger.info(f"Generating image edit with {model}, anchored prompt: {anchored_prompt[:100]}...")
         print(f"[IMAGEN_EDIT] Using model: {model} (requested: {actual_model})")
         sys.stdout.flush()
