@@ -1202,7 +1202,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                               </button>
                               <button
                                 type="button"
-                                onClick={() => handleGenerateWithPrompt(`${m.content}, different variation, remix`, true, m.image_url!)}
+                                onClick={() => handleGenerateWithPrompt(buildPrompt(m.content, "different variation, remix"), true, m.image_url!)}
                                 className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 text-xs font-medium transition-colors border border-purple-500/30"
                                 title="Generate a remix variation of this image"
                               >
@@ -1222,7 +1222,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                                   <button
                                     key={idx}
                                     type="button"
-                                    onClick={() => handleGenerateWithPrompt(`${m.content}, ${variation}`, true, m.image_url!)}
+                                    onClick={() => handleGenerateWithPrompt(buildPrompt(m.content, variation), true, m.image_url!)}
                                     className="text-left px-2 py-1 rounded-md text-xs bg-muted/40 hover:bg-primary/10 text-muted-foreground transition-colors truncate"
                                     title={variation}
                                   >
@@ -1233,14 +1233,14 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                                 <>
                                   <button
                                     type="button"
-                                    onClick={() => handleGenerateWithPrompt(`${m.content}, different artistic style`, true, m.image_url!)}
+                                    onClick={() => handleGenerateWithPrompt(buildPrompt(m.content, "different artistic style"), true, m.image_url!)}
                                     className="text-left px-2 py-1 rounded-md text-xs bg-muted/40 hover:bg-primary/10 text-muted-foreground transition-colors"
                                   >
                                     Different artistic style
                                   </button>
                                   <button
                                     type="button"
-                                    onClick={() => handleGenerateWithPrompt(`${m.content}, cinematic lighting`, true, m.image_url!)}
+                                    onClick={() => handleGenerateWithPrompt(buildPrompt(m.content, "cinematic lighting"), true, m.image_url!)}
                                     className="text-left px-2 py-1 rounded-md text-xs bg-muted/40 hover:bg-primary/10 text-muted-foreground transition-colors"
                                   >
                                     Cinematic version
