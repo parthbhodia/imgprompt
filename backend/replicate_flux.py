@@ -26,13 +26,24 @@ MAX_IMAGES_PER_REQUEST = 1
 
 print(f"[FLUX_INIT] PATCH_SIZE = {PATCH_SIZE} (imported from image_utils)")
 
+# Strong preservation prefix for background edits - locks the person completely
+IMG2IMG_PRESERVATION_PREFIX = (
+    "Edit ONLY the background of this photo. "
+    "The person in the foreground must remain IDENTICAL - "
+    "same gender, same skin tone, same body shape, same exact clothing, "
+    "same pose, same position in frame. "
+    "Treat the person as completely locked and untouchable. "
+    "Only modify what is behind them. "
+    "Apply this background change: "
+)
+
 # Dynamic strength mapping for img2img based on prompt intent
 # Lower strength = preserve original more, higher = transform more
 STRENGTH_BY_INTENT = {
-    "background": 0.25,      # "make background sunny/darker/blurred" - preserve subject
-    "lighting": 0.30,        # "adjust lighting, add shadows" - subtle changes
+    "background": 0.15,      # "make background sunny/darker/blurred" - preserve subject (was 0.25)
+    "lighting": 0.20,        # "adjust lighting, add shadows" - subtle changes (was 0.30)
     "color": 0.35,           # "change colors" - moderate
-    "enhance": 0.20,         # "make it hd/sharper" - preserve everything, improve quality
+    "enhance": 0.10,         # "make it hd/sharper" - preserve everything (was 0.20)
     "style": 0.55,           # "make it cartoon/anime/sketch" - allow style change
     "default": 0.40,         # fallback - balanced
 }
@@ -54,18 +65,18 @@ def get_strength_for_prompt(prompt: str) -> float:
     
     # Background/scene changes - low strength to preserve subject
     if any(w in p for w in ["background", "sky", "sunny", "weather", "scene", "beach", "mountain", "city"]):
-        print(f"[FLUX_STRENGTH] Prompt '{prompt[:30]}...' detected as BACKGROUND -> strength=0.25")
-        return 0.25
+        print(f"[FLUX_STRENGTH] Prompt '{prompt[:30]}...' detected as BACKGROUND -> strength=0.15")
+        return 0.15
     
     # Lighting adjustments - very subtle
     if any(w in p for w in ["lighting", "light", "bright", "dark", "shadow", "glow", "sunlight", "golden hour"]):
-        print(f"[FLUX_STRENGTH] Prompt '{prompt[:30]}...' detected as LIGHTING -> strength=0.30")
-        return 0.30
+        print(f"[FLUX_STRENGTH] Prompt '{prompt[:30]}...' detected as LIGHTING -> strength=0.20")
+        return 0.20
     
     # Quality enhancements - minimal change, just improve details
     if any(w in p for w in ["hd", "enhance", "sharpen", "quality", "4k", "8k", "high res", "clear", "crisp", "sharp"]):
-        print(f"[FLUX_STRENGTH] Prompt '{prompt[:30]}...' detected as ENHANCE -> strength=0.20")
-        return 0.20
+        print(f"[FLUX_STRENGTH] Prompt '{prompt[:30]}...' detected as ENHANCE -> strength=0.10")
+        return 0.10
     
     # Color adjustments - moderate
     if any(w in p for w in ["color", "vibrant", "saturated", "warm", "cool tone", "sepia", "black and white", "monochrome"]):
