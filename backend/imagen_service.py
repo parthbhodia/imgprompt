@@ -218,7 +218,7 @@ def generate_imagen_edit(
         print(f"[IMAGEN_EDIT] Image mode: {pil_image.mode}")
         print(f"[IMAGEN_EDIT] Config:")
         print(f"[IMAGEN_EDIT]   - response_modalities: ['Image']")
-        print(f"[IMAGEN_EDIT]   - temperature: 0.4")
+        print(f"[IMAGEN_EDIT]   - temperature: 0.8 (higher for portrait/img2img)")
         print(f"[IMAGEN_EDIT]   - top_p: 0.95")
         print(f"[IMAGEN_EDIT]   - safety_settings: BLOCK_NONE for all categories")
         sys.stdout.flush()
@@ -230,7 +230,7 @@ def generate_imagen_edit(
             contents=[pil_image, anchored_prompt],  # Image FIRST, then prompt
             config=types.GenerateContentConfig(
                 response_modalities=["Image"],
-                temperature=0.4,  # Lower temp for more consistent transformations
+                temperature=0.8,  # Higher temp for portrait/img2img - more creative freedom, less hallucination
                 top_p=0.95,
                 safety_settings=[
                     types.SafetySetting(
