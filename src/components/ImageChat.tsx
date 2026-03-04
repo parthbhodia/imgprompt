@@ -911,12 +911,19 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
     }
 
     try {
+      console.log('[FRONTEND] About to call generateImage:', {
+        prompt: promptToUse,
+        hasImage: !!imageBase64,
+        imageLength: imageBase64?.length,
+        model: selectedModel
+      });
       const res = await generateImage(token ?? null, {
         prompt: promptToUse,
         session_id: sid ?? undefined,
         image_base64: imageBase64 ?? undefined,
         model: selectedModel,
       });
+      console.log('[FRONTEND] generateImage success:', res);
       setCredits(res.credits_remaining);
       
       // Show recap toast
@@ -1377,7 +1384,6 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
           <div className="border-t bg-muted/30 shrink-0 space-y-2 p-3 sm:p-4">
             {/* Attached Image Preview */}
             {(() => {
-              console.log('[DEBUG] attachedImage state:', attachedImage);
               return attachedImage && (
                 <div className="relative inline-block">
                   <img
