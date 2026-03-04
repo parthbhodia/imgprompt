@@ -210,7 +210,8 @@ def run_flux_img2img(prompt: str, image_base64: str, *, num_outputs: int = 1, st
 
 
 # Stable Diffusion for img2img - better quality and more control
-SD_IMG2IMG_MODEL = "stability-ai/stable-diffusion-xl-base-1.0"
+# Using Flux dev for img2img as it's more reliable on Replicate
+SD_IMG2IMG_MODEL = "black-forest-labs/flux-dev"
 
 def run_stable_diffusion_img2img(prompt: str, image_base64: str, *, num_outputs: int = 1, strength: float = 0.75, guidance_scale: float = 7.5, num_inference_steps: int = 50) -> list[str]:
     """
