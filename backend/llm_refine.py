@@ -111,12 +111,17 @@ def sanitize_for_replicate(prompt: str, has_reference_image: bool = False) -> st
     
     Args:
         prompt: The prompt to sanitize
-        has_reference_image: If True, use img2img rules that preserve transformation intent
+        has_reference_image: If True, skip sanitization - imagen_service handles preservation
     """
+    # Skip LLM sanitization for img2img - user intent is clear and LLM over-expands it
+    if has_reference_image:
+        print(f"[SANITIZE] Skipping LLM sanitization for img2img - passing prompt directly: '{prompt[:50]}...'")
+        return prompt
+    
     if not settings.xai_api_key and not settings.groq_api_key:
         return prompt
 
-    system_prompt = _IMG2IMG_SANITIZE_PROMPT if has_reference_image else _SANITIZE_SYSTEM_PROMPT
+    system_prompt = _SANITIZE_SYSTEM_PROMPT
 
     try:
         rewritten = chat_completion(
