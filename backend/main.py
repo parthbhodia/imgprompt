@@ -201,7 +201,7 @@ class GenerateRequest(BaseModel):
     image_base64: str | None = None
     model: str = Field(
         default="replicate-flux",
-        pattern=r"^(replicate-flux|imagen-4-fast-generate-001|imagen-4-generate-001|imagen-4-ultra-generate-001|gemini-2\.5-flash-image|gemini-3\.1-flash-image-preview|gemini-3-pro-image-preview)$"
+        pattern=r"^(replicate-flux|imagen-3\.0-generate-001|imagen-3\.0-fast-generate-001|imagen-3\.0-ultra-generate-001|gemini-2\.5-flash-image|gemini-2\.0-flash-exp-image-generation)$"
     )
 
 

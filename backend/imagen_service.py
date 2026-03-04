@@ -121,7 +121,7 @@ def generate_imagen(
     prompt: str,
     *,
     aspect_ratio: str = "1:1",
-    model: str = "imagen-4-fast-generate-001",
+    model: str = "imagen-3.0-fast-generate-001",
 ) -> str:
     """
     Generate an image using Google Imagen API.
@@ -129,7 +129,7 @@ def generate_imagen(
     Args:
         prompt: The text prompt for image generation
         aspect_ratio: Image aspect ratio (1:1, 3:4, 4:3, 9:16, 16:9)
-        model: Model to use (default: imagen-4-fast-generate-001 for best rate limits)
+        model: Model to use (default: imagen-3.0-fast-generate-001 for best rate limits)
         
     Returns:
         Data URI of the generated image
@@ -183,7 +183,7 @@ def generate_imagen_edit(
     prompt: str,
     reference_image_base64: str,
     *,
-    model: str = "imagen-4-fast-generate-001",
+    model: str = "imagen-3.0-fast-generate-001",
 ) -> str:
     """
     Edit/transform an existing image using Google Imagen API.
@@ -400,11 +400,11 @@ def get_imagen_models() -> list[dict]:
         return []
     
     # Top 4 models prioritized by rate limits (higher = better)
-    # Rate limits: Imagen 4 models = 25/day, Nano Banana = varies
+    # Rate limits: Imagen 3 models = 25/day, Gemini Flash = varies
     return [
         {
-            "id": "imagen-4-fast-generate-001",
-            "name": "Imagen 4 Fast",
+            "id": "imagen-3.0-fast-generate-001",
+            "name": "Imagen 3.0 Fast",
             "provider": "google",
             "description": "Fastest generation (25 req/day)",
             "supports_img2img": True,
@@ -412,8 +412,8 @@ def get_imagen_models() -> list[dict]:
             "priority": 1,
         },
         {
-            "id": "imagen-4-generate-001", 
-            "name": "Imagen 4",
+            "id": "imagen-3.0-generate-001", 
+            "name": "Imagen 3.0",
             "provider": "google",
             "description": "Balanced quality & speed (25 req/day)",
             "supports_img2img": True,
@@ -421,8 +421,8 @@ def get_imagen_models() -> list[dict]:
             "priority": 2,
         },
         {
-            "id": "imagen-4-ultra-generate-001",
-            "name": "Imagen 4 Ultra", 
+            "id": "imagen-3.0-ultra-generate-001",
+            "name": "Imagen 3.0 Ultra", 
             "provider": "google",
             "description": "Highest quality (25 req/day)",
             "supports_img2img": True,
@@ -431,7 +431,7 @@ def get_imagen_models() -> list[dict]:
         },
         {
             "id": "gemini-2.5-flash-image",
-            "name": "Nano Banana (Flash)",
+            "name": "Gemini 2.5 Flash (Image)",
             "provider": "google",
             "description": "Experimental image model",
             "supports_img2img": True,
