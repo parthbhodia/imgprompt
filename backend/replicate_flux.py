@@ -228,7 +228,16 @@ def run_stable_diffusion_img2img(prompt: str, image_base64: str, *, num_outputs:
         print(f"[SD_IMG2IMG] Token valid, uploading image...")
         image_url = _upload_image_to_replicate(image_base64)
         print(f"[SD_IMG2IMG] Image uploaded: {image_url[:80]}...")
-        print(f"[SD_IMG2IMG] Running SDXL with strength={strength}, steps={num_inference_steps}")
+        print(f"[SD_IMG2IMG] ====== REQUEST PARAMETERS ======")
+        print(f"[SD_IMG2IMG] Model: {SD_IMG2IMG_MODEL}")
+        print(f"[SD_IMG2IMG] Prompt: {prompt}")
+        print(f"[SD_IMG2IMG] Image URL: {image_url[:80]}...")
+        print(f"[SD_IMG2IMG] Parameters:")
+        print(f"[SD_IMG2IMG]   - strength: {strength} (0=original, 1=new)")
+        print(f"[SD_IMG2IMG]   - guidance_scale: {guidance_scale}")
+        print(f"[SD_IMG2IMG]   - num_inference_steps: {num_inference_steps}")
+        print(f"[SD_IMG2IMG]   - num_outputs: {num_outputs}")
+        print(f"[SD_IMG2IMG] ====== CALLING REPLICATE ======")
         
         output = replicate.run(
             SD_IMG2IMG_MODEL,
