@@ -414,6 +414,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
   useEffect(() => {
     // When generationSettings changes (from sidebar), update selectedModel
     if (generationSettings.model !== selectedModel) {
+      console.log('[MODEL_SYNC] generationSettings.model changed:', generationSettings.model, '-> updating selectedModel from', selectedModel);
       setSelectedModel(generationSettings.model);
     }
   }, [generationSettings.model, selectedModel]);
@@ -421,6 +422,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
   useEffect(() => {
     // When selectedModel changes (from dropdown), update generationSettings
     if (selectedModel !== generationSettings.model) {
+      console.log('[MODEL_SYNC] selectedModel changed:', selectedModel, '-> updating generationSettings');
       setGenerationSettings(prev => ({ ...prev, model: selectedModel as any }));
     }
   }, [selectedModel, generationSettings.model]);
@@ -915,7 +917,8 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
         prompt: promptToUse,
         hasImage: !!imageBase64,
         imageLength: imageBase64?.length,
-        model: selectedModel
+        model: selectedModel,
+        modelType: typeof selectedModel
       });
       const res = await generateImage(token ?? null, {
         prompt: promptToUse,
@@ -1631,7 +1634,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
             </div>
 
             {/* Quick Actions - Only show when prompt is entered */}
-            {prompt.trim() && (
+            {useMemo(() => prompt.trim() && (
               <div className="space-y-2">
                 {/* AI Insights Badges */}
                 {!insightsLoading && chatInsights && (
@@ -1684,7 +1687,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                   <PromptGuidePanel />
                 </div>
               </div>
-            )}
+            ), [prompt, loading, refining, chatInsights, insightsLoading, token, selectedModel, handleRefine, handleGenerate])}
 
             {/* Preset Tags */}
             {user && (
