@@ -11,6 +11,90 @@ from google.genai import types
 
 logger = logging.getLogger(__name__)
 
+# Weak prompt expansions - map vague user inputs to detailed instructions
+# This prevents identity loss when users type generic terms like "make it hd"
+WEAK_PROMPT_EXPANSIONS = {
+    # Quality enhancements
+    "hd": "enhance photo quality, increase sharpness and detail, improve lighting",
+    "make it hd": "enhance photo quality, increase sharpness and detail, improve lighting",
+    "high quality": "enhance photo quality, increase sharpness and detail, improve lighting",
+    "enhance": "enhance photo quality, increase sharpness and detail, improve lighting",
+    "better quality": "enhance photo quality, increase sharpness and detail, improve lighting",
+    "improve": "enhance photo quality, increase sharpness and detail, improve lighting",
+    "upgrade": "enhance photo quality, increase sharpness and detail, improve lighting",
+    "4k": "enhance photo quality to 4K resolution, increase sharpness and detail",
+    "8k": "enhance photo quality to 8K resolution, increase sharpness and detail",
+    # Style transformations
+    "cartoon": "convert to cartoon illustration style",
+    "anime": "convert to anime art style",
+    "sketch": "convert to pencil sketch drawing",
+    "painting": "convert to oil painting style",
+    "cinematic": "apply cinematic color grading and dramatic lighting",
+    "oil painting": "convert to oil painting style",
+    "watercolor": "convert to watercolor painting style",
+    "pencil": "convert to pencil sketch drawing",
+    "drawing": "convert to hand-drawn illustration style",
+    "3d": "convert to 3D rendered style",
+    "pixar": "convert to Pixar 3D animation style",
+    "disney": "convert to Disney animation style",
+    "marvel": "convert to Marvel comic book style",
+    "comic": "convert to comic book illustration style",
+    "vintage": "apply vintage film photography style",
+    "retro": "apply retro aesthetic style",
+    "cyberpunk": "apply cyberpunk futuristic style with neon lighting",
+    "steampunk": "apply steampunk Victorian-futuristic style",
+}
+
+IMG2IMG_PRESERVATION_PREFIX = (
+    "Edit this exact photo while preserving the original person's "
+    "face, skin tone, body, pose, and identity. "
+    "Do not replace or alter the subject. "
+    "Apply only this change: "
+)
+
+
+def _expand_weak_prompt(prompt: str) -> str:
+    """Expand weak/vague prompts to detailed instructions."""
+    normalized = prompt.lower().strip()
+    
+    # Check for exact match in dictionary
+    if normalized in WEAK_PROMPT_EXPANSIONS:
+        expanded = WEAK_PROMPT_EXPANSIONS[normalized]
+        print(f"[IMAGEN_EDIT] WEAK PROMPT EXPANDED: '{prompt}' -> '{expanded}'")
+        return expanded
+    
+    # Check for partial matches (e.g., "make it cartoon style" contains "cartoon")
+    for key, expansion in WEAK_PROMPT_EXPANSIONS.items():
+        if key in normalized and len(normalized) < 30:  # Short prompt containing keyword
+            print(f"[IMAGEN_EDIT] WEAK PROMPT PARTIAL MATCH: '{prompt}' contains '{key}' -> '{expansion}'")
+            return expansion
+    
+    # No expansion needed - return original
+    return prompt
+
+
+def _build_img2img_prompt(user_prompt: str) -> str:
+    """Build a safe img2img prompt that preserves subject identity."""
+    # Expand weak prompts
+    expanded_prompt = _expand_weak_prompt(user_prompt)
+    
+    # Detect removal requests
+    removal_keywords = ['remove', 'delete', 'erase', 'take off', 'get rid of', 'without the', 'no ']
+    is_removal = any(keyword in user_prompt.lower() for keyword in removal_keywords)
+    
+    if is_removal:
+        # For removal: specific instruction with identity preservation
+        return (
+            f"Edit this exact photo to: {user_prompt}. "
+            f"CRITICAL: Keep the exact same person - same face, same hair, same skin tone, "
+            f"same pose angle, same clothing. Only make the specific change requested. "
+            f"Preserve facial features and identity perfectly."
+        )
+    else:
+        # Standard preservation prefix + expanded prompt
+        return f"{IMG2IMG_PRESERVATION_PREFIX}{expanded_prompt}"
+
+
 # Initialize Gemini client
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
@@ -157,47 +241,8 @@ def generate_imagen_edit(
     client = _get_client()
     
     try:
-        # Enhanced anchoring for better identity preservation while transforming
-        # Detect if this is a removal request vs addition/modification
-        removal_keywords = ['remove', 'delete', 'erase', 'take off', 'get rid of', 'without the', 'no ']
-        is_removal = any(keyword in prompt.lower() for keyword in removal_keywords)
-        
-        # Detect weak/generic prompts that need auto-enhancement
-        # Weak prompts: short, generic quality terms, no preservation keywords
-        preservation_keywords = ['preserve', 'keep', 'same person', 'same face', 'identity', 'this person', 'the person']
-        has_preservation = any(kw in prompt.lower() for kw in preservation_keywords)
-        is_weak_prompt = (
-            len(prompt.strip()) < 15 or  # Very short prompts
-            prompt.lower() in ['hd', 'make it hd', 'high quality', 'enhance', 'better quality', 'improve', 'upgrade', '4k', '8k'] or  # Generic quality
-            (not has_preservation and len(prompt.strip()) < 40)  # Medium length but no preservation
-        )
-        
-        if is_weak_prompt:
-            # Auto-enhance weak prompts with full preservation instructions
-            anchored_prompt = (
-                f"Enhance this photo to {prompt.strip()}. "
-                f"CRITICAL: Keep the exact same person - same face, same hair, same skin tone, "
-                f"same pose angle, same clothing, same accessories. "
-                f"Only improve image quality, sharpness, lighting, and detail. "
-                f"Do NOT change the subject, person, or any visual elements - only enhance technical quality."
-            )
-            print(f"[IMAGEN_EDIT] WEAK PROMPT DETECTED - Auto-enhanced: '{prompt}' -> full preservation prompt")
-        elif is_removal:
-            # For removal: focus on preserving identity, allow accessory changes
-            anchored_prompt = (
-                f"Edit this photo to: {prompt}. "
-                f"CRITICAL: Keep the exact same person - same face, same hair, same skin tone, "
-                f"same pose angle, same clothing. Only make the specific change requested. "
-                f"Preserve facial features and identity perfectly."
-            )
-        else:
-            # For additions/modifications: stronger preservation including accessories
-            anchored_prompt = (
-                f"Edit this photo to show: {prompt}. "
-                f"CRITICAL: Keep the exact same person - same face, same hair, same skin tone, "
-                f"same pose angle. Maintain all visible accessories (jewelry, watch, glasses). "
-                f"Only change what's described in the edit instruction."
-            )
+        # Build subject-preserving prompt with weak prompt expansion
+        anchored_prompt = _build_img2img_prompt(prompt)
         
         logger.info(f"Generating image edit with {model}, anchored prompt: {anchored_prompt[:100]}...")
         print(f"[IMAGEN_EDIT] Using model: {model} (requested: {actual_model})")
