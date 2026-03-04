@@ -27,7 +27,7 @@ from pydantic import BaseModel, Field
 from config import settings
 from auth import DEV_USER_ID, get_supabase_admin, get_current_user_id
 from credits import get_credits, deduct_credits, ensure_credits_column
-from replicate_flux import run_flux, run_flux_img2img
+from replicate_flux import run_flux, run_flux_img2img, run_stable_diffusion_img2img
 from replicate.exceptions import ModelError as ReplicateModelError
 from prompt_suggest import get_suggestions
 from moderation import check_moderation
@@ -857,12 +857,12 @@ async def generate_image(
     async def _run_replicate(p: str) -> list[str]:
         """Run Replicate in a thread pool with a 180s timeout."""
         if body.image_base64:
-            print(f"[_RUN_REPLICATE] img2img mode - calling run_flux_img2img")
+            print(f"[_RUN_REPLICATE] img2img mode - calling run_stable_diffusion_img2img")
             sys.stdout.flush()
             return await asyncio.wait_for(
                 asyncio.get_event_loop().run_in_executor(
                     None, 
-                    lambda: run_flux_img2img(p, body.image_base64)
+                    lambda: run_stable_diffusion_img2img(p, body.image_base64)
                 ),
                 timeout=180,
             )

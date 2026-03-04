@@ -207,3 +207,44 @@ def run_flux_img2img(prompt: str, image_base64: str, *, num_outputs: int = 1, st
         import traceback
         traceback.print_exc()
         raise
+
+
+# Stable Diffusion for img2img - better quality and more control
+SD_IMG2IMG_MODEL = "stability-ai/stable-diffusion-xl-base-1.0"
+
+def run_stable_diffusion_img2img(prompt: str, image_base64: str, *, num_outputs: int = 1, strength: float = 0.75, guidance_scale: float = 7.5, num_inference_steps: int = 50) -> list[str]:
+    """
+    Run Stable Diffusion XL img2img model.
+    Better quality for style transfers and photo transformations.
+    
+    Args:
+        strength: 0-1, how much to transform (0=original, 1=completely new). Default 0.75
+        guidance_scale: how strictly to follow prompt. Default 7.5
+        num_inference_steps: quality vs speed. Default 50 (higher = better quality)
+    """
+    try:
+        print(f"[SD_IMG2IMG] Starting with prompt: {prompt[:50]}...")
+        _ensure_replicate_token()
+        print(f"[SD_IMG2IMG] Token valid, uploading image...")
+        image_url = _upload_image_to_replicate(image_base64)
+        print(f"[SD_IMG2IMG] Image uploaded: {image_url[:80]}...")
+        print(f"[SD_IMG2IMG] Running SDXL with strength={strength}, steps={num_inference_steps}")
+        
+        output = replicate.run(
+            SD_IMG2IMG_MODEL,
+            input={
+                "image": image_url,
+                "prompt": prompt,
+                "strength": strength,
+                "guidance_scale": guidance_scale,
+                "num_inference_steps": num_inference_steps,
+                "num_outputs": num_outputs,
+            },
+        )
+        print(f"[SD_IMG2IMG] Model output received")
+        return _output_to_urls(output)
+    except Exception as e:
+        print(f"[SD_IMG2IMG] ERROR: {type(e).__name__}: {str(e)[:200]}")
+        import traceback
+        traceback.print_exc()
+        raise
