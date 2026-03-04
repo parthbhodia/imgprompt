@@ -63,6 +63,18 @@ def get_strength_for_prompt(prompt: str) -> float:
     """
     p = prompt.lower()
     
+    # Explicit preservation requests - use minimum strength
+    preservation_phrases = [
+        "keep the subject", "keep subject", "same subject", "same person",
+        "keep the person", "keep person", "keep the same", "same face",
+        "preserve subject", "preserve the subject", "preserve identity",
+        "keep identity", "same identity", "don't change the person",
+        "dont change the person", "keep me", "keep my face"
+    ]
+    if any(phrase in p for phrase in preservation_phrases):
+        print(f"[FLUX_STRENGTH] Prompt '{prompt[:30]}...' has EXPLICIT PRESERVATION request -> strength=0.10")
+        return 0.10
+    
     # Background/scene changes - low strength to preserve subject
     if any(w in p for w in ["background", "sky", "sunny", "weather", "scene", "beach", "mountain", "city"]):
         print(f"[FLUX_STRENGTH] Prompt '{prompt[:30]}...' detected as BACKGROUND -> strength=0.15")
