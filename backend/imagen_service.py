@@ -158,13 +158,47 @@ def generate_imagen_edit(
     
     try:
         # Enhanced anchoring for better identity preservation while transforming
-        # Include user's exact prompt but add specific preservation instructions
-        anchored_prompt = (
-            f"Edit this photo to show: {prompt}. "
-            f"CRITICAL: Keep the exact same person - same face, same hair, same skin tone, "
-            f"same pose angle. Maintain all visible accessories (jewelry, watch). "
-            f"Only change what's described in the edit instruction."
+        # Detect if this is a removal request vs addition/modification
+        removal_keywords = ['remove', 'delete', 'erase', 'take off', 'get rid of', 'without the', 'no ']
+        is_removal = any(keyword in prompt.lower() for keyword in removal_keywords)
+        
+        # Detect weak/generic prompts that need auto-enhancement
+        # Weak prompts: short, generic quality terms, no preservation keywords
+        preservation_keywords = ['preserve', 'keep', 'same person', 'same face', 'identity', 'this person', 'the person']
+        has_preservation = any(kw in prompt.lower() for kw in preservation_keywords)
+        is_weak_prompt = (
+            len(prompt.strip()) < 15 or  # Very short prompts
+            prompt.lower() in ['hd', 'make it hd', 'high quality', 'enhance', 'better quality', 'improve', 'upgrade', '4k', '8k'] or  # Generic quality
+            (not has_preservation and len(prompt.strip()) < 40)  # Medium length but no preservation
         )
+        
+        if is_weak_prompt:
+            # Auto-enhance weak prompts with full preservation instructions
+            anchored_prompt = (
+                f"Enhance this photo to {prompt.strip()}. "
+                f"CRITICAL: Keep the exact same person - same face, same hair, same skin tone, "
+                f"same pose angle, same clothing, same accessories. "
+                f"Only improve image quality, sharpness, lighting, and detail. "
+                f"Do NOT change the subject, person, or any visual elements - only enhance technical quality."
+            )
+            print(f"[IMAGEN_EDIT] WEAK PROMPT DETECTED - Auto-enhanced: '{prompt}' -> full preservation prompt")
+        elif is_removal:
+            # For removal: focus on preserving identity, allow accessory changes
+            anchored_prompt = (
+                f"Edit this photo to: {prompt}. "
+                f"CRITICAL: Keep the exact same person - same face, same hair, same skin tone, "
+                f"same pose angle, same clothing. Only make the specific change requested. "
+                f"Preserve facial features and identity perfectly."
+            )
+        else:
+            # For additions/modifications: stronger preservation including accessories
+            anchored_prompt = (
+                f"Edit this photo to show: {prompt}. "
+                f"CRITICAL: Keep the exact same person - same face, same hair, same skin tone, "
+                f"same pose angle. Maintain all visible accessories (jewelry, watch, glasses). "
+                f"Only change what's described in the edit instruction."
+            )
+        
         logger.info(f"Generating image edit with {model}, anchored prompt: {anchored_prompt[:100]}...")
         print(f"[IMAGEN_EDIT] Using model: {model} (requested: {actual_model})")
         sys.stdout.flush()
