@@ -9,6 +9,8 @@ from PIL import Image
 from google import genai
 from google.genai import types
 
+from image_utils import resize_image_if_needed, PATCH_SIZE
+
 logger = logging.getLogger(__name__)
 
 # Weak prompt expansions - map vague user inputs to detailed instructions
@@ -101,35 +103,6 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 # Log Imagen availability on module load
 print(f"[IMAGEN_INIT] GEMINI_API_KEY present: {bool(GEMINI_API_KEY)} (length: {len(GEMINI_API_KEY)})")
 sys.stdout.flush()
-
-# Imagen models require dimensions divisible by 16 for best compatibility
-PATCH_SIZE = 16
-
-
-def _ensure_divisible_by_patch_size(width: int, height: int) -> Tuple[int, int]:
-    """Ensure dimensions are divisible by patch size for model compatibility."""
-    new_width = (width // PATCH_SIZE) * PATCH_SIZE
-    new_height = (height // PATCH_SIZE) * PATCH_SIZE
-    # Ensure minimum size
-    new_width = max(PATCH_SIZE, new_width)
-    new_height = max(PATCH_SIZE, new_height)
-    return new_width, new_height
-
-
-def _resize_image_if_needed(pil_image: Image.Image) -> Image.Image:
-    """Resize image to ensure dimensions divisible by patch size."""
-    orig_width, orig_height = pil_image.size
-    print(f"[IMAGEN_RESIZE] Input image size: {orig_width}x{orig_height}")
-    new_width, new_height = _ensure_divisible_by_patch_size(orig_width, orig_height)
-    print(f"[IMAGEN_RESIZE] Target size: {new_width}x{new_height} (divisible by {PATCH_SIZE})")
-    
-    if (orig_width, orig_height) != (new_width, new_height):
-        pil_image = pil_image.resize((new_width, new_height), Image.Resampling.LANCZOS)
-        print(f"[IMAGEN_RESIZE] RESIZED to {pil_image.size[0]}x{pil_image.size[1]}")
-    else:
-        print(f"[IMAGEN_RESIZE] NO RESIZE needed - already compatible")
-    
-    return pil_image
 
 
 def _get_client():
@@ -272,7 +245,7 @@ def generate_imagen_edit(
         pil_image = Image.open(BytesIO(image_bytes))
         print(f"[IMAGEN_EDIT] PIL Image opened: {pil_image.size[0]}x{pil_image.size[1]}, mode={pil_image.mode}")
         sys.stdout.flush()
-        pil_image = _resize_image_if_needed(pil_image)
+        pil_image = resize_image_if_needed(pil_image)
         print(f"[IMAGEN_EDIT] After resize: {pil_image.size[0]}x{pil_image.size[1]}")
         sys.stdout.flush()
         

@@ -7,6 +7,8 @@ import replicate
 from config import settings
 from PIL import Image
 
+from image_utils import resize_bytes_if_needed, PATCH_SIZE
+
 # Ensure Replicate client can see the token (from env or backend .env)
 _token = os.environ.get("REPLICATE_API_TOKEN") or getattr(settings, "replicate_api_token", None) or ""
 if _token:
@@ -22,9 +24,7 @@ FLUX_IMG2IMG_MODEL = "black-forest-labs/flux-dev"
 MAX_IMAGE_BYTES = 5 * 1024 * 1024
 MAX_IMAGES_PER_REQUEST = 1
 
-# Flux models require dimensions divisible by 16 (not just 8) for VAE compatibility
-PATCH_SIZE = 16
-print(f"[FLUX_INIT] PATCH_SIZE = {PATCH_SIZE}")
+print(f"[FLUX_INIT] PATCH_SIZE = {PATCH_SIZE} (imported from image_utils)")
 
 # Dynamic strength mapping for img2img based on prompt intent
 # Lower strength = preserve original more, higher = transform more
@@ -82,44 +82,6 @@ def get_strength_for_prompt(prompt: str) -> float:
     return 0.40
 
 
-def _ensure_divisible_by_patch_size(width: int, height: int) -> tuple[int, int]:
-    """Ensure dimensions are divisible by patch size for model compatibility."""
-    new_width = (width // PATCH_SIZE) * PATCH_SIZE
-    new_height = (height // PATCH_SIZE) * PATCH_SIZE
-    # Ensure minimum size
-    new_width = max(PATCH_SIZE, new_width)
-    new_height = max(PATCH_SIZE, new_height)
-    print(f"[FLUX_MATH] {width}x{height} // {PATCH_SIZE} = {width // PATCH_SIZE}x{height // PATCH_SIZE} -> {new_width}x{new_height}")
-    return new_width, new_height
-
-
-def _resize_image_if_needed(raw: bytes) -> bytes:
-    """Resize image to ensure dimensions divisible by patch size."""
-    try:
-        img = Image.open(io.BytesIO(raw))
-        orig_width, orig_height = img.size
-        print(f"[FLUX_RESIZE] Input image size: {orig_width}x{orig_height}, mode={img.mode}")
-        new_width, new_height = _ensure_divisible_by_patch_size(orig_width, orig_height)
-        print(f"[FLUX_RESIZE] Target size: {new_width}x{new_height} (divisible by {PATCH_SIZE})")
-        
-        if (orig_width, orig_height) != (new_width, new_height):
-            print(f"[FLUX_RESIZE] RESIZING from {orig_width}x{orig_height} to {new_width}x{new_height}")
-            img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
-            buffer = io.BytesIO()
-            img_format = img.format if img.format else "WEBP"
-            img.save(buffer, format=img_format, quality=95)
-            result = buffer.getvalue()
-            print(f"[FLUX_RESIZE] Resized image bytes: {len(result)} bytes")
-            return result
-        else:
-            print(f"[FLUX_RESIZE] NO RESIZE needed - already compatible")
-    except Exception as e:
-        print(f"[FLUX_RESIZE] Error during resize: {e}")
-        import traceback
-        traceback.print_exc()
-    return raw
-
-
 def _data_url_to_bytes(data_url: str) -> tuple[bytes, str]:
     """Parse data URL (e.g. data:image/png;base64,...) to (raw_bytes, media_type)."""
     match = re.match(r"data:([^;]+);base64,(.+)", data_url.strip())
@@ -156,7 +118,7 @@ def _upload_image_to_replicate(image_base64: str) -> str:
     _validate_image_size(raw)
     # Resize to ensure dimensions divisible by patch size (Flux requirement)
     print(f"[FLUX_UPLOAD] Calling resize function...")
-    raw = _resize_image_if_needed(raw)
+    raw = resize_bytes_if_needed(raw)
     print(f"[FLUX_UPLOAD] After resize: {len(raw)} bytes")
     
     # Log final dimensions after resize

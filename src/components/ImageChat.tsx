@@ -46,6 +46,7 @@ import {
   type CreditHistoryResponse,
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { buildPrompt, fileToBase64 } from "@/lib/image-utils";
 import { PromptFrameworkBuilder } from "./PromptFrameworkBuilder";
 import { PromptGuidePanel } from "./PromptGuidePanel";
 import { PresetTags } from "./PresetTags";
@@ -185,7 +186,7 @@ const MessageItem = React.memo(({ message, index, isLast, conversationContext, o
                 </button>
                 <button
                   type="button"
-                  onClick={() => onRemix(`${m.content}, different variation, remix`, true, m.image_url!)}
+                  onClick={() => onRemix(buildPrompt(m.content, "different variation, remix"), true, m.image_url!)}
                   className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 text-xs font-medium transition-colors border border-purple-500/30"
                   title="Generate a remix variation of this image"
                 >
@@ -203,7 +204,7 @@ const MessageItem = React.memo(({ message, index, isLast, conversationContext, o
                   <button
                     key={idx}
                     type="button"
-                    onClick={() => onRemix(`${m.content}, ${variation}`, true, m.image_url!)}
+                    onClick={() => onRemix(buildPrompt(m.content, variation), true, m.image_url!)}
                     className="text-left px-2 py-1 rounded-md text-xs bg-muted/40 hover:bg-primary/10 text-muted-foreground transition-colors truncate"
                     title={variation}
                   >
@@ -219,14 +220,14 @@ const MessageItem = React.memo(({ message, index, isLast, conversationContext, o
               <div className="flex flex-col gap-1.5">
                 <button
                   type="button"
-                  onClick={() => onRemix(`${m.content}, different artistic style`, true, m.image_url!)}
+                  onClick={() => onRemix(buildPrompt(m.content, "different artistic style"), true, m.image_url!)}
                   className="text-left px-2 py-1 rounded-md text-xs bg-muted/40 hover:bg-primary/10 text-muted-foreground transition-colors"
                 >
                   Different artistic style
                 </button>
                 <button
                   type="button"
-                  onClick={() => onRemix(`${m.content}, cinematic lighting`, true, m.image_url!)}
+                  onClick={() => onRemix(buildPrompt(m.content, "cinematic lighting"), true, m.image_url!)}
                   className="text-left px-2 py-1 rounded-md text-xs bg-muted/40 hover:bg-primary/10 text-muted-foreground transition-colors"
                 >
                   Cinematic version
@@ -733,64 +734,6 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
     }
   };
 
-  const fileToBase64 = (file: File): Promise<string> =>
-    new Promise((resolve, reject) => {
-      console.log(`[fileToBase64] Starting with file: ${file.name}, size: ${file.size}, type: ${file.type}`);
-      // Resize image to ensure dimensions divisible by 16 for Flux compatibility
-      const img = new Image();
-      const url = URL.createObjectURL(file);
-      img.onload = () => {
-        URL.revokeObjectURL(url);
-        const PATCH_SIZE = 16;
-        const origWidth = img.naturalWidth;
-        const origHeight = img.naturalHeight;
-        console.log(`[fileToBase64] Image loaded: ${origWidth}x${origHeight}`);
-        const newWidth = Math.floor(origWidth / PATCH_SIZE) * PATCH_SIZE;
-        const newHeight = Math.floor(origHeight / PATCH_SIZE) * PATCH_SIZE;
-        
-        if (newWidth !== origWidth || newHeight !== origHeight) {
-          console.log(`[fileToBase64] RESIZING: ${origWidth}x${origHeight} -> ${newWidth}x${newHeight}`);
-          const canvas = document.createElement('canvas');
-          canvas.width = newWidth;
-          canvas.height = newHeight;
-          const ctx = canvas.getContext('2d');
-          if (!ctx) {
-            reject(new Error('Failed to get canvas context'));
-            return;
-          }
-          ctx.drawImage(img, 0, 0, newWidth, newHeight);
-          canvas.toBlob((blob) => {
-            if (!blob) {
-              reject(new Error('Canvas toBlob failed'));
-              return;
-            }
-            console.log(`[fileToBase64] Resized blob size: ${blob.size}`);
-            const reader = new FileReader();
-            reader.onload = () => {
-              console.log(`[fileToBase64] Done - output base64 length: ${(reader.result as string).length}`);
-              resolve(reader.result as string);
-            };
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
-          }, 'image/webp', 0.95);
-        } else {
-          console.log(`[fileToBase64] NO resize needed, using original`);
-          const reader = new FileReader();
-          reader.onload = () => {
-            console.log(`[fileToBase64] Done - output base64 length: ${(reader.result as string).length}`);
-            resolve(reader.result as string);
-          };
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        }
-      };
-      img.onerror = () => {
-        URL.revokeObjectURL(url);
-        reject(new Error('Failed to load image for resize'));
-      };
-      img.src = url;
-    });
-
   const handleRefine = useCallback(async () => {
     const trimmed = prompt.trim();
     if (!trimmed) return;
@@ -1006,7 +949,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
       stopGeneration();
       generatingRef.current = false; // Release the synchronous lock
     }
-  }, [prompt, user, devNoAuth, attachedImage, token, selectedModel, ensureSession, setChatSessions, startGeneration, fileToBase64, setAttachedImage, setLoading, setPromptValidation, setThinkingSteps, setShowThinking, setMessagesMap, setCredits, setRecapData, setShowRecapToast, setPrompt, stopGeneration]);
+  }, [prompt, user, devNoAuth, attachedImage, token, selectedModel, ensureSession, setChatSessions, startGeneration, setAttachedImage, setLoading, setPromptValidation, setThinkingSteps, setShowThinking, setMessagesMap, setCredits, setRecapData, setShowRecapToast, setPrompt, stopGeneration]);
 
   const handleGenerate = useCallback(() => {
     handleGenerateWithPrompt();

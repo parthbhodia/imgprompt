@@ -140,6 +140,7 @@ export function ChatSidebar({
                     }
                     className="w-full px-2 py-1.5 rounded-md bg-muted border border-border text-sm"
                   >
+                    <option value="replicate-flux">Flux 1.1 Ultra</option>
                     <option value="imagen-4-fast-generate-001">Imagen 4 Fast</option>
                     <option value="imagen-4-generate-001">Imagen 4</option>
                     <option value="imagen-4-ultra-generate-001">Imagen 4 Ultra</option>
