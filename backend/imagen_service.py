@@ -234,15 +234,35 @@ def generate_imagen_edit(
         print(f"[IMAGEN_EDIT] ERROR: {error_msg[:300]}")
         print(f"[IMAGEN_EDIT] ERROR type: {type(e).__name__}")
         
-        # Check for content policy violations - broader detection
         error_lower = error_msg.lower()
+        
+        # Check for quota/rate limit errors FIRST (highest priority)
+        if "429" in error_msg:
+            print(f"[IMAGEN_EDIT] 429 error detected - raising quota error")
+            raise RuntimeError(
+                "Gemini API quota exceeded (429). You've reached the free tier limit. "
+                "Please wait ~40 seconds and try again, or upgrade your API key."
+            )
+        
+        if "quota" in error_lower or "resource_exhausted" in error_lower:
+            print(f"[IMAGEN_EDIT] Quota error detected")
+            raise RuntimeError(
+                "Gemini API quota exceeded. You've reached the free tier limit. "
+                "Please wait a few minutes and try again, or upgrade your API key."
+            )
+        
+        # Only check for content policy if it's NOT a quota error
+        # Be very specific to avoid false positives from API error JSON structure
         is_content_policy = (
-            "content" in error_lower and ("policy" in error_lower or "cannot be generated" in error_lower or "violat" in error_lower) or
-            "cannot be generated" in error_lower or
-            "blocked" in error_lower or
-            "safety" in error_lower or
-            "policy" in error_lower
+            ("content policy" in error_lower) or 
+            ("safety" in error_lower and "blocked" in error_lower) or
+            ("cannot be generated" in error_lower and "quota" not in error_lower and "429" not in error_msg) or
+            ("person" in error_lower and ("depict" in error_lower or "image" in error_lower))
         )
+        
+        print(f"[IMAGEN_EDIT] is_content_policy check: {is_content_policy}")
+        print(f"[IMAGEN_EDIT] Error contains 'content policy': {'content policy' in error_lower}")
+        print(f"[IMAGEN_EDIT] Error contains '429': {'429' in error_msg}")
         
         if is_content_policy:
             print(f"[IMAGEN_EDIT] Content policy detected, getting suggestions for: {prompt[:50]}")
@@ -257,7 +277,7 @@ def generate_imagen_edit(
                 )
             except Exception as suggestion_error:
                 print(f"[IMAGEN_EDIT] Failed to get suggestions: {suggestion_error}")
-                # Fallback with generic suggestions that work for any prompt type
+                # Fallback with generic suggestions
                 fallback = [
                     "artistic stylized interpretation",
                     "digital illustration version",
