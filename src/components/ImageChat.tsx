@@ -791,7 +791,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
       img.src = url;
     });
 
-  const handleRefine = async () => {
+  const handleRefine = useCallback(async () => {
     const trimmed = prompt.trim();
     if (!trimmed) return;
     setRefining(true);
@@ -809,9 +809,9 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
     } finally {
       setRefining(false);
     }
-  };
+  }, [prompt, token]);
 
-  const handleGenerateWithPrompt = async (customPrompt?: string, useImage?: boolean, imageUrl?: string) => {
+  const handleGenerateWithPrompt = useCallback(async (customPrompt?: string, useImage?: boolean, imageUrl?: string) => {
     // Prevent parallel generation requests using synchronous ref (no stale closure issues)
     if (generatingRef.current) {
       console.log('[GENERATE] Already generating, ignoring duplicate request');
@@ -1006,11 +1006,11 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
       stopGeneration();
       generatingRef.current = false; // Release the synchronous lock
     }
-  };
+  }, [prompt, user, devNoAuth, attachedImage, token, selectedModel, ensureSession, setChatSessions, startGeneration, fileToBase64, setAttachedImage, setLoading, setPromptValidation, setThinkingSteps, setShowThinking, setMessagesMap, setCredits, setRecapData, setShowRecapToast, setPrompt, stopGeneration]);
 
-  const handleGenerate = () => {
+  const handleGenerate = useCallback(() => {
     handleGenerateWithPrompt();
-  };
+  }, [handleGenerateWithPrompt]);
 
   const handleSyncCredits = async () => {
     if (!token) return;
