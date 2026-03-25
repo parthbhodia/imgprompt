@@ -68,25 +68,49 @@ _IMG2IMG_SANITIZE_PROMPT = (
 )
 
 
-def refine_prompt(user_text: str, has_reference_image: bool = False) -> str:
+def refine_prompt(
+    user_text: str,
+    has_reference_image: bool = False,
+    similar_prompts: list[str] | None = None,
+) -> str:
     """
     Rewrite a rough user idea into a rich Flux image generation prompt.
     Uses xAI first, Groq fallback. Raises RuntimeError if no LLM configured.
-    
+
     Args:
         user_text: The raw user input
         has_reference_image: If True, skip LLM refinement - imagen_service handles preservation
+        similar_prompts: RAG-retrieved examples of high-quality past prompts injected as
+                         few-shot context to improve output richness and style consistency
     """
     # Skip LLM refinement for img2img - user intent is clear and LLM over-expands it
     # imagen_service.py handles preservation prefix + weak prompt expansion
     if has_reference_image:
         print(f"[REFINE] Skipping LLM refinement for img2img - passing user prompt directly: '{user_text[:50]}...'")
         return user_text
-    
+
     if not settings.xai_api_key and not settings.groq_api_key:
         raise RuntimeError("Prompt refinement is not available (XAI_API_KEY or GROQ_API_KEY not set).")
 
+    # --- LangChain agent (primary path) ---
+    try:
+        from lc_refine import lc_refine_prompt
+        agent_result = lc_refine_prompt(user_text)
+        if agent_result:
+            return agent_result
+    except Exception as e:
+        logger.warning("[REFINE] LangChain agent unavailable, falling back to direct completion: %s", e)
+
+    # --- Direct completion (fallback) ---
     system_prompt = _SYSTEM_PROMPT
+    if similar_prompts:
+        examples = "\n".join(f"{i + 1}. {p}" for i, p in enumerate(similar_prompts[:3]))
+        system_prompt += (
+            f"\n\nReference examples of high-quality refined prompts from past generations:\n"
+            f"{examples}\n"
+            "Use these as richness and specificity benchmarks — match their level of detail."
+        )
+        logger.info("[REFINE] Injecting %d RAG examples into system prompt", len(similar_prompts[:3]))
 
     try:
         refined = chat_completion(

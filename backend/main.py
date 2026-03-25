@@ -32,6 +32,8 @@ from replicate.exceptions import ModelError as ReplicateModelError
 from prompt_suggest import get_suggestions
 from moderation import check_moderation
 from llm_refine import refine_prompt, sanitize_for_replicate, get_chat_insights, analyze_conversation_context
+from rag_store import add_prompt as rag_add_prompt, retrieve_similar as rag_retrieve_similar
+from search_store import index_image as search_index_image, search_images
 from stripe_payments import create_checkout_session, create_portal_session, handle_webhook, PLANS
 from prompt_framework import (
     PromptFramework, build_prompt_from_framework, build_compact_prompt,
@@ -203,6 +205,7 @@ class GenerateRequest(BaseModel):
         default="replicate-flux",
         pattern=r"^(replicate-flux|imagen-3\.0-generate-001|imagen-3\.0-fast-generate-001|imagen-3\.0-ultra-generate-001|gemini-2\.5-flash-image|gemini-2\.0-flash-exp-image-generation)$"
     )
+    variations: bool = False  # When True, generate 4 variations and return all URLs
 
 
 class ModelInfo(BaseModel):
@@ -249,6 +252,7 @@ def list_models():
 
 class GenerateResponse(BaseModel):
     image_url: str
+    image_urls: list[str] = []   # All variation URLs (populated when variations=True)
     message_id: str | None = None
     credits_remaining: int
 
@@ -704,7 +708,8 @@ def refine_prompt_endpoint(
             detail="Prompt refinement is not available (XAI_API_KEY or GROQ_API_KEY not set).",
         )
     try:
-        refined = refine_prompt(body.text, has_reference_image=body.has_reference_image)
+        similar = rag_retrieve_similar(body.text) if not body.has_reference_image else []
+        refined = refine_prompt(body.text, has_reference_image=body.has_reference_image, similar_prompts=similar)
         return RefineResponse(refined=refined)
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e))
@@ -867,10 +872,11 @@ async def generate_image(
                 ),
                 timeout=180,
             )
-        print(f"[_RUN_REPLICATE] text2img mode - calling run_flux")
+        print(f"[_RUN_REPLICATE] text2img mode - calling run_flux (variations={body.variations})")
         sys.stdout.flush()
+        n = 4 if body.variations else 1
         return await asyncio.wait_for(
-            asyncio.get_event_loop().run_in_executor(None, lambda: run_flux(p)),
+            asyncio.get_event_loop().run_in_executor(None, lambda: run_flux(p, num_outputs=n)),
             timeout=180,
         )
     
@@ -1050,9 +1056,26 @@ async def generate_image(
         except Exception as e:
             logger.warning(f"Failed to archive image: {e}")
 
+    # Background: index this prompt so future refinements can use it as a RAG example.
+    # Also index for semantic image search. Skip img2img — not reusable as few-shot examples.
+    if not body.image_base64:
+        try:
+            asyncio.get_event_loop().run_in_executor(
+                None, lambda: rag_add_prompt(body.prompt, safe_prompt)
+            )
+        except Exception:
+            pass
+        try:
+            asyncio.get_event_loop().run_in_executor(
+                None, lambda: search_index_image(user_id, safe_prompt, image_url)
+            )
+        except Exception:
+            pass
+
     credits_remaining = get_credits(supabase, user_id)
     return GenerateResponse(
         image_url=image_url,
+        image_urls=urls,
         message_id=message_id,
         credits_remaining=credits_remaining,
     )
@@ -1215,6 +1238,78 @@ def my_generations(user_id: Annotated[str, Depends(get_current_user_id)]):
             for row in (r.data or [])
         ]
     }
+
+
+class SearchResult(BaseModel):
+    prompt: str
+    image_url: str
+
+
+@app.get("/search", response_model=list[SearchResult])
+def search_my_generations(
+    q: str = Query(..., min_length=1, max_length=500),
+    k: int = Query(default=12, ge=1, le=50),
+    user_id: Annotated[str, Depends(get_current_user_id)] = None,
+):
+    """Semantic search over the current user's generated images using natural language."""
+    results = search_images(user_id, q, k=k)
+    return [SearchResult(prompt=r["prompt"], image_url=r["image_url"]) for r in results]
+
+
+class DailyCount(BaseModel):
+    date: str
+    count: int
+
+
+class AnalyticsResponse(BaseModel):
+    total_generations: int
+    credits_used: int
+    generations_by_day: list[DailyCount]
+    top_prompts: list[str]
+
+
+@app.get("/analytics", response_model=AnalyticsResponse)
+def get_analytics(user_id: Annotated[str, Depends(get_current_user_id)]):
+    """Return generation analytics for the current user."""
+    supabase = get_supabase_admin()
+
+    # Total generations + credits used
+    rows = (
+        supabase.table("image_generations")
+        .select("prompt, credits_used, created_at")
+        .eq("user_id", user_id)
+        .order("created_at", desc=True)
+        .limit(500)
+        .execute()
+    )
+    data = rows.data or []
+
+    total_generations = len(data)
+    credits_used = sum(int(r.get("credits_used") or 0) for r in data)
+
+    # Daily counts — last 30 days
+    from collections import Counter
+    day_counts: Counter = Counter()
+    for r in data:
+        day = (r.get("created_at") or "")[:10]  # "YYYY-MM-DD"
+        if day:
+            day_counts[day] += 1
+
+    # Sort ascending so charts render left→right
+    generations_by_day = [
+        DailyCount(date=d, count=c)
+        for d, c in sorted(day_counts.items())
+    ][-30:]
+
+    # Top 5 prompts by first occurrence (most recent)
+    top_prompts = [r["prompt"] for r in data if r.get("prompt")][:5]
+
+    return AnalyticsResponse(
+        total_generations=total_generations,
+        credits_used=credits_used,
+        generations_by_day=generations_by_day,
+        top_prompts=top_prompts,
+    )
 
 
 class ThinkingRequest(BaseModel):

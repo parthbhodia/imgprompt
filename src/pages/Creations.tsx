@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { getMyGenerations, type GenerationRecord } from "@/lib/api";
+import { getMyGenerations, searchGenerations, type GenerationRecord, type SearchResult } from "@/lib/api";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -11,7 +12,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Sparkles, Download, Share2, Wand2, LogIn, ImageOff, ArrowLeft, Copy, Check, Edit, RefreshCw, Zap } from "lucide-react";
+import { Sparkles, Download, Share2, Wand2, LogIn, ImageOff, ArrowLeft, Copy, Check, Edit, RefreshCw, Zap, Search, X, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -23,9 +24,15 @@ export default function Creations() {
   const [selectedGen, setSelectedGen] = useState<GenerationRecord | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
+  // Semantic search state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<SearchResult[] | null>(null);
+  const [searching, setSearching] = useState(false);
+  const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const token = session?.access_token ?? null;
 
-  // Load generations on mount
+  // Load all generations on mount
   useEffect(() => {
     if (!token) { setLoading(false); return; }
     getMyGenerations(token)
@@ -33,6 +40,28 @@ export default function Creations() {
       .catch(() => toast.error("Could not load your creations."))
       .finally(() => setLoading(false));
   }, [token]);
+
+  // Debounced semantic search
+  useEffect(() => {
+    if (searchDebounce.current) clearTimeout(searchDebounce.current);
+    if (!searchQuery.trim() || !token) {
+      setSearchResults(null);
+      return;
+    }
+    setSearching(true);
+    searchDebounce.current = setTimeout(async () => {
+      try {
+        const results = await searchGenerations(token, searchQuery.trim());
+        setSearchResults(results);
+      } catch {
+        toast.error("Search failed.");
+        setSearchResults([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 400);
+    return () => { if (searchDebounce.current) clearTimeout(searchDebounce.current); };
+  }, [searchQuery, token]);
 
   const handleDownload = (gen: GenerationRecord) => {
     const link = document.createElement("a");
@@ -110,14 +139,49 @@ export default function Creations() {
 
         <div className="container mx-auto px-4 py-10 max-w-7xl">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold flex items-center gap-3">
-              <Wand2 className="w-7 h-7 text-primary" />
-              Your Creations
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Click any image to edit, remix, or use as reference for new variations.
-            </p>
+          <div className="mb-6 space-y-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h1 className="text-3xl font-bold flex items-center gap-3">
+                  <Wand2 className="w-7 h-7 text-primary" />
+                  Your Creations
+                </h1>
+                <p className="text-muted-foreground mt-1">
+                  Click any image to edit, remix, or use as reference.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 shrink-0"
+                onClick={() => navigate("/analytics")}
+              >
+                <TrendingUp className="w-4 h-4" />
+                <span className="hidden sm:inline">Analytics</span>
+              </Button>
+            </div>
+
+            {/* Search bar — only show when signed in and has generations */}
+            {user && !loading && generations.length > 0 && (
+              <div className="relative max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                <Input
+                  placeholder="Search your images semantically…"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 pr-9"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Not signed in */}
@@ -159,8 +223,45 @@ export default function Creations() {
             </div>
           )}
 
-          {/* Creations Grid */}
-          {user && !loading && generations.length > 0 && (
+          {/* Search results */}
+          {user && searchQuery && (
+            <div className="mb-8">
+              {searching && (
+                <p className="text-sm text-muted-foreground mb-4 animate-pulse">Searching…</p>
+              )}
+              {!searching && searchResults !== null && (
+                <>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {searchResults.length} result{searchResults.length !== 1 ? "s" : ""} for "{searchQuery}"
+                  </p>
+                  {searchResults.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
+                      <Search className="w-10 h-10 text-muted-foreground/40" />
+                      <p className="text-muted-foreground text-sm">No images found matching your search.</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {searchResults.map((r, i) => (
+                        <div
+                          key={i}
+                          className="group relative rounded-2xl overflow-hidden cursor-pointer border border-border/40 hover:border-primary/50 transition-all hover:shadow-lg"
+                          onClick={() => setSelectedGen({ id: String(i), session_id: "", content: r.prompt, image_url: r.image_url, created_at: "" })}
+                        >
+                          <img src={r.image_url} alt={r.prompt} className="w-full aspect-square object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-end p-3">
+                            <p className="text-white text-xs line-clamp-3">{r.prompt}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Creations Grid — hidden while searching */}
+          {user && !loading && generations.length > 0 && !searchQuery && (
             <>
               <p className="text-sm text-muted-foreground mb-4">
                 {generations.length} image{generations.length !== 1 ? "s" : ""} generated

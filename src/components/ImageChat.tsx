@@ -16,7 +16,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Sparkles, Send, Coins, Loader2, LogIn, Lightbulb,
   ImagePlus, X, Wand2, Maximize2, Minimize2, Download, Share2, RotateCcw, Shuffle, ChevronDown, ChevronUp,
-  MoreVertical, Copy, RefreshCw, Edit3, Palette, Settings, HelpCircle, History, BookmarkPlus, AlertTriangle, Check, Plus, Menu, Shield
+  MoreVertical, Copy, RefreshCw, Edit3, Palette, Settings, HelpCircle, History, BookmarkPlus, AlertTriangle, Check, Plus, Menu, Shield, Layers
 } from "lucide-react";
 import { toast } from "sonner";
 import heic2any from "heic2any";
@@ -51,6 +51,7 @@ import { PromptFrameworkBuilder } from "./PromptFrameworkBuilder";
 import { PromptGuidePanel } from "./PromptGuidePanel";
 import { PresetTags } from "./PresetTags";
 import { StyleLibrary } from "./StyleLibrary";
+import { VariationGallery } from "./VariationGallery";
 import { CreditDisplay } from "./CreditDisplay";
 import { ModelSelector } from "./ModelSelector";
 import { ChatSidebar } from "./ChatSidebar";
@@ -97,20 +98,23 @@ interface MessageItemProps {
   conversationContext: ConversationContextResponse | null;
   onRemix: (customPrompt?: string, useImage?: boolean, imageUrl?: string) => Promise<void>;
   setItemSize: (index: number, size: number) => void;
+  /** Variation image URLs — present when the message was generated with variations=true */
+  imageUrls?: string[];
 }
 
-const MessageItem = React.memo(({ message, index, isLast, conversationContext, onRemix, setItemSize }: MessageItemProps) => {
+const MessageItem = React.memo(({ message, index, isLast, conversationContext, onRemix, setItemSize, imageUrls }: MessageItemProps) => {
   const ref = useRef<HTMLDivElement>(null);
-  
+
   useEffect(() => {
     if (ref.current) {
       const height = ref.current.getBoundingClientRect().height;
       setItemSize(index, height + 12); // +12 for padding
     }
-  }, [index, setItemSize, message.content, message.image_url]);
-  
+  }, [index, setItemSize, message.content, message.image_url, imageUrls]);
+
   const m = message;
-  
+  const hasVariations = imageUrls && imageUrls.length > 1;
+
   return (
     <div
       ref={ref}
@@ -141,14 +145,25 @@ const MessageItem = React.memo(({ message, index, isLast, conversationContext, o
         <div className="max-w-[90%] space-y-2">
           {m.image_url && (
             <>
-              <a
-                href={m.image_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block rounded-xl overflow-hidden border border-border hover:border-primary/40 transition-colors"
-              >
-                <img src={m.image_url} alt="Generated" className="w-full h-auto object-cover" />
-              </a>
+              {/* Variation gallery (4-image grid) or single image */}
+              {hasVariations ? (
+                <div className="space-y-1.5">
+                  <p className="text-xs text-muted-foreground font-medium">4 variations generated — click to open full size</p>
+                  <VariationGallery
+                    urls={imageUrls!}
+                    onSelect={(url) => window.open(url, "_blank")}
+                  />
+                </div>
+              ) : (
+                <a
+                  href={m.image_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block rounded-xl overflow-hidden border border-border hover:border-primary/40 transition-colors"
+                >
+                  <img src={m.image_url} alt="Generated" className="w-full h-auto object-cover" />
+                </a>
+              )}
               <div className="flex gap-1.5 flex-wrap">
                 <button
                   type="button"
@@ -290,6 +305,10 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showUtilitiesMenu, setShowUtilitiesMenu] = useState(false);
   const [showAdminMenu, setShowAdminMenu] = useState(false);
+  /** When true, generate 4 variations instead of 1 */
+  const [variations, setVariations] = useState(false);
+  /** Map of messageId → array of variation URLs */
+  const [variationsMap, setVariationsMap] = useState<Map<string, string[]>>(new Map());
   const [chatSessions, setChatSessions] = useState<Array<{ id: string; title: string; timestamp: Date; messageCount: number }>>([]);
   const [creditHistory, setCreditHistory] = useState<any[]>([]);
   const [generationSettings, setGenerationSettings] = useState({
@@ -861,10 +880,11 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
         session_id: sid ?? undefined,
         image_base64: imageBase64 ?? undefined,
         model: selectedModel,
+        variations: variations && !imageBase64,  // variations not supported with img2img
       });
       console.log('[FRONTEND] generateImage success:', res);
       setCredits(res.credits_remaining);
-      
+
       // Show recap toast
       setRecapData({
         cost: 1,
@@ -872,10 +892,21 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
         type: "standard",
       });
       setShowRecapToast(true);
-      
+
       // Generate unique temp IDs for optimistic updates to avoid key collisions
       const tempUserId = `temp-user-${Date.now()}`;
       const tempAsstId = `temp-asst-${Date.now()}`;
+      const finalMsgId = res.message_id || tempAsstId;
+
+      // Store variation URLs when multiple were returned
+      if (res.image_urls && res.image_urls.length > 1) {
+        setVariationsMap((prev) => {
+          const next = new Map(prev);
+          next.set(finalMsgId, res.image_urls);
+          return next;
+        });
+      }
+
       setMessagesMap((prev) => {
         const next = new Map(prev);
         next.set(tempUserId, {
@@ -888,7 +919,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
           ...(userMessageAttachedUrl && { attached_image_url: userMessageAttachedUrl }),
         });
         next.set(tempAsstId, {
-          id: res.message_id || tempAsstId,
+          id: finalMsgId,
           session_id: sid,
           role: "assistant",
           content: "",
@@ -1154,16 +1185,29 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                     </div>
                     ) : (
                       <div className="max-w-[90%] space-y-2">
-                        {m.image_url && (
+                        {m.image_url && (() => {
+                          const msgVariations = variationsMap.get(m.id);
+                          const hasVariations = msgVariations && msgVariations.length > 1;
+                          return (
                           <>
-                            <a
-                              href={m.image_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="block rounded-xl overflow-hidden border border-border hover:border-primary/40 transition-colors"
-                            >
-                              <img src={m.image_url} alt="Generated" className="w-full h-auto object-cover" />
-                            </a>
+                            {hasVariations ? (
+                              <div className="space-y-1.5">
+                                <p className="text-xs text-muted-foreground font-medium">4 variations — click to open full size</p>
+                                <VariationGallery
+                                  urls={msgVariations!}
+                                  onSelect={(url) => window.open(url, "_blank")}
+                                />
+                              </div>
+                            ) : (
+                              <a
+                                href={m.image_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block rounded-xl overflow-hidden border border-border hover:border-primary/40 transition-colors"
+                              >
+                                <img src={m.image_url} alt="Generated" className="w-full h-auto object-cover" />
+                              </a>
+                            )}
                             {/* Image utilities */}
                             <div className="flex gap-1.5 flex-wrap">
                               <button
@@ -1211,7 +1255,8 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                               </button>
                             </div>
                           </>
-                        )}
+                          );
+                        })()}
                         {/* Quick action suggestions - context-aware */}
                         {messages.length > 0 && messages.some(msg => msg.role === "user") && (
                           <div className="pt-2 border-t border-border/40 space-y-2">
@@ -1603,6 +1648,18 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                     {refining ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
                     <span className="hidden sm:inline">Refine</span>
                   </Button>
+                  <Button
+                    type="button"
+                    variant={variations ? "default" : "outline"}
+                    size="sm"
+                    className="gap-1 text-xs shrink-0"
+                    onClick={() => setVariations((v) => !v)}
+                    disabled={loading || !!attachedImage}
+                    title={attachedImage ? "Variations not supported with reference images" : variations ? "Variations ON — will generate 4 images" : "Generate 4 variations"}
+                  >
+                    <Layers className="w-3 h-3" />
+                    <span className="hidden sm:inline">Variations</span>
+                  </Button>
                   <ModelSelector
                     token={token}
                     selectedModel={selectedModel}
@@ -1623,7 +1680,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                   <PromptGuidePanel />
                 </div>
               </div>
-            ), [prompt, loading, refining, chatInsights, insightsLoading, token, selectedModel, handleRefine, handleGenerate])}
+            ), [prompt, loading, refining, chatInsights, insightsLoading, token, selectedModel, variations, attachedImage, handleRefine, handleGenerate])}
 
             {/* Preset Tags */}
             {user && (

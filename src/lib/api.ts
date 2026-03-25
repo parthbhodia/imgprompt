@@ -12,10 +12,14 @@ export type GenerateRequest = {
   /** Optional base64 data URL (e.g. data:image/jpeg;base64,...) for reference / img2img */
   image_base64?: string | null;
   model?: string;
+  /** When true, generate 4 variations and return all URLs in image_urls */
+  variations?: boolean;
 };
 
 export type GenerateResponse = {
   image_url: string;
+  /** All variation URLs (populated when variations=true) */
+  image_urls: string[];
   message_id: string | null;
   credits_remaining: number;
 };
@@ -751,4 +755,41 @@ export async function getTrendingElements(): Promise<TrendingElementsResponse> {
     throw new Error(`Failed to fetch trending elements: ${response.statusText}`);
   }
   return response.json();
+}
+
+// ============================================================================
+// SEARCH & ANALYTICS API
+// ============================================================================
+
+export type SearchResult = {
+  prompt: string;
+  image_url: string;
+};
+
+export async function searchGenerations(
+  token: string | null,
+  query: string,
+  k: number = 12
+): Promise<SearchResult[]> {
+  const params = new URLSearchParams({ q: query, k: String(k) });
+  return fetchApi<SearchResult[]>(`/search?${params.toString()}`, {
+    method: "GET",
+    token,
+  });
+}
+
+export type DailyCount = {
+  date: string;
+  count: number;
+};
+
+export type AnalyticsData = {
+  total_generations: number;
+  credits_used: number;
+  generations_by_day: DailyCount[];
+  top_prompts: string[];
+};
+
+export async function getAnalytics(token: string | null): Promise<AnalyticsData> {
+  return fetchApi<AnalyticsData>("/analytics", { method: "GET", token });
 }
