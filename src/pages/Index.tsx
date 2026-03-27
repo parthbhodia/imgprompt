@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sparkles, Zap, Copy, Search, Lightbulb, Star, Palette, MessageCircle, Share2, ChevronLeft, ChevronRight, ExternalLink, ThumbsUp, Heart, TrendingUp, LogIn, LogOut, User, Wand2, Images } from "lucide-react";
+import { SearchModal } from "@/components/SearchModal";
 import { toast } from "sonner";
 import { fetchPrompts, type NormalizedPrompt } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -194,6 +195,7 @@ const Index = () => {
   const [selectedPromptId, setSelectedPromptId] = useState<number | null>(null);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [isSignInDialogOpen, setIsSignInDialogOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const galleryRef = useRef<HTMLDivElement>(null);
   const trendingScrollRef = useRef<HTMLDivElement>(null);
   const likedScrollRef = useRef<HTMLDivElement>(null);
@@ -201,7 +203,7 @@ const Index = () => {
   const hasInitializedRoute = useRef(false);
 
   const navigate = useNavigate();
-  const { user, signInWithGoogle, signOut } = useAuth();
+  const { user, session, signInWithGoogle, signOut } = useAuth();
   const { likeCounts, userLikes, userFavorites, toggleLike, toggleFavorite } = useLikes();
   const selectedPrompt = selectedPromptId && Array.isArray(mergedPrompts) ? mergedPrompts.find((prompt) => prompt.id === selectedPromptId) ?? null : null;
   const selectedSlide = selectedPrompt ? selectedPrompt.slides[currentSlideIndex] : null;
@@ -561,6 +563,11 @@ const Index = () => {
 
   return (
     <>
+    <SearchModal
+      token={session?.access_token ?? null}
+      open={searchOpen}
+      onClose={() => setSearchOpen(false)}
+    />
     <main
       className="min-h-screen bg-background relative overflow-x-hidden"
       role="main"
@@ -583,6 +590,16 @@ const Index = () => {
             <div className="flex items-center gap-2">
               {user && (
                 <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => setSearchOpen(true)}
+                    title="Search your generated images"
+                  >
+                    <Search className="w-4 h-4 text-muted-foreground" />
+                    <span className="hidden sm:inline text-muted-foreground">Search</span>
+                  </Button>
                   <Button
                     variant="ghost"
                     size="sm"
