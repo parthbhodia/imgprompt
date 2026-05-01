@@ -1615,7 +1615,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
             </div>
 
             {/* Quick Actions - Only show when prompt is entered */}
-            {useMemo(() => prompt.trim() && (
+            {prompt.trim() && (
               <div className="space-y-2">
                 {/* AI Insights Badges */}
                 {!insightsLoading && chatInsights && (
@@ -1680,7 +1680,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                   <PromptGuidePanel />
                 </div>
               </div>
-            ), [prompt, loading, refining, chatInsights, insightsLoading, token, selectedModel, variations, attachedImage, handleRefine, handleGenerate])}
+            )}
 
             {/* Preset Tags */}
             {user && (
