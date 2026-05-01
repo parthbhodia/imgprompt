@@ -304,12 +304,14 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
   // Use Map for O(1) deduplication and efficient updates
   const [messagesMap, setMessagesMap] = useState<Map<string, MessageResponse>>(new Map());
   const messages = useMemo(() => {
-    return Array.from(messagesMap.values()).sort((a, b) => 
+    return Array.from(messagesMap.values()).sort((a, b) =>
       new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
     );
   }, [messagesMap]);
+  const visibleMessages = useMemo(() => messages.slice(-visibleCount), [messages, visibleCount]);
   const [hasMoreMessages, setHasMoreMessages] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(3);
   const [suggestions, setSuggestions] = useState<SuggestResponse["suggestions"]>([]);
   const [attachedImage, setAttachedImage] = useState<{ file: File; preview: string } | null>(null);
   const [refining, setRefining] = useState(false);
@@ -693,6 +695,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
           msgsMap.set(key, m);
         });
         setMessagesMap(msgsMap);
+        setVisibleCount(3);
         // If we got 20 messages, there might be more
         setHasMoreMessages(msgs.length === 20);
       })
@@ -930,6 +933,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
         });
       }
 
+      setVisibleCount(v => v + 2);
       setMessagesMap((prev) => {
         const next = new Map(prev);
         next.set(tempUserId, {
@@ -1156,12 +1160,18 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                 )}
 
               {/* View Older Messages Button */}
-              {hasMoreMessages && (
+              {(hasMoreMessages || messages.length > visibleCount) && (
                 <div className="flex justify-center py-2">
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={loadOlderMessages}
+                    onClick={() => {
+                      if (messages.length > visibleCount) {
+                        setVisibleCount(v => v + 10);
+                      } else {
+                        loadOlderMessages();
+                      }
+                    }}
                     disabled={loadingOlder}
                     className="text-xs text-muted-foreground hover:text-primary"
                   >
@@ -1170,13 +1180,13 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                     ) : (
                       <ChevronUp className="w-3 h-3 mr-1" />
                     )}
-                    View older messages
+                    Load earlier messages
                   </Button>
                 </div>
               )}
 
               {/* Messages - chronological (oldest first, newest at bottom like ChatGPT) */}
-              {messages.length > 0 && messages.map((m, index) => (
+              {visibleMessages.length > 0 && visibleMessages.map((m, index) => (
                 <div
                   key={m.id ? `${m.id}-${index}` : `${m.created_at}-${m.role}-${index}`}
                   className={cn("flex gap-2", m.role === "user" ? "justify-end" : "justify-start")}
@@ -1947,11 +1957,13 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                           onClick={(e) => {
                             e.stopPropagation();
                             // Scroll the Radix ScrollArea viewport to the target image
-                            const viewport = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
-                            const target = viewport?.querySelector(`[data-msg-image="${m.id}"]`);
+                            const viewport = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement | null;
+                            const target = document.querySelector(`[data-msg-image="${m.id}"]`) as HTMLElement | null;
                             if (target && viewport) {
-                              const targetTop = (target as HTMLElement).offsetTop - 80;
-                              viewport.scrollTo({ top: targetTop, behavior: "smooth" });
+                              const targetRect = target.getBoundingClientRect();
+                              const viewportRect = viewport.getBoundingClientRect();
+                              const scrollTop = viewport.scrollTop + targetRect.top - viewportRect.top - 80;
+                              viewport.scrollTo({ top: scrollTop, behavior: "smooth" });
                             }
                             // Flash highlight the image
                             const img = document.querySelector(`[data-msg-image="${m.id}"]`);
@@ -2001,6 +2013,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
               onNewChat={() => {
                 setSessionId(null);
                 setMessagesMap(new Map());
+                setVisibleCount(3);
                 setPrompt("");
                 setSidebarOpen(false);
               }}
@@ -2019,6 +2032,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                   if (sessionId === id) {
                     setSessionId(null);
                     setMessagesMap(new Map());
+                    setVisibleCount(3);
                   }
                   toast.success("Chat deleted");
                 } catch (err) {
