@@ -1601,6 +1601,14 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                 <ImagePlus className="w-4 h-4 sm:w-5 sm:h-5" />
               </Button>
 
+              {/* Model Selector - always visible */}
+              <ModelSelector
+                token={token}
+                selectedModel={selectedModel}
+                onSelectModel={(model) => setGenerationSettings(prev => ({ ...prev, model: model as any }))}
+                disabled={loading}
+              />
+
               {/* Send Button */}
               <Button
                 onClick={handleGenerate}
@@ -1660,12 +1668,6 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                     <Layers className="w-3 h-3" />
                     <span className="hidden sm:inline">Variations</span>
                   </Button>
-                  <ModelSelector
-                    token={token}
-                    selectedModel={selectedModel}
-                    onSelectModel={(model) => setGenerationSettings(prev => ({ ...prev, model: model as any }))}
-                    disabled={loading}
-                  />
                   <PromptFrameworkBuilder
                     onPromptGenerated={(builtPrompt) => {
                       setPrompt(builtPrompt);
