@@ -261,6 +261,29 @@ MessageItem.displayName = 'MessageItem';
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const MAX_IMAGE_DIMENSION_PX = 8000;
 
+const DOT_GRID_LABELS = [
+  "Sketching your idea...",
+  "Laying down colors...",
+  "Adding details...",
+  "Refining edges...",
+  "Applying lighting...",
+  "Finishing up...",
+  "Almost there...",
+];
+
+function DotGridLabel() {
+  const [idx, setIdx] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setIdx((i) => (i + 1) % DOT_GRID_LABELS.length), 2200);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <p className="text-xs text-muted-foreground mb-2 font-medium transition-all duration-500">
+      {DOT_GRID_LABELS[idx]}
+    </p>
+  );
+}
+
 interface ImageChatProps {
   inline?: boolean;
   initialPrompt?: string;
@@ -1353,7 +1376,8 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                     
                     {/* Dot grid loader */}
                     <div className="rounded-2xl bg-muted/50 p-4 w-64 h-48 flex flex-col gap-1 justify-center">
-                      <p className="text-xs text-muted-foreground mb-2 font-medium">Creating image</p>
+                      <DotGridLabel />
+
                       {Array.from({ length: 10 }).map((_, row) => (
                         <div key={row} className="flex gap-1">
                           {Array.from({ length: 13 }).map((_, col) => {
