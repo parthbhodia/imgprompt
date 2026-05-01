@@ -137,23 +137,93 @@ def _resolve_plan_from_subscription(subscription_id: str) -> str | None:
     """Look up a subscription and return the plan slug from its metadata."""
     try:
         s = _stripe()
-        sub = s.Subscription.retrieve(subscription_id)
-        # stripe-python v5+ uses attribute access, not dict-style
-        metadata = sub.metadata if hasattr(sub, "metadata") else {}
-        plan = metadata.get("plan") if hasattr(metadata, "get") else getattr(metadata, "plan", None)
+        sub = s.Subscription.retrieve(
+            subscription_id,
+            expand=["items.data.price.product"],
+        )
+        plan = _plan_from_metadata(sub)
         if plan and plan in PLANS:
             return plan
+
         # Fall back to matching by price ID
-        price_id = sub.items.data[0].price.id
-        for slug in PLANS:
-            try:
-                if _price_id(slug) == price_id:
-                    return slug
-            except ValueError:
-                pass
+        price_ids: list[str] = []
+        for item in _subscription_items(sub):
+            price = _get_field(item, "price")
+            plan = _plan_from_price(price)
+            if plan:
+                return plan
+
+            price_id = _get_field(price, "id")
+            if price_id:
+                price_ids.append(price_id)
+                plan = _plan_from_price_id(price_id)
+                if plan:
+                    return plan
+
+        logger.warning(
+            "Could not resolve plan from subscription %s; checked price IDs: %s",
+            subscription_id,
+            price_ids or "none",
+        )
     except Exception as e:
         logger.warning("Could not resolve plan from subscription %s: %s", subscription_id, e)
     return None
+
+
+def _get_field(obj, field: str, default=None):
+    """Read Stripe objects and plain dicts through the same path."""
+    if obj is None:
+        return default
+    if isinstance(obj, dict):
+        return obj.get(field, default)
+    return getattr(obj, field, default)
+
+
+def _plan_from_metadata(obj) -> str | None:
+    metadata = _get_field(obj, "metadata", {}) or {}
+    plan = metadata.get("plan") if hasattr(metadata, "get") else _get_field(metadata, "plan")
+    return plan if plan in PLANS else None
+
+
+def _plan_from_price_id(price_id: str) -> str | None:
+    for slug in PLANS:
+        try:
+            if _price_id(slug) == price_id:
+                return slug
+        except ValueError:
+            continue
+    return None
+
+
+def _plan_from_price(price) -> str | None:
+    plan = _plan_from_metadata(price)
+    if plan:
+        return plan
+
+    lookup_key = _get_field(price, "lookup_key", "") or ""
+    nickname = _get_field(price, "nickname", "") or ""
+    for value in (lookup_key, nickname):
+        normalized = value.lower()
+        for slug in PLANS:
+            if slug in normalized:
+                return slug
+
+    product = _get_field(price, "product")
+    plan = _plan_from_metadata(product)
+    if plan:
+        return plan
+
+    product_name = (_get_field(product, "name", "") or "").lower()
+    for slug in PLANS:
+        if slug in product_name:
+            return slug
+    return None
+
+
+def _subscription_items(subscription) -> list:
+    items = _get_field(subscription, "items")
+    data = _get_field(items, "data", [])
+    return data or []
 
 
 def _user_id_from_customer(stripe_customer_id: str) -> str | None:

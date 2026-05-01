@@ -32,8 +32,6 @@ from replicate.exceptions import ModelError as ReplicateModelError
 from prompt_suggest import get_suggestions
 from moderation import check_moderation
 from llm_refine import refine_prompt, sanitize_for_replicate, get_chat_insights, analyze_conversation_context
-from rag_store import add_prompt as rag_add_prompt, retrieve_similar as rag_retrieve_similar
-from search_store import index_image as search_index_image, search_images
 from stripe_payments import create_checkout_session, create_portal_session, handle_webhook, PLANS
 from prompt_framework import (
     PromptFramework, build_prompt_from_framework, build_compact_prompt,
@@ -709,7 +707,10 @@ def refine_prompt_endpoint(
             detail="Prompt refinement is not available (XAI_API_KEY or GROQ_API_KEY not set).",
         )
     try:
-        similar = rag_retrieve_similar(body.text) if not body.has_reference_image else []
+        similar = []
+        if settings.enable_semantic_features and not body.has_reference_image:
+            from rag_store import retrieve_similar as rag_retrieve_similar
+            similar = rag_retrieve_similar(body.text)
         refined = refine_prompt(body.text, has_reference_image=body.has_reference_image, similar_prompts=similar)
         return RefineResponse(refined=refined)
     except RuntimeError as e:
@@ -1075,16 +1076,17 @@ async def generate_image(
         except Exception as e:
             logger.warning(f"Failed to archive image: {e}")
 
-    # Background: index this prompt so future refinements can use it as a RAG example.
-    # Also index for semantic image search. Skip img2img — not reusable as few-shot examples.
-    if not body.image_base64:
+    # Optional semantic indexing loads a local embedding model, so keep it off on small hosts.
+    if settings.enable_semantic_features and not body.image_base64:
         try:
+            from rag_store import add_prompt as rag_add_prompt
             asyncio.get_event_loop().run_in_executor(
                 None, lambda: rag_add_prompt(body.prompt, safe_prompt)
             )
         except Exception:
             pass
         try:
+            from search_store import index_image as search_index_image
             asyncio.get_event_loop().run_in_executor(
                 None, lambda: search_index_image(user_id, safe_prompt, image_url)
             )
@@ -1270,7 +1272,24 @@ def search_my_generations(
     k: int = Query(default=12, ge=1, le=50),
     user_id: Annotated[str, Depends(get_current_user_id)] = None,
 ):
-    """Semantic search over the current user's generated images using natural language."""
+    """Search the current user's generated images."""
+    if not settings.enable_semantic_features:
+        supabase = get_supabase_admin()
+        rows = (
+            supabase.table("image_generations")
+            .select("prompt, image_url, created_at")
+            .eq("user_id", user_id)
+            .ilike("prompt", f"%{q}%")
+            .order("created_at", desc=True)
+            .limit(k)
+            .execute()
+        )
+        return [
+            SearchResult(prompt=row.get("prompt") or "", image_url=row["image_url"])
+            for row in (rows.data or [])
+        ]
+
+    from search_store import search_images
     results = search_images(user_id, q, k=k)
     return [SearchResult(prompt=r["prompt"], image_url=r["image_url"]) for r in results]
 
@@ -1497,6 +1516,8 @@ def payments_sync_credits(
     except stripe_lib.error.StripeError as e:
         logger.error("Stripe error during sync: %s", e)
         raise HTTPException(status_code=400, detail=f"Stripe error: {str(e)}")
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error("Error syncing credits: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
