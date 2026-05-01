@@ -1351,11 +1351,31 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                       </div>
                     )}
                     
-                    {/* Simple Loading Animation */}
-                    <div className="flex gap-1">
-                      <div className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: '0ms' }} />
-                      <div className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: '150ms' }} />
-                      <div className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: '300ms' }} />
+                    {/* Dot grid loader */}
+                    <div className="rounded-2xl bg-muted/50 p-4 w-64 h-48 flex flex-col gap-1 justify-center">
+                      <p className="text-xs text-muted-foreground mb-2 font-medium">Creating image</p>
+                      {Array.from({ length: 10 }).map((_, row) => (
+                        <div key={row} className="flex gap-1">
+                          {Array.from({ length: 13 }).map((_, col) => {
+                            const delay = ((row * 13 + col) * 40) % 1200;
+                            const opacity = 0.08 + (row / 10) * 0.25;
+                            const size = 2 + (row / 10) * 2;
+                            return (
+                              <div
+                                key={col}
+                                className="rounded-full animate-pulse bg-muted-foreground"
+                                style={{
+                                  width: size,
+                                  height: size,
+                                  opacity,
+                                  animationDelay: `${delay}ms`,
+                                  animationDuration: '1.4s',
+                                }}
+                              />
+                            );
+                          })}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
