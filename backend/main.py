@@ -200,10 +200,7 @@ class GenerateRequest(BaseModel):
     prompt: str = Field(..., min_length=1, max_length=2000)
     session_id: str | None = None
     image_base64: str | None = None
-    model: str = Field(
-        default="replicate-flux",
-        pattern=r"^(replicate-flux|gpt-image-1|imagen-3\.0-generate-001|imagen-3\.0-fast-generate-001|imagen-3\.0-ultra-generate-001|gemini-2\.5-flash-image|gemini-2\.0-flash-exp-image-generation)$"
-    )
+    model: str = Field(default="replicate-flux")
     variations: bool = False  # When True, generate 4 variations and return all URLs
 
 
