@@ -929,11 +929,13 @@ async def generate_image(
                 urls = [result]
             except Exception as openai_error:
                 msg = str(openai_error)
-                logger.error(f"OpenAI failed (no fallback for explicit gpt-image-1): {msg[:200]}")
-                if not use_openai:  # only fallback if not explicitly selected
+                logger.error(f"OpenAI failed: {msg[:200]}")
+                if "safety" in msg.lower() or "rejected" in msg.lower() or "policy" in msg.lower():
+                    raise HTTPException(status_code=400, detail="Your request was blocked by OpenAI's safety filter. Try rephrasing your prompt.")
+                if not use_openai:
                     use_openai_img2img = False
                 else:
-                    raise HTTPException(status_code=502, detail=f"OpenAI error: {msg[:200]}")
+                    raise HTTPException(status_code=502, detail=f"Image generation failed. Please try again.")
 
         if not use_openai and not use_openai_img2img:
             if use_imagen:

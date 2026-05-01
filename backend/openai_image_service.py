@@ -127,16 +127,30 @@ def edit_openai_image(prompt: str, image_base64: str) -> str:
 
     # Step 2: gpt-image-1 edits with the structured prompt
     image_bytes = base64.b64decode(raw_b64)
-    image_file = io.BytesIO(image_bytes)
-    image_file.name = "reference.png"
 
-    response = client.images.edit(
-        model="gpt-image-1",
-        image=image_file,
-        prompt=structured_prompt,
-        n=1,
-        size="1024x1024",
-        quality="high",
-    )
-    b64 = response.data[0].b64_json
-    return f"data:image/png;base64,{b64}"
+    def _do_edit(edit_prompt: str) -> str:
+        image_file = io.BytesIO(image_bytes)
+        image_file.name = "reference.png"
+        resp = client.images.edit(
+            model="gpt-image-1",
+            image=image_file,
+            prompt=edit_prompt,
+            n=1,
+            size="1024x1024",
+            quality="high",
+        )
+        return f"data:image/png;base64,{resp.data[0].b64_json}"
+
+    try:
+        return _do_edit(structured_prompt)
+    except Exception as e:
+        msg = str(e)
+        # Safety rejection — retry with the plain user prompt (no detailed body description)
+        if "400" in msg and ("safety" in msg.lower() or "rejected" in msg.lower() or "policy" in msg.lower()):
+            print(f"[OPENAI] Safety rejection on structured prompt, retrying with simple prompt")
+            safe_fallback = (
+                f"Edit this photo: {prompt}. "
+                f"Keep the person's appearance identical. Photorealistic."
+            )
+            return _do_edit(safe_fallback)
+        raise
