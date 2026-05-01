@@ -47,6 +47,7 @@ from style_library import (
 )
 from thinking import generate_thinking_steps, update_thinking_step
 from imagen_service import generate_imagen, generate_imagen_edit, is_imagen_available, get_imagen_models
+from openai_image_service import edit_openai_image, generate_openai_image, is_openai_available
 
 # Image archival helpers
 def archive_image_to_storage(supabase, user_id: str, image_url: str, message_id: str) -> Optional[str]:
@@ -826,13 +827,13 @@ async def generate_image(
     imagen_model = body.model if use_imagen else None
     logger.info(f"Using model: {imagen_model if use_imagen else 'Replicate Flux'}")
     
-    # When img2img is requested, we prefer Imagen but can fallback to Replicate Flux
-    # Both support img2img - Imagen via gemini-2.5-flash-image, Flux via flux-dev
+    # When img2img is requested, prefer OpenAI > Imagen > Replicate Flux
     use_img2img = bool(body.image_base64)
-    if use_img2img and not use_imagen and not settings.replicate_api_token:
+    use_openai_img2img = use_img2img and is_openai_available()
+    if use_img2img and not use_openai_img2img and not use_imagen and not settings.replicate_api_token:
         raise HTTPException(
             status_code=503,
-            detail="Image-to-image transformation requires either Imagen (GEMINI_API_KEY) or Replicate (REPLICATE_API_TOKEN). Please set one in your backend .env file."
+            detail="Image-to-image transformation requires OPENAI_API_KEY, GEMINI_API_KEY, or REPLICATE_API_TOKEN. Please set one in your backend .env file."
         )
     # Define helper functions outside try block for proper scope
     async def _run_imagen(p: str) -> list[str]:
@@ -892,23 +893,41 @@ async def generate_image(
     fallback_to_flux = False
     
     try:
-        if use_imagen:
-            print(f"[GENERATE_ENDPOINT] Using Imagen, calling _run_imagen...")
+        if use_openai_img2img:
+            print(f"[GENERATE_ENDPOINT] Using OpenAI img2img (gpt-image-1)...")
             sys.stdout.flush()
             try:
-                urls = await _run_imagen(safe_prompt)
-            except Exception as imagen_error:
-                msg = str(imagen_error)
-                if "429" in msg or "RESOURCE_EXHAUSTED" in msg or "quota" in msg.lower():
-                    logger.warning(f"Imagen rate limit hit, falling back to Flux: {msg[:100]}")
-                    fallback_to_flux = True
-                else:
-                    raise
-        
-        if not use_imagen or fallback_to_flux:
-            print(f"[GENERATE_ENDPOINT] Using Flux (fallback={fallback_to_flux}, img2img={bool(body.image_base64)})")
-            sys.stdout.flush()
-            urls = await _run_replicate(safe_prompt)
+                result = await asyncio.wait_for(
+                    asyncio.get_event_loop().run_in_executor(
+                        None,
+                        lambda: edit_openai_image(safe_prompt, body.image_base64),
+                    ),
+                    timeout=120,
+                )
+                urls = [result]
+            except Exception as openai_error:
+                msg = str(openai_error)
+                logger.warning(f"OpenAI img2img failed, falling back: {msg[:100]}")
+                use_openai_img2img = False  # allow fallback below
+
+        if not use_openai_img2img:
+            if use_imagen:
+                print(f"[GENERATE_ENDPOINT] Using Imagen, calling _run_imagen...")
+                sys.stdout.flush()
+                try:
+                    urls = await _run_imagen(safe_prompt)
+                except Exception as imagen_error:
+                    msg = str(imagen_error)
+                    if "429" in msg or "RESOURCE_EXHAUSTED" in msg or "quota" in msg.lower():
+                        logger.warning(f"Imagen rate limit hit, falling back to Flux: {msg[:100]}")
+                        fallback_to_flux = True
+                    else:
+                        raise
+
+            if not use_imagen or fallback_to_flux:
+                print(f"[GENERATE_ENDPOINT] Using Flux (fallback={fallback_to_flux}, img2img={bool(body.image_base64)})")
+                sys.stdout.flush()
+                urls = await _run_replicate(safe_prompt)
             
     except asyncio.TimeoutError:
         logger.error("Image generation timed out")

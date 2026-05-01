@@ -5,6 +5,7 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     supabase_url: str = ""
     supabase_service_role_key: str = ""
+    openai_api_key: str = ""
     replicate_api_token: str = ""
     flux_model: str = "black-forest-labs/flux-schnell"
     groq_api_key: str = ""
