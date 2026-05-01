@@ -6,10 +6,14 @@ from config import settings
 
 # Prepended to every img2img prompt so gpt-image-1 anchors to the uploaded person
 IDENTITY_PRESERVATION_PREFIX = (
-    "This is a photo edit request. The person in the uploaded image is the subject. "
-    "You MUST preserve their exact face, facial features, skin tone, eye color, hair, "
-    "beard, and overall identity — they must be immediately recognizable as the same person. "
-    "Do NOT generate a new or different person. Only apply the following transformation: "
+    "Edit this real photograph. Keep it looking like a real photograph — photorealistic, "
+    "not illustrated, not painted, not AI-generated looking. "
+    "The person's face, skin texture, pores, beard stubble, eye shape, nose, lips, "
+    "skin tone, hair texture, and all facial characteristics must remain IDENTICAL to the uploaded photo. "
+    "Do NOT smooth, idealize, or beautify the face. Do NOT change the person. "
+    "Only modify the background and/or clothing as described. "
+    "The person must look exactly like themselves from the original photo. "
+    "Transformation to apply: "
 )
 
 
