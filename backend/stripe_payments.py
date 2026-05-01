@@ -182,7 +182,7 @@ def _get_field(obj, field: str, default=None):
 def _plan_from_metadata(obj) -> str | None:
     metadata = _get_field(obj, "metadata", {}) or {}
     plan = metadata.get("plan") if hasattr(metadata, "get") else _get_field(metadata, "plan")
-    return plan if plan in PLANS else None
+    return plan if plan and plan in PLANS else None
 
 
 def _plan_from_price_id(price_id: str) -> str | None:
@@ -240,7 +240,8 @@ def _user_id_from_customer(stripe_customer_id: str) -> str | None:
     try:
         s = _stripe()
         customer = s.Customer.retrieve(stripe_customer_id)
-        return customer.get("metadata", {}).get("supabase_user_id")
+        metadata = getattr(customer, "metadata", {}) or {}
+        return metadata.get("supabase_user_id") if hasattr(metadata, "get") else _get_field(metadata, "supabase_user_id")
     except Exception:
         return None
 
