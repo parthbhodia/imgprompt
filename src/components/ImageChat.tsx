@@ -161,7 +161,7 @@ const MessageItem = React.memo(({ message, index, isLast, conversationContext, o
                   rel="noopener noreferrer"
                   className="block rounded-xl overflow-hidden border border-border hover:border-primary/40 transition-colors"
                 >
-                  <img src={m.image_url} alt="Generated" className="w-full h-auto object-cover" />
+                  <img src={m.image_url} alt="Generated" className="w-full h-auto object-cover" data-msg-image={m.id} />
                 </a>
               )}
               <div className="flex gap-1.5 flex-wrap">
@@ -1978,9 +1978,41 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
               </div>
             </div>
 
-            {/* Chat body */}
-            <div className="flex-1 min-h-0 w-full max-w-7xl mx-auto flex flex-col px-4 sm:px-8 py-4">
-              <div 
+            {/* Chat body + history sidebar */}
+            <div className="flex-1 min-h-0 w-full max-w-7xl mx-auto flex gap-3 px-4 sm:px-8 py-4">
+
+              {/* Generated image history — left strip */}
+              {(() => {
+                const imageMessages = messages.filter(m => m.image_url);
+                if (imageMessages.length === 0) return null;
+                return (
+                  <div className="hidden sm:flex flex-col gap-2 w-14 shrink-0 overflow-y-auto py-1 scrollbar-none">
+                    {[...imageMessages].reverse().map((m, i) => {
+                      const total = imageMessages.length;
+                      const opacity = Math.max(0.15, 1 - (i / Math.max(total - 1, 1)) * 0.85);
+                      return (
+                        <button
+                          key={m.id}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // Find the image in the chat and scroll to it
+                            const imgs = document.querySelectorAll('[data-msg-image]');
+                            const target = Array.from(imgs).find(el => el.getAttribute('data-msg-image') === m.id);
+                            target?.scrollIntoView({ behavior: "smooth", block: "center" });
+                          }}
+                          className="shrink-0 w-12 h-12 rounded-lg overflow-hidden border border-border/30 hover:border-primary/50 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-primary/50"
+                          style={{ opacity }}
+                          title={m.content?.slice(0, 60)}
+                        >
+                          <img src={m.image_url!} alt="" className="w-full h-full object-cover" />
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+
+              <div
                 className="flex-1 min-h-0 rounded-2xl border border-border/40 bg-card/50 overflow-hidden flex flex-col shadow-lg"
                 onClick={(e) => e.stopPropagation()}
               >
