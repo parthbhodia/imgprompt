@@ -83,10 +83,26 @@ def refine_prompt(
         similar_prompts: RAG-retrieved examples of high-quality past prompts injected as
                          few-shot context to improve output richness and style consistency
     """
-    # Skip LLM refinement for img2img - user intent is clear and LLM over-expands it
-    # imagen_service.py handles preservation prefix + weak prompt expansion
+    # For img2img use the img2img-specific system prompt instead of skipping
     if has_reference_image:
-        print(f"[REFINE] Skipping LLM refinement for img2img - passing user prompt directly: '{user_text[:50]}...'")
+        print(f"[REFINE] img2img refinement for: '{user_text[:50]}...'")
+        if not settings.xai_api_key and not settings.groq_api_key:
+            return user_text
+        try:
+            result = chat_completion(
+                [
+                    {"role": "system", "content": _IMG2IMG_SYSTEM_PROMPT},
+                    {"role": "user", "content": user_text[:1500]},
+                ],
+                max_tokens=300,
+                temperature=0.4,
+                timeout=10,
+            )
+            if result:
+                print(f"[REFINE] img2img refined: '{result[:80]}...'")
+                return result
+        except Exception as e:
+            logger.warning("[REFINE] img2img refinement failed, returning original: %s", e)
         return user_text
 
     if not settings.xai_api_key and not settings.groq_api_key:
