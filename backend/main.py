@@ -1484,7 +1484,7 @@ def payments_sync_credits(
             "credits": credits,
             "stripe_subscription_id": sub.id,
             "stripe_plan": plan,
-            "stripe_status": sub.get("status", "active"),  # Use Stripe's actual status
+            "stripe_status": getattr(sub, "status", "active"),
         }).eq("id", user_id).execute()
         
         logger.info("Manually synced %d credits for user %s (plan=%s)", credits, user_id, plan)

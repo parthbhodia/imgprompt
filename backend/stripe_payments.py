@@ -138,12 +138,14 @@ def _resolve_plan_from_subscription(subscription_id: str) -> str | None:
     try:
         s = _stripe()
         sub = s.Subscription.retrieve(subscription_id)
-        plan = sub.get("metadata", {}).get("plan")
+        # stripe-python v5+ uses attribute access, not dict-style
+        metadata = sub.metadata if hasattr(sub, "metadata") else {}
+        plan = metadata.get("plan") if hasattr(metadata, "get") else getattr(metadata, "plan", None)
         if plan and plan in PLANS:
             return plan
         # Fall back to matching by price ID
-        price_id = sub["items"]["data"][0]["price"]["id"]
-        for slug, info in PLANS.items():
+        price_id = sub.items.data[0].price.id
+        for slug in PLANS:
             try:
                 if _price_id(slug) == price_id:
                     return slug
