@@ -1946,10 +1946,19 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                           key={m.id}
                           onClick={(e) => {
                             e.stopPropagation();
-                            // Find the image in the chat and scroll to it
-                            const imgs = document.querySelectorAll('[data-msg-image]');
-                            const target = Array.from(imgs).find(el => el.getAttribute('data-msg-image') === m.id);
-                            target?.scrollIntoView({ behavior: "smooth", block: "center" });
+                            // Scroll the Radix ScrollArea viewport to the target image
+                            const viewport = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+                            const target = viewport?.querySelector(`[data-msg-image="${m.id}"]`);
+                            if (target && viewport) {
+                              const targetTop = (target as HTMLElement).offsetTop - 80;
+                              viewport.scrollTo({ top: targetTop, behavior: "smooth" });
+                            }
+                            // Flash highlight the image
+                            const img = document.querySelector(`[data-msg-image="${m.id}"]`);
+                            if (img) {
+                              img.classList.add("ring-2", "ring-primary", "ring-offset-2");
+                              setTimeout(() => img.classList.remove("ring-2", "ring-primary", "ring-offset-2"), 1500);
+                            }
                           }}
                           className="shrink-0 w-12 h-12 rounded-lg overflow-hidden border border-border/30 hover:border-primary/50 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-primary/50"
                           style={{ opacity }}
