@@ -18,6 +18,7 @@ interface ModelSelectorProps {
 }
 
 const modelIcons: Record<string, React.ReactNode> = {
+  "gpt-image-1": <Sparkles className="w-4 h-4 text-emerald-500" />,
   "replicate-flux": <Cpu className="w-4 h-4 text-purple-500" />,
   "imagen-3.0-fast-generate-001": <Zap className="w-4 h-4 text-green-500" />,
   "imagen-3.0-generate-001": <Sparkles className="w-4 h-4 text-blue-500" />,
@@ -28,6 +29,7 @@ const modelIcons: Record<string, React.ReactNode> = {
 };
 
 const modelBadges: Record<string, string> = {
+  "gpt-image-1": "Best for Edits",
   "imagen-3.0-fast-generate-001": "Fastest",
   "imagen-3.0-generate-001": "Balanced",
   "imagen-3.0-ultra-generate-001": "Ultra Quality",

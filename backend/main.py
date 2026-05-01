@@ -228,6 +228,18 @@ def list_models():
         ),
     ]
     
+    # Add OpenAI gpt-image-1
+    if is_openai_available():
+        models.append(
+            ModelInfo(
+                id="gpt-image-1",
+                name="GPT Image 1",
+                provider="OpenAI",
+                description="Best for reference-image editing and transformations",
+                available=True,
+            )
+        )
+
     # Add Imagen models from imagen_service
     imagen_models = get_imagen_models()
     if imagen_models:
@@ -824,13 +836,14 @@ async def generate_image(
             logger.warning(f"[GENERATE_ENDPOINT] Failed to decode image: {e}")
 
     # Determine which model to use
+    use_openai = body.model == "gpt-image-1" and is_openai_available()
     use_imagen = (body.model.startswith("gemini-") or body.model.startswith("imagen-")) and is_imagen_available()
     imagen_model = body.model if use_imagen else None
-    logger.info(f"Using model: {imagen_model if use_imagen else 'Replicate Flux'}")
-    
-    # When img2img is requested, prefer OpenAI > Imagen > Replicate Flux
+    logger.info(f"Using model: {'OpenAI gpt-image-1' if use_openai else imagen_model if use_imagen else 'Replicate Flux'}")
+
+    # When img2img is requested, prefer OpenAI (explicit or auto) > Imagen > Replicate Flux
     use_img2img = bool(body.image_base64)
-    use_openai_img2img = use_img2img and is_openai_available()
+    use_openai_img2img = use_img2img and (use_openai or is_openai_available())
     if use_img2img and not use_openai_img2img and not use_imagen and not settings.replicate_api_token:
         raise HTTPException(
             status_code=503,
@@ -894,24 +907,34 @@ async def generate_image(
     fallback_to_flux = False
     
     try:
-        if use_openai_img2img:
-            print(f"[GENERATE_ENDPOINT] Using OpenAI img2img (gpt-image-1)...")
+        if use_openai or use_openai_img2img:
+            print(f"[GENERATE_ENDPOINT] Using OpenAI gpt-image-1 (img2img={use_img2img})...")
             sys.stdout.flush()
             try:
-                result = await asyncio.wait_for(
-                    asyncio.get_event_loop().run_in_executor(
-                        None,
-                        lambda: edit_openai_image(safe_prompt, body.image_base64),
-                    ),
-                    timeout=120,
-                )
+                if use_img2img:
+                    result = await asyncio.wait_for(
+                        asyncio.get_event_loop().run_in_executor(
+                            None,
+                            lambda: edit_openai_image(safe_prompt, body.image_base64),
+                        ),
+                        timeout=120,
+                    )
+                else:
+                    result = await asyncio.wait_for(
+                        asyncio.get_event_loop().run_in_executor(
+                            None,
+                            lambda: generate_openai_image(safe_prompt),
+                        ),
+                        timeout=120,
+                    )
                 urls = [result]
             except Exception as openai_error:
                 msg = str(openai_error)
-                logger.warning(f"OpenAI img2img failed, falling back: {msg[:100]}")
+                logger.warning(f"OpenAI failed, falling back: {msg[:100]}")
+                use_openai = False
                 use_openai_img2img = False  # allow fallback below
 
-        if not use_openai_img2img:
+        if not use_openai and not use_openai_img2img:
             if use_imagen:
                 print(f"[GENERATE_ENDPOINT] Using Imagen, calling _run_imagen...")
                 sys.stdout.flush()
