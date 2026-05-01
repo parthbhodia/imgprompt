@@ -27,37 +27,40 @@ def _build_structured_prompt(client: OpenAI, image_b64: str, user_intent: str) -
     try:
         system = (
             "You are an expert prompt engineer for photorealistic AI image editing. "
-            "Given a photo and a user's edit request, you output a single structured prompt "
-            "that will produce a highly realistic result while preserving the person's identity. "
-            "Follow the exact output format specified — no extra commentary."
+            "The user's edit request is the PRIMARY directive — it MUST be honored exactly and literally. "
+            "Your job is to describe the person from the photo in detail, then place them in the EXACT scenario the user requested. "
+            "Do NOT reinterpret, generalize, or soften the user's request. "
+            "Follow the exact output format — no extra commentary."
         )
 
-        user_msg = f"""Analyze this photo and the user's edit request, then write a structured image-editing prompt.
+        user_msg = f"""The user wants this specific edit applied to the photo: "{user_intent}"
 
-User's edit request: "{user_intent}"
+CRITICAL: The edit request above must appear LITERALLY in your output. If the user says 'Starbucks', the environment must be Starbucks. If the user says 'beach', it must be a beach. Do not substitute or generalize.
 
-Output format (fill in every field):
+Analyze the photo and write a structured prompt that:
+1. Places this EXACT person (described from the photo) in the EXACT scenario from the edit request
+2. Preserves their face, skin tone, hair, and identity completely
 
-A highly realistic photo of [describe the exact person from the photo — skin tone, face shape, eye color, hair, beard].
+Output format:
 
-Style: [derive from request]
-Clothing: [derive from request, or keep original if not mentioned]
-Environment: [expand the location into rich scene detail — surfaces, props, background activity, atmosphere]
-Lighting: [natural lighting type, time of day, direction, softness]
-Camera: [focal length feel, depth of field, framing]
-Expression: [relaxed/neutral/slight smile — match the original]
+A highly realistic photo of [describe the exact person — skin tone, face shape, eye color, hair, beard/stubble].
+
+Style: photorealistic, candid
+Clothing: [keep original clothing unless user specified different]
+Environment: [MUST match the user's request exactly — "{user_intent}" — expand with specific details: exact location, props, background, atmosphere that fits this scene]
+Lighting: [match the lighting that would naturally occur in the environment from the user's request]
+Camera: 85mm lens, shallow depth of field, candid framing
+Expression: [match the original photo]
 
 Details:
 - natural skin texture and pores, slight asymmetry
 - accurate facial features identical to the uploaded photo
 - realistic proportions and anatomy
-- depth of field, softly blurred background
+- depth of field, background blurred but recognizable as the requested location
 - subtle imperfections: natural lighting falloff, real-world shadows
-- cinematic color balance
 
 Quality:
-- ultra high resolution, sharp focus
-- no blur, no distortion, photorealistic
+- ultra high resolution, sharp focus, photorealistic
 - preserve exact identity of the person in the uploaded photo"""
 
         resp = client.chat.completions.create(
@@ -81,7 +84,7 @@ Quality:
             ],
         )
         structured = resp.choices[0].message.content.strip()
-        print(f"[OPENAI] Structured prompt built ({len(structured)} chars)")
+        print(f"[OPENAI] Structured prompt built ({len(structured)} chars):\n{structured}\n")
         return structured
 
     except Exception as e:
