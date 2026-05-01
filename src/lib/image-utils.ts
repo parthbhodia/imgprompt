@@ -7,7 +7,7 @@
 export const PATCH_SIZE = 16;
 
 /** Max dimension for uploaded images - balances quality with API limits */
-export const MAX_UPLOAD_SIZE = 1024;
+export const MAX_UPLOAD_SIZE = 2048;
 
 interface ImageDimensions {
   width: number;

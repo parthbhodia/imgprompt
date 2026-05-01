@@ -908,28 +908,32 @@ async def generate_image(
             print(f"[GENERATE_ENDPOINT] Using OpenAI gpt-image-1 (img2img={use_img2img})...")
             sys.stdout.flush()
             try:
+                # Use raw prompt for OpenAI — GPT-4o builds its own structured prompt
+                openai_prompt = body.prompt
                 if use_img2img:
                     result = await asyncio.wait_for(
                         asyncio.get_event_loop().run_in_executor(
                             None,
-                            lambda: edit_openai_image(safe_prompt, body.image_base64),
+                            lambda: edit_openai_image(openai_prompt, body.image_base64),
                         ),
-                        timeout=120,
+                        timeout=180,  # GPT-4o vision + gpt-image-1 edit = two calls
                     )
                 else:
                     result = await asyncio.wait_for(
                         asyncio.get_event_loop().run_in_executor(
                             None,
-                            lambda: generate_openai_image(safe_prompt),
+                            lambda: generate_openai_image(openai_prompt),
                         ),
                         timeout=120,
                     )
                 urls = [result]
             except Exception as openai_error:
                 msg = str(openai_error)
-                logger.warning(f"OpenAI failed, falling back: {msg[:100]}")
-                use_openai = False
-                use_openai_img2img = False  # allow fallback below
+                logger.error(f"OpenAI failed (no fallback for explicit gpt-image-1): {msg[:200]}")
+                if not use_openai:  # only fallback if not explicitly selected
+                    use_openai_img2img = False
+                else:
+                    raise HTTPException(status_code=502, detail=f"OpenAI error: {msg[:200]}")
 
         if not use_openai and not use_openai_img2img:
             if use_imagen:
