@@ -1512,81 +1512,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                 )}
               </div>
 
-              {/* Image Upload Button */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={async (e) => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-                  
-                  let processedFile = file;
-                  
-                  // Check if it's a HEIC/HEIF file and convert it
-                  if (isHeicFile(file)) {
-                    try {
-                      toast.loading("Converting iPhone image...", { id: "heic-convert" });
-                      processedFile = await convertHeicToJpeg(file);
-                      toast.success("Image converted!", { id: "heic-convert" });
-                    } catch (err) {
-                      toast.error("Failed to convert iPhone image. Please save as JPEG first.", { id: "heic-convert" });
-                      e.target.value = "";
-                      return;
-                    }
-                  }
-                  
-                  // Check for supported formats (after conversion)
-                  const supportedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
-                  const isSupported = supportedTypes.some(type => 
-                    processedFile.type.toLowerCase().startsWith(type) || 
-                    processedFile.name.toLowerCase().endsWith(type.replace('image/', ''))
-                  );
-                  
-                  if (!isSupported) {
-                    toast.error(`Format not supported: ${processedFile.type || processedFile.name.split('.').pop()?.toUpperCase()}. Please use JPEG, PNG, WebP, or GIF.`);
-                    e.target.value = "";
-                    return;
-                  }
-                  
-                  if (processedFile.size > MAX_IMAGE_BYTES) {
-                    toast.error(`Image must be under ${MAX_IMAGE_BYTES / (1024 * 1024)}MB (got ${(processedFile.size / (1024 * 1024)).toFixed(1)}MB).`);
-                    e.target.value = "";
-                    return;
-                  }
-                  const url = URL.createObjectURL(processedFile);
-                  console.log('[DEBUG] Created blob URL:', url);
-                  const img = new Image();
-                  img.onload = () => {
-                    console.log('[DEBUG] Image loaded successfully:', img.naturalWidth, 'x', img.naturalHeight);
-                    if (img.naturalWidth > MAX_IMAGE_DIMENSION_PX || img.naturalHeight > MAX_IMAGE_DIMENSION_PX) {
-                      URL.revokeObjectURL(url);
-                      toast.error(`Image dimensions must be at most ${MAX_IMAGE_DIMENSION_PX}px on each side (got ${img.naturalWidth}×${img.naturalHeight}).`);
-                      return;
-                    }
-                    console.log('[DEBUG] Setting attachedImage state');
-                    setAttachedImage((prev) => {
-                      if (prev?.preview) URL.revokeObjectURL(prev.preview);
-                      return { file: processedFile, preview: url };
-                    });
-                    // Force immediate validation clear to prevent race condition
-                    requestAnimationFrame(() => {
-                      setPromptValidation({ show: false, message: '', blocksGeneration: false });
-                    });
-                    toast.success("Image attached!");
-                    // Reset file input so same file can be selected again if needed
-                    e.target.value = "";
-                  };
-                  img.onerror = () => { 
-                    console.error('[DEBUG] Failed to load image');
-                    URL.revokeObjectURL(url); 
-                    toast.error("Could not load image. Please try JPEG or PNG format.");
-                    e.target.value = "";
-                  };
-                  img.src = url;
-                }}
-              />
+              {/* Upload button — input is hoisted outside renderChatContent to avoid multiple ref instances */}
               <Button
                 type="button"
                 variant="outline"
@@ -1705,10 +1631,76 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
     </>
   );
 
+  // ── Shared hidden file input — rendered ONCE here, not inside renderChatContent ──
+  const fileInput = (
+    <input
+      ref={fileInputRef}
+      type="file"
+      accept="image/*"
+      className="hidden"
+      onChange={async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        let processedFile = file;
+        if (isHeicFile(file)) {
+          try {
+            toast.loading("Converting iPhone image...", { id: "heic-convert" });
+            processedFile = await convertHeicToJpeg(file);
+            toast.success("Image converted!", { id: "heic-convert" });
+          } catch (err) {
+            toast.error("Failed to convert iPhone image. Please save as JPEG first.", { id: "heic-convert" });
+            e.target.value = "";
+            return;
+          }
+        }
+        const supportedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+        const isSupported = supportedTypes.some(type =>
+          processedFile.type.toLowerCase().startsWith(type) ||
+          processedFile.name.toLowerCase().endsWith(type.replace('image/', ''))
+        );
+        if (!isSupported) {
+          toast.error(`Format not supported: ${processedFile.type || processedFile.name.split('.').pop()?.toUpperCase()}. Please use JPEG, PNG, WebP, or GIF.`);
+          e.target.value = "";
+          return;
+        }
+        if (processedFile.size > MAX_IMAGE_BYTES) {
+          toast.error(`Image must be under ${MAX_IMAGE_BYTES / (1024 * 1024)}MB (got ${(processedFile.size / (1024 * 1024)).toFixed(1)}MB).`);
+          e.target.value = "";
+          return;
+        }
+        const url = URL.createObjectURL(processedFile);
+        const img = new Image();
+        img.onload = () => {
+          if (img.naturalWidth > MAX_IMAGE_DIMENSION_PX || img.naturalHeight > MAX_IMAGE_DIMENSION_PX) {
+            URL.revokeObjectURL(url);
+            toast.error(`Image dimensions must be at most ${MAX_IMAGE_DIMENSION_PX}px on each side (got ${img.naturalWidth}×${img.naturalHeight}).`);
+            return;
+          }
+          setAttachedImage((prev) => {
+            if (prev?.preview) URL.revokeObjectURL(prev.preview);
+            return { file: processedFile, preview: url };
+          });
+          requestAnimationFrame(() => {
+            setPromptValidation({ show: false, message: '', blocksGeneration: false });
+          });
+          toast.success("Image attached!");
+          e.target.value = "";
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(url);
+          toast.error("Could not load image. Please try JPEG or PNG format.");
+          e.target.value = "";
+        };
+        img.src = url;
+      }}
+    />
+  );
+
   // ── Inline mode ──────────────────────────────────────────────────────────
   if (inline) {
     return (
       <>
+        {fileInput}
         {/* Normal inline card */}
         <section
           id="ai-chat"
@@ -2051,6 +2043,8 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
 
   // ── Floating sheet (non-inline) ──────────────────────────────────────────
   return (
+    <>
+    {fileInput}
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button
@@ -2084,5 +2078,6 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
         {renderChatContent()}
       </SheetContent>
     </Sheet>
+    </>
   );
 }
