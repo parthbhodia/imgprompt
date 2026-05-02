@@ -12,6 +12,8 @@ from PIL import Image, ImageDraw, ImageFilter
 from openai import OpenAI
 from config import settings
 
+OPENAI_IMAGE_MODEL = "gpt-image-2"
+
 
 def _client() -> OpenAI:
     return OpenAI(api_key=settings.openai_api_key)
@@ -142,7 +144,7 @@ def generate_openai_image(prompt: str) -> str:
     """Text-to-image via gpt-image-2. Returns base64 data URL."""
     client = _client()
     response = client.images.generate(
-        model="gpt-image-2",
+        model=OPENAI_IMAGE_MODEL,
         prompt=prompt,
         n=1,
         size="1024x1024",
@@ -190,7 +192,7 @@ def edit_openai_image(prompt: str, image_base64: str) -> str:
         image_file.name = "reference.png"
 
         kwargs = dict(
-            model="gpt-image-2",
+            model=OPENAI_IMAGE_MODEL,
             image=image_file,
             prompt=edit_prompt,
             n=1,

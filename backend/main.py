@@ -934,9 +934,25 @@ async def generate_image(
                 logger.error(f"OpenAI failed: {msg[:500]}")
                 if "safety" in msg.lower() or "rejected" in msg.lower() or "policy" in msg.lower():
                     raise HTTPException(status_code=400, detail="Your request was blocked by OpenAI's safety filter. Try rephrasing your prompt.")
-                if "model" in msg.lower() and ("not found" in msg.lower() or "does not exist" in msg.lower() or "invalid" in msg.lower()):
+                if "403" in msg and "verified" in msg.lower():
+                    # org not verified for gpt-image-2, fall back to gpt-image-1
+                    print("[OPENAI] gpt-image-2 requires org verification, falling back to gpt-image-1")
+                    sys.stdout.flush()
+                    try:
+                        import openai_image_service as _ois
+                        _orig = _ois.OPENAI_IMAGE_MODEL
+                        _ois.OPENAI_IMAGE_MODEL = "gpt-image-1"
+                        if use_img2img:
+                            result = edit_openai_image(openai_prompt, body.image_base64)
+                        else:
+                            result = generate_openai_image(openai_prompt)
+                        _ois.OPENAI_IMAGE_MODEL = _orig
+                        urls = [result]
+                    except Exception as fb_err:
+                        raise HTTPException(status_code=403, detail="GPT Image 2 requires OpenAI organization verification. Visit platform.openai.com/settings/organization/general to verify.")
+                elif "model" in msg.lower() and ("not found" in msg.lower() or "does not exist" in msg.lower() or "invalid" in msg.lower()):
                     raise HTTPException(status_code=502, detail=f"GPT Image 2 is not yet available on this API account. Try upgrading your OpenAI usage tier.")
-                if not use_openai:
+                elif not use_openai:
                     use_openai_img2img = False
                 else:
                     raise HTTPException(status_code=502, detail=f"OpenAI error: {msg[:200]}")
