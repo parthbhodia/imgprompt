@@ -303,6 +303,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
   const [sessionId, setSessionId] = useState<string | null>(null);
   // Use Map for O(1) deduplication and efficient updates
   const [messagesMap, setMessagesMap] = useState<Map<string, MessageResponse>>(new Map());
+  const [visibleCount, setVisibleCount] = useState(3);
   const messages = useMemo(() => {
     return Array.from(messagesMap.values()).sort((a, b) =>
       new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
@@ -311,7 +312,6 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
   const visibleMessages = useMemo(() => messages.slice(-visibleCount), [messages, visibleCount]);
   const [hasMoreMessages, setHasMoreMessages] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
-  const [visibleCount, setVisibleCount] = useState(3);
   const [suggestions, setSuggestions] = useState<SuggestResponse["suggestions"]>([]);
   const [attachedImage, setAttachedImage] = useState<{ file: File; preview: string } | null>(null);
   const [refining, setRefining] = useState(false);
