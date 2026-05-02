@@ -969,7 +969,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
       } else if (msg.toLowerCase().includes("timed out") || msg.includes("504")) {
         toast.error("Image generation timed out — Replicate was too slow. Please try again.", { duration: 7000 });
       } else if (msg.includes("502") || msg.toLowerCase().includes("bad gateway")) {
-        toast.error("Image generation failed (Replicate error). Please try again in a moment.", { duration: 7000 });
+        toast.error("Image generation failed. Please try again in a moment.", { duration: 7000 });
       } else if (msg.toLowerCase().includes("content policy") || msg.toLowerCase().includes("cannot be processed")) {
         // Content policy error with copyable suggestions
         const suggestionsMatch = msg.match(/Try these alternatives: (.+)$/);
