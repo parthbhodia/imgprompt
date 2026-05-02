@@ -1,9 +1,9 @@
-"""OpenAI image generation and image-to-image editing via gpt-image-1.
+"""OpenAI image generation and image-to-image editing via gpt-image-2.
 
 Pipeline for img2img:
   1. GPT-4o Vision analyzes the photo — detects face position, describes person
   2. Builds a background-focused scene prompt for the user's requested environment
-  3. gpt-image-1 edits with a face-lock mask: face pixels are kept from original,
+  3. gpt-image-2 edits with a face-lock mask: face pixels are kept from original,
      everything else (background, clothing, lighting) is regenerated
 """
 import base64
@@ -139,10 +139,10 @@ Keep it under 200 words. Output only the prompt."""
 
 
 def generate_openai_image(prompt: str) -> str:
-    """Text-to-image via gpt-image-1. Returns base64 data URL."""
+    """Text-to-image via gpt-image-2. Returns base64 data URL."""
     client = _client()
     response = client.images.generate(
-        model="gpt-image-1",
+        model="gpt-image-2",
         prompt=prompt,
         n=1,
         size="1024x1024",
@@ -154,12 +154,12 @@ def generate_openai_image(prompt: str) -> str:
 
 def edit_openai_image(prompt: str, image_base64: str) -> str:
     """
-    Image-to-image edit via gpt-image-1 with face-lock masking.
+    Image-to-image edit via gpt-image-2 with face-lock masking.
 
     Pipeline:
       1. GPT-4o Vision builds a scene-focused prompt
       2. Pillow generates a face-lock mask (face = opaque/keep, rest = transparent/edit)
-      3. gpt-image-1 edits only the non-face regions
+      3. gpt-image-2 edits only the non-face regions
 
     image_base64: data URL or raw base64 string. Returns base64 data URL.
     """
@@ -190,7 +190,7 @@ def edit_openai_image(prompt: str, image_base64: str) -> str:
         image_file.name = "reference.png"
 
         kwargs = dict(
-            model="gpt-image-1",
+            model="gpt-image-2",
             image=image_file,
             prompt=edit_prompt,
             n=1,

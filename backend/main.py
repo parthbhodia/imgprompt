@@ -225,12 +225,12 @@ def list_models():
         ),
     ]
     
-    # Add OpenAI gpt-image-1
+    # Add OpenAI gpt-image-2
     if is_openai_available():
         models.append(
             ModelInfo(
-                id="gpt-image-1",
-                name="GPT Image 1",
+                id="gpt-image-2",
+                name="GPT Image 2",
                 provider="OpenAI",
                 description="Best for reference-image editing and transformations",
                 available=True,
@@ -833,10 +833,10 @@ async def generate_image(
             logger.warning(f"[GENERATE_ENDPOINT] Failed to decode image: {e}")
 
     # Determine which model to use
-    use_openai = body.model == "gpt-image-1" and is_openai_available()
+    use_openai = body.model == "gpt-image-2" and is_openai_available()
     use_imagen = (body.model.startswith("gemini-") or body.model.startswith("imagen-")) and is_imagen_available()
     imagen_model = body.model if use_imagen else None
-    logger.info(f"Using model: {'OpenAI gpt-image-1' if use_openai else imagen_model if use_imagen else 'Replicate Flux'}")
+    logger.info(f"Using model: {'OpenAI gpt-image-2' if use_openai else imagen_model if use_imagen else 'Replicate Flux'}")
 
     # When img2img is requested, prefer OpenAI (explicit or auto) > Imagen > Replicate Flux
     use_img2img = bool(body.image_base64)
@@ -905,7 +905,7 @@ async def generate_image(
     
     try:
         if use_openai or use_openai_img2img:
-            print(f"[GENERATE_ENDPOINT] Using OpenAI gpt-image-1 (img2img={use_img2img})...")
+            print(f"[GENERATE_ENDPOINT] Using OpenAI gpt-image-2 (img2img={use_img2img})...")
             sys.stdout.flush()
             try:
                 # Use raw prompt for OpenAI — GPT-4o builds its own structured prompt
@@ -916,7 +916,7 @@ async def generate_image(
                             None,
                             lambda: edit_openai_image(openai_prompt, body.image_base64),
                         ),
-                        timeout=180,  # GPT-4o vision + gpt-image-1 edit = two calls
+                        timeout=180,  # GPT-4o vision + gpt-image-2 edit = two calls
                     )
                 else:
                     result = await asyncio.wait_for(
