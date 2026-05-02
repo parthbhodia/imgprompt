@@ -1536,7 +1536,10 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
               <ModelSelector
                 token={token}
                 selectedModel={selectedModel}
-                onSelectModel={(model) => setGenerationSettings(prev => ({ ...prev, model: model as any }))}
+                onSelectModel={(model) => {
+                  setSelectedModel(model);
+                  setGenerationSettings(prev => ({ ...prev, model: model as any }));
+                }}
                 disabled={loading}
               />
 
