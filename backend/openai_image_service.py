@@ -21,30 +21,37 @@ def is_openai_available() -> bool:
     return bool(getattr(settings, "openai_api_key", ""))
 
 
-def _create_face_lock_mask(image_bytes: bytes) -> bytes:
+def _create_face_lock_mask(image_bytes: bytes) -> tuple[bytes, bool]:
     """
-    Create a mask PNG where the face region is opaque (keep) and everything
-    else is transparent (edit). For OpenAI images.edit(): transparent = edit.
+    Create a face-lock mask and return (mask_bytes, is_closeup).
 
-    Uses a heuristic ellipse centered on the upper-center of the image,
-    which covers the face in typical portrait/selfie photos.
+    is_closeup=True means the face fills most of the frame — caller should
+    skip the mask and rely on prompting instead (no room for background).
+
+    Mask: opaque = keep (face), transparent = edit (background).
+    For OpenAI images.edit(): transparent pixels are the regions to edit.
     """
     img = Image.open(io.BytesIO(image_bytes)).convert("RGBA")
     w, h = img.size
 
-    # Start fully transparent = everything editable
-    mask = Image.new("L", (w, h), 0)
-    draw = ImageDraw.Draw(mask)
-
-    # Face center: ~28% from top, horizontally centered
+    # Face ellipse heuristic for standard portrait photos
     cx = w // 2
     cy = int(h * 0.28)
-    rx = int(w * 0.20)   # ~40% of image width
-    ry = int(h * 0.20)   # ~40% of image height
+    rx = int(w * 0.20)
+    ry = int(h * 0.20)
 
+    face_area = 3.14159 * rx * ry
+    image_area = w * h
+    face_fraction = face_area / image_area
+
+    # If face covers >35% of frame it's a close-up — mask won't help
+    if face_fraction > 0.35:
+        print(f"[OPENAI] Close-up detected (face={face_fraction:.0%} of frame), skipping mask")
+        return b"", True
+
+    mask = Image.new("L", (w, h), 0)
+    draw = ImageDraw.Draw(mask)
     draw.ellipse([cx - rx, cy - ry, cx + rx, cy + ry], fill=255)
-
-    # Soft feathered edges for natural blending
     mask = mask.filter(ImageFilter.GaussianBlur(radius=int(min(w, h) * 0.05)))
 
     rgba = Image.new("RGBA", (w, h), (0, 0, 0, 0))
@@ -53,10 +60,10 @@ def _create_face_lock_mask(image_bytes: bytes) -> bytes:
     buf = io.BytesIO()
     rgba.save(buf, format="PNG")
     buf.seek(0)
-    return buf.getvalue()
+    return buf.getvalue(), False
 
 
-def _build_scene_prompt(client: OpenAI, image_b64: str, user_intent: str) -> str:
+def _build_scene_prompt(client: OpenAI, image_b64: str, user_intent: str, is_closeup: bool = False) -> str:
     """
     Use GPT-4o Vision to:
     1. Briefly describe the person (for continuity cues in the unmasked area)
@@ -75,8 +82,15 @@ def _build_scene_prompt(client: OpenAI, image_b64: str, user_intent: str) -> str
             "No extra commentary — output only the prompt."
         )
 
-        user_msg = f"""User's edit request: "{user_intent}"
+        closeup_instruction = (
+            "\nIMPORTANT: The source photo is an extreme close-up. "
+            "The output MUST be a wider shot (waist-up or half-body) so the background scene is clearly visible. "
+            "Explicitly include 'wider shot showing [scene] in background' in the prompt.\n"
+            if is_closeup else ""
+        )
 
+        user_msg = f"""User's edit request: "{user_intent}"
+{closeup_instruction}
 CRITICAL: Honor the request EXACTLY. If the user says 'Starbucks', the scene must be inside a Starbucks. If they say 'beach at sunset', it must be a beach at sunset. Do not generalize or substitute.
 
 Analyze the photo, then write a prompt using this format:
@@ -84,8 +98,9 @@ Analyze the photo, then write a prompt using this format:
 [Brief person description: skin tone, hair, clothing visible in photo] — placed in [EXACT scene from user's request].
 
 Scene: [Rich, specific description of the EXACT location from the user's request — furniture, signage, props, colors, atmosphere]
+{"Framing: wider shot, waist-up or half-body, clearly showing the background scene" if is_closeup else "Framing: natural candid framing"}
 Lighting: [Natural lighting for this specific environment and time of day]
-Camera: 85mm lens, f/1.8, shallow depth of field, candid shot
+Camera: 85mm lens, f/1.8, shallow depth of field
 Style: photorealistic, high resolution, natural photography
 
 Keep it under 200 words. Output only the prompt."""
@@ -157,17 +172,18 @@ def edit_openai_image(prompt: str, image_base64: str) -> str:
 
     image_bytes = base64.b64decode(raw_b64)
 
-    # Step 1: build scene prompt
-    scene_prompt = _build_scene_prompt(client, raw_b64, prompt)
-
-    # Step 2: create face-lock mask
+    # Step 1: create face-lock mask (also detects if close-up)
     try:
-        mask_bytes = _create_face_lock_mask(image_bytes)
-        use_mask = True
-        print(f"[OPENAI] Face-lock mask created, size={len(mask_bytes)} bytes")
+        mask_bytes, is_closeup = _create_face_lock_mask(image_bytes)
+        use_mask = not is_closeup and len(mask_bytes) > 0
+        if use_mask:
+            print(f"[OPENAI] Face-lock mask created, size={len(mask_bytes)} bytes")
     except Exception as e:
         print(f"[OPENAI] Mask creation failed, editing without mask: {e}")
-        use_mask = False
+        mask_bytes, is_closeup, use_mask = b"", False, False
+
+    # Step 2: build scene prompt (close-up flag adjusts framing instructions)
+    scene_prompt = _build_scene_prompt(client, raw_b64, prompt, is_closeup=is_closeup)
 
     def _do_edit(edit_prompt: str, with_mask: bool = True) -> str:
         image_file = io.BytesIO(image_bytes)
