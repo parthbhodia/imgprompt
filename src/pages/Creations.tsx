@@ -72,7 +72,7 @@ export default function Creations() {
 
   const handleShare = async (gen: GenerationRecord) => {
     if (navigator.share) {
-      await navigator.share({ title: "VibeIMG", text: gen.content, url: gen.image_url }).catch(() => {});
+      await navigator.share({ title: "ImgPrompt", text: gen.content, url: gen.image_url }).catch(() => {});
     } else {
       navigator.clipboard.writeText(gen.image_url);
       toast.success("Image link copied!");
@@ -128,7 +128,7 @@ export default function Creations() {
           <div className="container mx-auto px-4 h-14 flex items-center justify-between">
             <Link to="/" className="flex items-center gap-2 font-bold text-lg">
               <Sparkles className="w-5 h-5 text-primary" />
-              VibeIMG
+              ImgPrompt
             </Link>
             <Button variant="ghost" size="sm" className="gap-2" onClick={() => navigate(-1)}>
               <ArrowLeft className="w-4 h-4" />

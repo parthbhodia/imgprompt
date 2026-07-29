@@ -1,9 +1,9 @@
 """Stripe subscription payment integration.
 
-Subscription plans → monthly credit top-ups:
-  starter  — $1.99/mo →  20 credits
-  popular  — $4.99/mo →  60 credits
-  pro      — $9.99/mo → 150 credits
+Subscription plans → library unlock + monthly transform credits:
+  starter  — $2.99/mo →  10 credits
+  popular  — $5.99/mo →  25 credits
+  pro      — $9.99/mo →  40 credits
 """
 import logging
 import stripe

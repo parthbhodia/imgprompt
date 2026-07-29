@@ -35,13 +35,22 @@ interface Platform {
   id: number;
   name: string;
 }
+interface PackOption {
+  id: number;
+  name: string;
+  slug: string;
+}
 interface SlideForm {
   id?: number;
   prompt_text: string;
+  prompt_preview?: string;
   image_url: string;
+  before_image_url?: string;
   sort_order: number;
   _file?: File;
   _preview?: string;
+  _beforeFile?: File;
+  _beforePreview?: string;
 }
 
 const slugify = (val: string) =>
@@ -51,6 +60,12 @@ const slugify = (val: string) =>
     .replace(/[^a-z0-9\s-]/g, "")
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-");
+
+const makePreview = (text: string) => {
+  const trimmed = text.trim();
+  if (trimmed.length <= 120) return trimmed;
+  return `${trimmed.slice(0, 117)}...`;
+};
 
 const AdminPromptForm = () => {
   const { id } = useParams();
@@ -64,28 +79,34 @@ const AdminPromptForm = () => {
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
   const [featured, setFeatured] = useState(false);
+  const [isPremium, setIsPremium] = useState(true);
   const [categoryId, setCategoryId] = useState<string>("");
   const [selectedPlatforms, setSelectedPlatforms] = useState<number[]>([]);
+  const [selectedPacks, setSelectedPacks] = useState<number[]>([]);
   const [slides, setSlides] = useState<SlideForm[]>([
-    { prompt_text: "", image_url: "", sort_order: 0 },
+    { prompt_text: "", prompt_preview: "", image_url: "", before_image_url: "", sort_order: 0 },
   ]);
 
   // Options
   const [categories, setCategories] = useState<Category[]>([]);
   const [platforms, setPlatforms] = useState<Platform[]>([]);
+  const [packs, setPacks] = useState<PackOption[]>([]);
 
   const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const beforeFileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const autoSlug = useRef(true);
 
-  // Load categories + platforms
+  // Load categories + platforms + packs
   useEffect(() => {
     const load = async () => {
-      const [catRes, platRes] = await Promise.all([
+      const [catRes, platRes, packRes] = await Promise.all([
         supabase.from("categories").select("id, name").order("name"),
         supabase.from("platforms").select("id, name").order("name"),
+        supabase.from("packs").select("id, name, slug").order("sort_order"),
       ]);
       setCategories((catRes.data ?? []) as Category[]);
       setPlatforms((platRes.data ?? []) as Platform[]);
+      setPacks((packRes.data ?? []) as PackOption[]);
     };
     load();
   }, []);
@@ -97,7 +118,7 @@ const AdminPromptForm = () => {
       const { data, error } = await supabase
         .from("prompts")
         .select(
-          `*, slides(*), prompt_platforms(platform_id)`
+          `*, slides(*), prompt_platforms(platform_id), prompt_packs(pack_id)`
         )
         .eq("id", Number(id))
         .single();
@@ -109,10 +130,16 @@ const AdminPromptForm = () => {
       setTitle(data.title);
       setSlug(data.slug);
       setFeatured(data.featured);
+      setIsPremium(data.is_premium !== false);
       setCategoryId(data.category_id ? String(data.category_id) : "");
       setSelectedPlatforms(
         (data.prompt_platforms as { platform_id: number }[]).map(
           (pp) => pp.platform_id
+        )
+      );
+      setSelectedPacks(
+        ((data.prompt_packs as { pack_id: number }[]) || []).map(
+          (pp) => pp.pack_id
         )
       );
       const sorted = [...(data.slides as SlideForm[])].sort(
@@ -121,7 +148,7 @@ const AdminPromptForm = () => {
       setSlides(
         sorted.length > 0
           ? sorted
-          : [{ prompt_text: "", image_url: "", sort_order: 0 }]
+          : [{ prompt_text: "", prompt_preview: "", image_url: "", before_image_url: "", sort_order: 0 }]
       );
       autoSlug.current = false;
       setLoading(false);
@@ -144,11 +171,19 @@ const AdminPromptForm = () => {
     );
   };
 
+  const togglePack = (packId: number) => {
+    setSelectedPacks((prev) =>
+      prev.includes(packId)
+        ? prev.filter((p) => p !== packId)
+        : [...prev, packId]
+    );
+  };
+
   // Slide operations
   const addSlide = () => {
     setSlides((prev) => [
       ...prev,
-      { prompt_text: "", image_url: "", sort_order: prev.length },
+      { prompt_text: "", prompt_preview: "", image_url: "", before_image_url: "", sort_order: prev.length },
     ]);
   };
 
@@ -185,6 +220,13 @@ const AdminPromptForm = () => {
             _preview: URL.createObjectURL(value),
           };
         }
+        if (field === "_beforeFile" && value instanceof File) {
+          return {
+            ...s,
+            _beforeFile: value,
+            _beforePreview: URL.createObjectURL(value),
+          };
+        }
         return { ...s, [field]: value };
       })
     );
@@ -207,18 +249,35 @@ const AdminPromptForm = () => {
 
     setSaving(true);
     try {
-      // Upload any new slide images
+      // Upload any new slide images (after + before)
       const uploadedSlides = await Promise.all(
         slides.map(async (slide, idx) => {
+          let next = { ...slide };
           if (slide._file) {
             const ext = slide._file.name.split(".").pop() ?? "jpg";
             const path = `prompts/${slug}/${Date.now()}-${idx}.${ext}`;
             const publicUrl = await uploadImage(slide._file, path);
-            return { ...slide, image_url: publicUrl };
+            next = { ...next, image_url: publicUrl };
           }
-          return slide;
+          if (slide._beforeFile) {
+            const ext = slide._beforeFile.name.split(".").pop() ?? "jpg";
+            const path = `prompts/${slug}/before-${Date.now()}-${idx}.${ext}`;
+            const publicUrl = await uploadImage(slide._beforeFile, path);
+            next = { ...next, before_image_url: publicUrl };
+          }
+          return next;
         })
       );
+
+      const slidePayload = (promptId: number) =>
+        uploadedSlides.map((s, i) => ({
+          prompt_id: promptId,
+          prompt_text: s.prompt_text,
+          prompt_preview: s.prompt_preview || makePreview(s.prompt_text),
+          image_url: s.image_url,
+          before_image_url: s.before_image_url || "",
+          sort_order: i,
+        }));
 
       if (isEdit && id) {
         // Update prompt
@@ -228,6 +287,7 @@ const AdminPromptForm = () => {
             title,
             slug,
             featured,
+            is_premium: isPremium,
             category_id: Number(categoryId),
             updated_at: new Date().toISOString(),
           })
@@ -248,17 +308,20 @@ const AdminPromptForm = () => {
           );
         }
 
+        await supabase.from("prompt_packs").delete().eq("prompt_id", Number(id));
+        if (selectedPacks.length > 0) {
+          await supabase.from("prompt_packs").insert(
+            selectedPacks.map((packId) => ({
+              prompt_id: Number(id),
+              pack_id: packId,
+            }))
+          );
+        }
+
         // Replace slides: delete old, insert new
         await supabase.from("slides").delete().eq("prompt_id", Number(id));
         if (uploadedSlides.length > 0) {
-          await supabase.from("slides").insert(
-            uploadedSlides.map((s, i) => ({
-              prompt_id: Number(id),
-              prompt_text: s.prompt_text,
-              image_url: s.image_url,
-              sort_order: i,
-            }))
-          );
+          await supabase.from("slides").insert(slidePayload(Number(id)));
         }
 
         toast.success("Prompt updated!");
@@ -270,6 +333,7 @@ const AdminPromptForm = () => {
             title,
             slug,
             featured,
+            is_premium: isPremium,
             category_id: Number(categoryId),
           })
           .select("id")
@@ -288,16 +352,18 @@ const AdminPromptForm = () => {
           );
         }
 
-        // Insert slides
-        if (uploadedSlides.length > 0) {
-          await supabase.from("slides").insert(
-            uploadedSlides.map((s, i) => ({
+        if (selectedPacks.length > 0) {
+          await supabase.from("prompt_packs").insert(
+            selectedPacks.map((packId) => ({
               prompt_id: promptId,
-              prompt_text: s.prompt_text,
-              image_url: s.image_url,
-              sort_order: i,
+              pack_id: packId,
             }))
           );
+        }
+
+        // Insert slides
+        if (uploadedSlides.length > 0) {
+          await supabase.from("slides").insert(slidePayload(promptId));
         }
 
         toast.success("Prompt created!");
@@ -381,21 +447,28 @@ const AdminPromptForm = () => {
             </SelectContent>
           </Select>
         </div>
-        <div className="flex items-center gap-3 p-3 rounded-lg border border-border/50 bg-muted/20">
-          <Switch
-            id="featured"
-            checked={featured}
-            onCheckedChange={setFeatured}
-          />
-          <Label htmlFor="featured" className="flex items-center gap-2 cursor-pointer">
-            <Star className={`w-4 h-4 ${featured ? 'text-amber-500 fill-amber-500' : 'text-muted-foreground'}`} />
-            Featured prompt
-          </Label>
-          {featured && (
-            <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-full">
-              Will appear in featured section
-            </span>
-          )}
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-3 p-3 rounded-lg border border-border/50 bg-muted/20">
+            <Switch
+              id="featured"
+              checked={featured}
+              onCheckedChange={setFeatured}
+            />
+            <Label htmlFor="featured" className="flex items-center gap-2 cursor-pointer">
+              <Star className={`w-4 h-4 ${featured ? 'text-amber-500 fill-amber-500' : 'text-muted-foreground'}`} />
+              Featured look
+            </Label>
+          </div>
+          <div className="flex items-center gap-3 p-3 rounded-lg border border-border/50 bg-muted/20">
+            <Switch
+              id="premium"
+              checked={isPremium}
+              onCheckedChange={setIsPremium}
+            />
+            <Label htmlFor="premium" className="cursor-pointer">
+              Premium (full prompt locked until subscribe)
+            </Label>
+          </div>
         </div>
       </div>
 
@@ -417,6 +490,27 @@ const AdminPromptForm = () => {
           ))}
         </div>
       </div>
+
+      {/* Packs */}
+      {packs.length > 0 && (
+        <div className="space-y-3">
+          <Label>Look packs</Label>
+          <div className="flex flex-wrap gap-4">
+            {packs.map((p) => (
+              <label
+                key={p.id}
+                className="flex items-center gap-2 cursor-pointer"
+              >
+                <Checkbox
+                  checked={selectedPacks.includes(p.id)}
+                  onCheckedChange={() => togglePack(p.id)}
+                />
+                <span className="text-sm">{p.name}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Slides */}
       <div className="space-y-4">
@@ -469,14 +563,14 @@ const AdminPromptForm = () => {
               </div>
             </div>
 
-            {/* Image upload */}
+            {/* After image upload */}
             <div className="space-y-2">
-              <Label>Image</Label>
+              <Label>After image (result)</Label>
               <div className="flex items-start gap-4">
                 {(slide._preview || slide.image_url) && (
                   <img
                     src={slide._preview || slide.image_url}
-                    alt={`Slide ${idx + 1}`}
+                    alt={`Slide ${idx + 1} after`}
                     className="w-24 h-24 rounded-lg object-cover border"
                   />
                 )}
@@ -501,11 +595,8 @@ const AdminPromptForm = () => {
                     onClick={() => fileInputRefs.current[idx]?.click()}
                   >
                     <Upload className="w-4 h-4" />
-                    Upload image
+                    Upload after image
                   </Button>
-                  <p className="text-xs text-muted-foreground">
-                    Or paste a URL below:
-                  </p>
                   <Input
                     value={slide.image_url}
                     onChange={(e) =>
@@ -517,16 +608,71 @@ const AdminPromptForm = () => {
               </div>
             </div>
 
+            {/* Before image upload */}
+            <div className="space-y-2">
+              <Label>Before image (optional)</Label>
+              <div className="flex items-start gap-4">
+                {(slide._beforePreview || slide.before_image_url) && (
+                  <img
+                    src={slide._beforePreview || slide.before_image_url}
+                    alt={`Slide ${idx + 1} before`}
+                    className="w-24 h-24 rounded-lg object-cover border"
+                  />
+                )}
+                <div className="flex-1 space-y-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    ref={(el) => {
+                      beforeFileInputRefs.current[idx] = el;
+                    }}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) updateSlide(idx, "_beforeFile", file);
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => beforeFileInputRefs.current[idx]?.click()}
+                  >
+                    <Upload className="w-4 h-4" />
+                    Upload before image
+                  </Button>
+                  <Input
+                    value={slide.before_image_url || ""}
+                    onChange={(e) =>
+                      updateSlide(idx, "before_image_url", e.target.value)
+                    }
+                    placeholder="https://..."
+                  />
+                </div>
+              </div>
+            </div>
+
             {/* Prompt text */}
             <div className="space-y-2">
-              <Label>Prompt text</Label>
+              <Label>Full prompt text</Label>
               <textarea
                 className="w-full min-h-[120px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 value={slide.prompt_text}
                 onChange={(e) =>
                   updateSlide(idx, "prompt_text", e.target.value)
                 }
-                placeholder="Enter the AI prompt text for this slide..."
+                placeholder="Transform the uploaded photo into..."
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Free teaser preview</Label>
+              <Input
+                value={slide.prompt_preview || ""}
+                onChange={(e) =>
+                  updateSlide(idx, "prompt_preview", e.target.value)
+                }
+                placeholder="Shown to free users (auto-filled from prompt if empty)"
               />
             </div>
           </Card>

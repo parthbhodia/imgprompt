@@ -7,6 +7,7 @@ interface CreditsContextType {
   credits: number;
   plan: string | null;
   status: string | null;
+  libraryUnlocked: boolean;
   loading: boolean;
   syncCredits: () => Promise<void>;
   refreshCredits: () => Promise<void>;
@@ -31,6 +32,7 @@ export const CreditsProvider = ({ children }: CreditsProviderProps) => {
   const [credits, setCredits] = useState<number>(0);
   const [plan, setPlan] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
+  const [libraryUnlocked, setLibraryUnlocked] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [lastUpdated, setLastUpdated] = useState<number | null>(null);
 
@@ -46,6 +48,7 @@ export const CreditsProvider = ({ children }: CreditsProviderProps) => {
       setCredits(data.credits);
       setPlan(data.plan);
       setStatus(data.status);
+      setLibraryUnlocked(Boolean(data.library_unlocked));
       setLastUpdated(Date.now());
     } catch (error) {
       console.error('Failed to refresh credits:', error);
@@ -73,6 +76,9 @@ export const CreditsProvider = ({ children }: CreditsProviderProps) => {
             setCredits(result.credits);
             setPlan(result.plan);
             setStatus(result.status);
+            // Re-check entitlement after Stripe sync
+            const sub = await getSubscriptionStatus(token);
+            setLibraryUnlocked(Boolean(sub.library_unlocked));
             setLastUpdated(Date.now());
             console.log(`✅ Sync successful: ${result.credits} credits for ${result.plan} plan`);
             return; // Return void instead of the result
@@ -105,6 +111,7 @@ export const CreditsProvider = ({ children }: CreditsProviderProps) => {
       setCredits(0);
       setPlan(null);
       setStatus(null);
+      setLibraryUnlocked(false);
       setLoading(false);
       return;
     }
@@ -152,6 +159,7 @@ export const CreditsProvider = ({ children }: CreditsProviderProps) => {
     credits,
     plan,
     status,
+    libraryUnlocked,
     loading,
     syncCredits,
     refreshCredits,

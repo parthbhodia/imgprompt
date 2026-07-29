@@ -53,7 +53,7 @@ export function ChatSidebar({
         {/* Header */}
         <div className="p-4 border-b border-border space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">VibeIMG</h2>
+            <h2 className="text-lg font-semibold">ImgPrompt</h2>
             </div>
 
           {/* Credits Display */}
@@ -240,7 +240,7 @@ export function ChatSidebar({
 
         {/* Footer */}
         <div className="p-4 border-t border-border text-xs text-muted-foreground text-center">
-          <p>VibeIMG © 2026</p>
+          <p>ImgPrompt © 2026</p>
         </div>
     </div>
   );

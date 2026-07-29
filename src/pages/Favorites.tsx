@@ -27,7 +27,8 @@ type PromptWithAssets = {
   category: string;
   platforms: string[];
   slug: string;
-  slides: { image: string; prompt: string }[];
+  unlocked: boolean;
+  slides: { image: string; beforeImage?: string; prompt: string; preview?: string }[];
   featured?: boolean;
 };
 
@@ -39,10 +40,13 @@ const normalizePrompts = (data?: NormalizedPrompt[]): PromptWithAssets[] => {
     category: item.category || "Uncategorized",
     platforms: item.platforms?.length ? item.platforms : ["Custom"],
     slug: item.slug || `prompt-${item.id}`,
+    unlocked: item.unlocked,
     slides:
       item.slides?.map((slide) => ({
         image: slide.image || "",
+        beforeImage: slide.beforeImage || "",
         prompt: slide.prompt,
+        preview: slide.preview,
       })) ?? [],
     featured: item.featured,
   }));
@@ -221,7 +225,9 @@ const Favorites = () => {
                     category={prompt.category}
                     title={prompt.title}
                     platforms={prompt.platforms}
+                    unlocked={prompt.unlocked}
                     onOpen={() => openPrompt(prompt.id)}
+                    onGenerateWithAI={() => navigate("/")}
                     likeCount={likeCounts[prompt.id] ?? 0}
                     isLiked={userLikes.has(prompt.id)}
                     isFavorited={userFavorites.has(prompt.id)}

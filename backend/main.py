@@ -33,6 +33,7 @@ from prompt_suggest import get_suggestions
 from moderation import check_moderation
 from llm_refine import refine_prompt, sanitize_for_replicate, get_chat_insights, analyze_conversation_context
 from stripe_payments import create_checkout_session, create_portal_session, handle_webhook, PLANS
+from library_access import has_library_access, get_slide_prompt_text, get_full_library_prompts
 from prompt_framework import (
     PromptFramework, build_prompt_from_framework, build_compact_prompt,
     get_quick_fixes_for_issue, build_negative_constraints_from_categories,
@@ -197,11 +198,14 @@ def unhandled_exception_handler(request: Request, exc: Exception):
 
 # ---------- Request/Response models ----------
 class GenerateRequest(BaseModel):
-    prompt: str = Field(..., min_length=1, max_length=2000)
+    prompt: str = Field(default="", max_length=2000)
     session_id: str | None = None
     image_base64: str | None = None
     model: str = Field(default="replicate-flux")
     variations: bool = False  # When True, generate 4 variations and return all URLs
+    # When set, server loads full library prompt_text (keeps copy gated for free users)
+    library_prompt_id: int | None = None
+    library_slide_index: int = 0
 
 
 class ModelInfo(BaseModel):
@@ -378,10 +382,32 @@ class SubscriptionStatusResponse(BaseModel):
     plan: str | None
     status: str | None
     credits: int
+    library_unlocked: bool = False
 
 
-class SessionCreate(BaseModel):
-    title: str = "New chat"
+class LibraryPromptSlide(BaseModel):
+    prompt: str
+    preview: str
+    image: str
+    before_image: str = ""
+    sort_order: int = 0
+
+
+class LibraryPromptItem(BaseModel):
+    id: int
+    title: str
+    slug: str
+    featured: bool = False
+    is_premium: bool = True
+    category: str = "Uncategorized"
+    platforms: list[str] = []
+    packs: list[str] = []
+    slides: list[LibraryPromptSlide] = []
+
+
+class LibraryUnlockResponse(BaseModel):
+    unlocked: bool
+    prompts: list[LibraryPromptItem] = []
 
 
 class SessionResponse(BaseModel):
@@ -521,24 +547,58 @@ class PlanInfo(BaseModel):
     label: str
     price: str
     credits: int
+    features: list[str] = []
 
 
 class PlansResponse(BaseModel):
     plans: list[PlanInfo]
 
 
+PLAN_FEATURES: dict[str, list[str]] = {
+    "starter": [
+        "Unlock full photo-transform prompts",
+        "Copy for ChatGPT, Midjourney & more",
+        "{credits} in-app transforms / month",
+        "Image-to-image editing",
+        "AI prompt refinement",
+    ],
+    "popular": [
+        "Unlock full photo-transform prompts",
+        "All curated look packs",
+        "Copy for ChatGPT, Midjourney & more",
+        "{credits} in-app transforms / month",
+        "Image-to-image editing",
+        "Priority support",
+    ],
+    "pro": [
+        "Unlock full photo-transform prompts",
+        "All curated look packs",
+        "Copy for ChatGPT, Midjourney & more",
+        "{credits} in-app transforms / month",
+        "Image-to-image editing",
+        "Priority support",
+        "Early access to new looks",
+    ],
+}
+
+
 @app.get("/pricing/plans", response_model=PlansResponse)
 def get_plans():
     """Get all available subscription plans. Public endpoint."""
-    plans = [
-        PlanInfo(
-            slug=slug,
-            label=info["label"],
-            price=info["price"],
-            credits=info["credits"],
+    plans = []
+    for slug, info in PLANS.items():
+        credits = info["credits"]
+        raw_features = PLAN_FEATURES.get(slug, [])
+        features = [f.replace("{credits}", str(credits)) for f in raw_features]
+        plans.append(
+            PlanInfo(
+                slug=slug,
+                label=info["label"],
+                price=info["price"],
+                credits=credits,
+                features=features,
+            )
         )
-        for slug, info in PLANS.items()
-    ]
     return PlansResponse(plans=plans)
 
 
@@ -799,6 +859,13 @@ async def generate_image(
         )
 
     prompt = body.prompt.strip()
+    if body.library_prompt_id is not None:
+        library_text = get_slide_prompt_text(
+            body.library_prompt_id, body.library_slide_index or 0
+        )
+        if not library_text:
+            raise HTTPException(status_code=404, detail="Library look not found")
+        prompt = library_text.strip()
     if not prompt:
         raise HTTPException(status_code=400, detail="Prompt is required")
 
@@ -1447,13 +1514,68 @@ def get_subscription_status(user_id: Annotated[str, Depends(get_current_user_id)
         .execute()
     )
     if not row.data:
-        return SubscriptionStatusResponse(plan=None, status=None, credits=0)
+        return SubscriptionStatusResponse(
+            plan=None, status=None, credits=0, library_unlocked=False
+        )
     data = row.data[0]
+    plan = data.get("stripe_plan")
+    status_val = data.get("stripe_status")
+    unlocked = has_library_access(user_id)
     return SubscriptionStatusResponse(
-        plan=data.get("stripe_plan"),
-        status=data.get("stripe_status"),
+        plan=plan,
+        status=status_val,
         credits=int(data.get("credits") or 0),
+        library_unlocked=unlocked,
     )
+
+
+@app.get("/prompts/library", response_model=LibraryUnlockResponse)
+def get_unlocked_library(user_id: Annotated[str, Depends(get_current_user_id)]):
+    """Return full prompt texts when the user has an active subscription."""
+    if not has_library_access(user_id):
+        return LibraryUnlockResponse(unlocked=False, prompts=[])
+
+    raw = get_full_library_prompts()
+    prompts: list[LibraryPromptItem] = []
+    for row in raw:
+        category = row.get("category") or {}
+        slides_raw = sorted(
+            row.get("slides") or [],
+            key=lambda s: s.get("sort_order") or 0,
+        )
+        platforms = [
+            (pp.get("platform") or {}).get("name")
+            for pp in (row.get("prompt_platforms") or [])
+            if (pp.get("platform") or {}).get("name")
+        ]
+        packs = [
+            (pp.get("pack") or {}).get("slug")
+            for pp in (row.get("prompt_packs") or [])
+            if (pp.get("pack") or {}).get("slug")
+        ]
+        prompts.append(
+            LibraryPromptItem(
+                id=row["id"],
+                title=row.get("title") or "",
+                slug=row.get("slug") or "",
+                featured=bool(row.get("featured")),
+                is_premium=bool(row.get("is_premium", True)),
+                category=category.get("name") if isinstance(category, dict) else "Uncategorized",
+                platforms=platforms,
+                packs=packs,
+                slides=[
+                    LibraryPromptSlide(
+                        prompt=s.get("prompt_text") or "",
+                        preview=s.get("prompt_preview") or "",
+                        image=s.get("image_url") or "",
+                        before_image=s.get("before_image_url") or "",
+                        sort_order=int(s.get("sort_order") or 0),
+                    )
+                    for s in slides_raw
+                ],
+            )
+        )
+    return LibraryUnlockResponse(unlocked=True, prompts=prompts)
 
 
 @app.post("/payments/create-checkout", response_model=CheckoutResponse)

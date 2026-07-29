@@ -10,11 +10,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Sparkles, Zap, Copy, Search, Lightbulb, Star, Palette, MessageCircle, Share2, ChevronLeft, ChevronRight, ExternalLink, ThumbsUp, Heart, TrendingUp, LogIn, LogOut, User, Wand2, Images } from "lucide-react";
+import { Sparkles, Zap, Copy, Search, Lightbulb, Star, Palette, MessageCircle, Share2, ChevronLeft, ChevronRight, ExternalLink, ThumbsUp, Heart, TrendingUp, LogIn, LogOut, User, Wand2, Images, Lock, Upload } from "lucide-react";
 import { SearchModal } from "@/components/SearchModal";
 import { toast } from "sonner";
-import { fetchPrompts, type NormalizedPrompt } from "@/lib/supabase";
+import { fetchPrompts, mergeUnlockedPrompts, type NormalizedPrompt, type PackRow } from "@/lib/supabase";
+import { getUnlockedLibrary } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCredits } from "@/contexts/CreditsContext";
 import { useLikes } from "@/hooks/use-likes";
 import { cn } from "@/lib/utils";
 
@@ -23,10 +25,15 @@ type PromptWithAssets = {
   title: string;
   category: string;
   platforms: string[];
+  packs: string[];
   slug: string;
+  unlocked: boolean;
+  isPremium: boolean;
   slides: {
     image: string;
+    beforeImage: string;
     prompt: string;
+    preview: string;
   }[];
   featured?: boolean;
 };
@@ -38,10 +45,15 @@ const normalizeStrapiPrompts = (data?: NormalizedPrompt[]): PromptWithAssets[] =
     title: item.title,
     category: item.category || "Uncategorized",
     platforms: item.platforms?.length ? item.platforms : ["Custom"],
+    packs: item.packs ?? [],
     slug: item.slug || `prompt-${item.id}`,
+    unlocked: item.unlocked,
+    isPremium: item.isPremium,
     slides: item.slides?.map((slide) => ({
       image: slide.image || "",
+      beforeImage: slide.beforeImage || "",
       prompt: slide.prompt,
+      preview: slide.preview || "",
     })) ?? [],
     featured: item.featured,
   }));
@@ -69,29 +81,29 @@ const platformUrls: Record<string, string> = {
 
 const faqItems = [
   {
-    question: "What makes VibeIMG different from other AI prompt libraries?",
-    answer: "VibeIMG pairs every prompt with finished visuals, detailed guidance, and platform tags so you know exactly how to recreate the look across Midjourney, DALL·E 3, Stable Diffusion, and more.",
+    question: "What makes ImgPrompt different?",
+    answer: "ImgPrompt is built for photo transforms — every look is designed to run on your uploaded photo, with proof images so you know the result before you copy the prompt or try it in-app.",
   },
   {
     question: "Can I use these prompts for commercial projects?",
-    answer: "Yes—each prompt is written to be production-ready. We recommend customizing names, colors, and brand cues before publishing to ensure unique final images.",
+    answer: "Yes—each transform prompt is written to be production-ready. Customize colors and brand cues before publishing so finals stay unique to you.",
   },
   {
-    question: "How often is the VibeIMG library updated?",
-    answer: "We add fresh prompt packs weekly, focusing on trending aesthetics like cyberpunk portraits, anime splash art, luxury products, and cinematic landscapes.",
+    question: "How does unlocking work?",
+    answer: "Browse looks for free. Subscribe to unlock full prompt text you can copy into ChatGPT, Midjourney, and more. Paid plans also include monthly in-app transform credits.",
   },
   {
     question: "Do I need advanced AI knowledge to start?",
-    answer: "Not at all. Each prompt includes plain-language steps that cover composition, lighting, camera choices, and color grading so beginners can follow along confidently.",
+    answer: "No. Upload your photo, pick a look, and either try it in ImgPrompt or unlock the full prompt to paste into your favorite image tool.",
   },
 ];
 
 const websiteSchema = {
   "@context": "https://schema.org",
   "@type": "WebSite",
-  name: "VibeIMG",
+  name: "ImgPrompt",
   url: "https://vibeimg.xyz",
-  description: "VibeIMG is a curated AI prompt library that showcases premium Midjourney, DALL·E, and Stable Diffusion prompts with visuals and creator tips.",
+  description: "ImgPrompt is a curated photo-transformation prompt library — upload your photo, pick a proven look, unlock the full prompt.",
   potentialAction: {
     "@type": "SearchAction",
     target: "https://vibeimg.xyz/?q={search_term_string}",
@@ -112,9 +124,9 @@ const faqSchema = {
   })),
 };
 
-const DEFAULT_DOCUMENT_TITLE = "ImgPrompt — Curated AI Prompt Library & Inspiration";
+const DEFAULT_DOCUMENT_TITLE = "ImgPrompt — Photo Transform Prompts for Your Images";
 const DEFAULT_META_DESCRIPTION =
-  "ImgPrompt is a curated library of high-performing AI prompts with visuals, tips, and platform guidance so you can create stunning images faster.";
+  "Upload your photo. Get a proven AI look. ImgPrompt unlocks photo-transform prompts for ChatGPT, Midjourney, and in-app transforms on vibeimg.xyz.";
 
 const getInitialRouteState = (promptList: PromptWithAssets[]) => {
   if (typeof window === "undefined") {
@@ -177,7 +189,9 @@ const Index = () => {
   });
 
   const remotePrompts = normalizeStrapiPrompts(supabaseData?.prompts);
-  const mergedPrompts = remotePrompts;
+  const packs: PackRow[] = supabaseData?.packs ?? [];
+  const [unlockedPrompts, setUnlockedPrompts] = useState<PromptWithAssets[] | null>(null);
+  const mergedPrompts = unlockedPrompts ?? remotePrompts;
   const categories = buildCategories(mergedPrompts);
   const defaultCategory = categories[0] ?? "All";
   
@@ -185,18 +199,23 @@ const Index = () => {
   const categoryFromUrl = searchParams.get('category');
   const initialCategory = categoryFromUrl ? findCategoryFromSlug(categoryFromUrl, categories) : defaultCategory;
   const [activeCategory, setActiveCategory] = useState(initialCategory);
+  const [activePack, setActivePack] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [visibleCount, setVisibleCount] = useState(6);
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiImageUrl, setAiImageUrl] = useState<string | undefined>(undefined);
+  const [aiLibraryPromptId, setAiLibraryPromptId] = useState<number | null>(null);
+  const [aiLibrarySlideIndex, setAiLibrarySlideIndex] = useState(0);
   const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false);
   const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
   const [isPromptDialogOpen, setIsPromptDialogOpen] = useState(false);
   const [selectedPromptId, setSelectedPromptId] = useState<number | null>(null);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+  const [modalShowBefore, setModalShowBefore] = useState(false);
   const [isSignInDialogOpen, setIsSignInDialogOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const galleryRef = useRef<HTMLDivElement>(null);
+  const chatRef = useRef<HTMLDivElement>(null);
   const trendingScrollRef = useRef<HTMLDivElement>(null);
   const likedScrollRef = useRef<HTMLDivElement>(null);
   const adsenseScriptRef = useRef<HTMLScriptElement | null>(null);
@@ -204,9 +223,35 @@ const Index = () => {
 
   const navigate = useNavigate();
   const { user, session, signInWithGoogle, signOut } = useAuth();
+  const { libraryUnlocked } = useCredits();
   const { likeCounts, userLikes, userFavorites, toggleLike, toggleFavorite } = useLikes();
   const selectedPrompt = selectedPromptId && Array.isArray(mergedPrompts) ? mergedPrompts.find((prompt) => prompt.id === selectedPromptId) ?? null : null;
   const selectedSlide = selectedPrompt ? selectedPrompt.slides[currentSlideIndex] : null;
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadUnlocked = async () => {
+      if (!libraryUnlocked || !session?.access_token || !remotePrompts.length) {
+        setUnlockedPrompts(null);
+        return;
+      }
+      try {
+        const res = await getUnlockedLibrary(session.access_token);
+        if (cancelled || !res.unlocked) {
+          setUnlockedPrompts(null);
+          return;
+        }
+        const merged = mergeUnlockedPrompts(supabaseData?.prompts ?? [], res.prompts);
+        setUnlockedPrompts(normalizeStrapiPrompts(merged));
+      } catch (err) {
+        console.warn("Failed to load unlocked library", err);
+      }
+    };
+    loadUnlocked();
+    return () => {
+      cancelled = true;
+    };
+  }, [libraryUnlocked, session?.access_token, remotePrompts.length, supabaseData?.prompts]);
 
   useEffect(() => {
     if (!categories.includes(activeCategory)) {
@@ -344,6 +389,7 @@ const Index = () => {
     setIsPromptDialogOpen(false);
     setSelectedPromptId(null);
     setCurrentSlideIndex(0);
+    setModalShowBefore(false);
   };
 
   const copyTextToClipboard = async (text: string, successMessage = "Copied to clipboard!") => {
@@ -417,7 +463,9 @@ const Index = () => {
   };
 
   const handlePlatformLaunch = async (platform: string) => {
-    if (!selectedSlide) {
+    if (!selectedSlide || !selectedPrompt?.unlocked) {
+      toast.message("Unlock ImgPrompt to copy full prompts");
+      navigate("/pricing");
       return;
     }
     const copyPromise = copyTextToClipboard(
@@ -435,11 +483,17 @@ const Index = () => {
     if (!selectedSlide) {
       return;
     }
+    if (!selectedPrompt?.unlocked) {
+      toast.message("Unlock ImgPrompt to copy the full transform prompt");
+      navigate("/pricing");
+      return;
+    }
     await copyTextToClipboard(selectedSlide.prompt, "Prompt copied!");
   };
 
   const goToSlide = (direction: "prev" | "next") => {
     if (!selectedPrompt) return;
+    setModalShowBefore(false);
     setCurrentSlideIndex((prev) => {
       if (direction === "prev") {
         return (prev - 1 + selectedPrompt.slides.length) % selectedPrompt.slides.length;
@@ -494,6 +548,19 @@ const Index = () => {
     galleryRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
+  const scrollToChat = () => {
+    document.getElementById("ai-chat")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const startTryOnLook = (promptId: number, slideIndex: number, imageUrl: string, promptText: string) => {
+    setAiLibraryPromptId(promptId);
+    setAiLibrarySlideIndex(slideIndex);
+    setAiImageUrl(imageUrl);
+    setAiPrompt(promptText || "Transform my uploaded photo with this look");
+    closePromptModal();
+    setTimeout(scrollToChat, 80);
+  };
+
   const scrollToPromptCard = (promptId: number) => {
     const element = document.getElementById(`prompt-${promptId}`);
     element?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -509,12 +576,15 @@ const Index = () => {
 
   const filteredPrompts = mergedPrompts.filter((prompt) => {
     const matchesCategory = activeCategory === "All" || prompt.category === activeCategory;
-    const lowerQuery = searchQuery.toLowerCase();
+    const matchesPack =
+      activePack === "all" || (prompt.packs || []).includes(activePack);
     const matchesSearch =
-      searchQuery === "" ||
-      prompt.title.toLowerCase().includes(lowerQuery) ||
-      prompt.slides.some((slide) => slide.prompt.toLowerCase().includes(lowerQuery));
-    return matchesCategory && matchesSearch;
+      !searchQuery ||
+      prompt.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      prompt.slides.some((s) =>
+        (s.preview || s.prompt || "").toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    return matchesCategory && matchesPack && matchesSearch;
   });
   const hasPromptContent = filteredPrompts.length > 0;
   const visiblePrompts = filteredPrompts.slice(0, visibleCount);
@@ -522,7 +592,7 @@ const Index = () => {
 
   useEffect(() => {
     setVisibleCount(6);
-  }, [activeCategory, searchQuery]);
+  }, [activeCategory, activePack, searchQuery]);
 
   useEffect(() => {
     if (typeof document === "undefined") {
@@ -571,7 +641,7 @@ const Index = () => {
     <main
       className="min-h-screen bg-background relative overflow-x-hidden"
       role="main"
-      aria-label="AI prompt inspiration library"
+      aria-label="ImgPrompt photo transform library"
     >
       {/* Animated background gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/10 animate-gradient" />
@@ -584,7 +654,7 @@ const Index = () => {
           <div className="container mx-auto px-4 h-14 flex items-center justify-between">
             <Link to="/" className="flex items-center gap-2 font-bold text-lg">
               <Sparkles className="w-5 h-5 text-primary" />
-              VibeIMG
+              ImgPrompt
             </Link>
 
             <div className="flex items-center gap-2">
@@ -661,45 +731,51 @@ const Index = () => {
         </nav>
 
         {/* Hero Section */}
-        <header className="container mx-auto px-4 py-16 md:py-24">
+        <header className="container mx-auto px-4 py-12 md:py-20">
           <div className="text-center space-y-6 animate-fade-in">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass mb-4">
               <Sparkles className="w-4 h-4 text-primary" />
-              <span className="text-sm font-medium">AI Prompt Library</span>
+              <span className="text-sm font-medium">Photo transform prompts</span>
             </div>
             
             <h1 className="text-5xl md:text-7xl font-bold leading-tight">
-              Discover Amazing
-              <span className="text-gradient block mt-2">AI Prompts</span>
+              Your photo.
+              <span className="text-gradient block mt-2">A proven look.</span>
             </h1>
             
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              See exactly how stunning AI images were created. Click any card to reveal the magic prompt behind it. Copy, learn, and create your own masterpieces!
+              ImgPrompt is built for creators who want a transform that works on their image — not a generic Midjourney dump. Upload, pick a look, unlock the full prompt.
             </p>
 
             <div className="flex flex-wrap gap-4 justify-center pt-4">
-              <Button onClick={scrollToGallery} className="gradient-primary neon-glow font-semibold px-8">
-                <Zap className="w-5 h-5 mr-2" />
-                Explore Prompts
+              <Button onClick={scrollToChat} className="gradient-primary neon-glow font-semibold px-8">
+                <Upload className="w-5 h-5 mr-2" />
+                Upload your photo
               </Button>
-              <Button onClick={() => setIsHelpDialogOpen(true)} variant="outline" className="glass font-semibold px-8">
-                <Copy className="w-5 h-5 mr-2" />
-                Learn More
+              <Button onClick={scrollToGallery} variant="outline" className="glass font-semibold px-8">
+                <Zap className="w-5 h-5 mr-2" />
+                Browse looks
               </Button>
             </div>
           </div>
         </header>
 
-        {/* AI Image Chat – visible on first visit */}
-        <ImageChat
-          inline
-          initialPrompt={aiPrompt}
-          initialImageUrl={aiImageUrl}
-          onPromptConsumed={() => {
-            setAiPrompt("");
-            setAiImageUrl(undefined);
-          }}
-        />
+        {/* Transform studio */}
+        <div ref={chatRef}>
+          <ImageChat
+            inline
+            initialPrompt={aiPrompt}
+            initialImageUrl={aiImageUrl}
+            initialLibraryPromptId={aiLibraryPromptId}
+            initialLibrarySlideIndex={aiLibrarySlideIndex}
+            onPromptConsumed={() => {
+              setAiPrompt("");
+              setAiImageUrl(undefined);
+              setAiLibraryPromptId(null);
+              setAiLibrarySlideIndex(0);
+            }}
+          />
+        </div>
 
         {/* Social media drops - Trending prompt highlights (Hidden) */}
 
@@ -710,16 +786,16 @@ const Index = () => {
               {/* Left Column - Text Content */}
               <div className="lg:col-span-1 space-y-4">
                 <div>
-                  <p className="text-sm uppercase tracking-widest text-primary font-semibold mb-2">Portrait Editing</p>
+                  <p className="text-sm uppercase tracking-widest text-primary font-semibold mb-2">Portrait Looks</p>
                   <h2 className="text-3xl md:text-4xl font-bold leading-tight">
-                    Portrait Edits & Styles
+                    Portrait transforms for your photo
                   </h2>
                 </div>
                 <p className="text-base text-muted-foreground leading-relaxed">
-                  Transform your portraits with our curated collection of portrait editing LoRA models and custom styles. Each model is carefully selected to help you enhance, stylize, and transform your portrait images with artistic flair.
+                  LinkedIn headshots, neon cyberpunk, creative resume portraits — each look is written to preserve your face and transform the rest.
                 </p>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Simply select a portrait editing style, add it to your prompt, and let the AI enhance your images with professional-quality transformations. Mix and match styles to create unique artistic variations.
+                  Pick a look, upload your photo, and try it in ImgPrompt — or unlock the full prompt to paste into ChatGPT or Midjourney.
                 </p>
                 <div className="pt-4">
                   <a href="/?category=portrait-editing">
@@ -911,7 +987,7 @@ const Index = () => {
                 </div>
                 <Input
                   type="text"
-                  placeholder="Search prompts by title or description..."
+                  placeholder="Search looks by title or description..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="flex-1 h-12 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-base placeholder:text-muted-foreground/60"
@@ -930,8 +1006,29 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Category Filter */}
-        <section className="container mx-auto px-4 py-8">
+        {/* Pack + Category Filter */}
+        <section className="container mx-auto px-4 py-8 space-y-4">
+          {packs.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                variant={activePack === "all" ? "default" : "outline"}
+                onClick={() => setActivePack("all")}
+              >
+                All packs
+              </Button>
+              {packs.map((pack) => (
+                <Button
+                  key={pack.id}
+                  size="sm"
+                  variant={activePack === pack.slug ? "default" : "outline"}
+                  onClick={() => setActivePack(pack.slug)}
+                >
+                  {pack.name}
+                </Button>
+              ))}
+            </div>
+          )}
           <CategoryFilter
             categories={categories}
             activeCategory={activeCategory}
@@ -963,16 +1060,9 @@ const Index = () => {
                   title={prompt.title}
                   platforms={prompt.platforms}
                   onOpen={() => openPromptModal(prompt.id)}
-                  onGenerateWithAI={(promptText, imageUrl) => {
-                    console.log("Generate with AI clicked:", { promptText: promptText?.slice(0, 50), imageUrl: imageUrl?.slice(0, 50) });
-                    try {
-                      // Set both prompt and image via React state
-                      setAiPrompt(promptText);
-                      setAiImageUrl(imageUrl);
-                      console.log("State updated successfully");
-                    } catch (err) {
-                      console.error("Error in onGenerateWithAI:", err);
-                    }
+                  unlocked={prompt.unlocked}
+                  onGenerateWithAI={(promptText, imageUrl, slideIndex) => {
+                    startTryOnLook(prompt.id, slideIndex, imageUrl, promptText);
                   }}
                   likeCount={likeCounts[prompt.id] ?? 0}
                   isLiked={userLikes.has(prompt.id)}
@@ -1024,7 +1114,7 @@ const Index = () => {
           <div className="space-y-6">
             <div className="text-center space-y-3">
               <p className="text-sm uppercase tracking-widest text-primary font-semibold">FAQ</p>
-              <h2 className="text-3xl font-bold">Answers to popular VibeIMG questions</h2>
+              <h2 className="text-3xl font-bold">Answers to popular ImgPrompt questions</h2>
               <p className="text-muted-foreground max-w-3xl mx-auto">
                 These search-optimized answers help new creators—and search engines—understand how to get the most out of the vibeimg.xyz prompt library.
               </p>
@@ -1188,10 +1278,23 @@ const Index = () => {
             <div className="grid gap-6 md:grid-cols-2">
               <div className="relative rounded-2xl overflow-hidden border border-border/60 max-h-[360px] md:max-h-full">
                 <img
-                  src={selectedSlide.image}
+                  src={
+                    modalShowBefore && selectedSlide.beforeImage
+                      ? selectedSlide.beforeImage
+                      : selectedSlide.image
+                  }
                   alt={selectedPrompt.title}
                   className="w-full h-full object-cover"
                 />
+                {selectedSlide.beforeImage && (
+                  <button
+                    type="button"
+                    className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-semibold glass"
+                    onClick={() => setModalShowBefore((v) => !v)}
+                  >
+                    {modalShowBefore ? "Show after" : "Show before"}
+                  </button>
+                )}
 
                 {selectedPrompt.slides.length > 1 && (
                   <>
@@ -1222,28 +1325,62 @@ const Index = () => {
               <div className="flex flex-col gap-4">
                 {/* Prompt text */}
                 <div className="rounded-2xl border border-border/70 bg-background/80 p-4 overflow-y-auto max-h-[320px] relative group/prompt">
-                  <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed pr-8">{selectedSlide.prompt}</p>
-                  {/* Small copy icon top-right of prompt box */}
+                  {selectedPrompt.unlocked ? (
+                    <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed pr-8">
+                      {selectedSlide.prompt}
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed">
+                        {selectedSlide.preview || "Upload your photo → get this look"}
+                      </p>
+                      <div className="rounded-xl border border-dashed border-border/80 bg-muted/30 p-3 flex items-start gap-2">
+                        <Lock className="w-4 h-4 mt-0.5 text-muted-foreground shrink-0" />
+                        <div className="text-xs text-muted-foreground">
+                          Full transform prompt is locked. Subscribe to copy it into ChatGPT, Midjourney, and more.
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   <button
                     type="button"
                     onClick={copySelectedPrompt}
                     aria-label="Copy prompt"
                     className="absolute top-3 right-3 p-1.5 rounded-lg bg-muted/60 hover:bg-primary/20 transition-colors opacity-0 group-hover/prompt:opacity-100"
                   >
-                    <Copy className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
+                    {selectedPrompt.unlocked ? (
+                      <Copy className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
+                    ) : (
+                      <Lock className="w-3.5 h-3.5 text-muted-foreground" />
+                    )}
                   </button>
                 </div>
 
-                {/* Generate with AI – primary CTA */}
+                {!selectedPrompt.unlocked && (
+                  <Button
+                    variant="outline"
+                    className="w-full gap-2"
+                    onClick={() => navigate("/pricing")}
+                  >
+                    <Lock className="w-4 h-4" />
+                    Unlock full prompt
+                  </Button>
+                )}
+
+                {/* Try on my photo – primary CTA */}
                 <Button
                   className="w-full gap-2 bg-gradient-to-r from-primary to-accent text-white hover:opacity-90 transition-opacity text-base py-5"
                   onClick={() => {
-                    setAiPrompt(selectedSlide.prompt);
-                    closePromptModal();
+                    startTryOnLook(
+                      selectedPrompt.id,
+                      currentSlideIndex,
+                      selectedSlide.image,
+                      selectedSlide.prompt
+                    );
                   }}
                 >
                   <Wand2 className="w-4 h-4" />
-                  Generate with AI
+                  Try on my photo
                 </Button>
 
                 {/* Like / Favorite row */}

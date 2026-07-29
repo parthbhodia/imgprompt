@@ -184,7 +184,7 @@ const MessageItem = React.memo(({ message, index, isLast, conversationContext, o
                   onClick={() => {
                     if (navigator.share) {
                       navigator.share({
-                        title: "VibeIMG - Generated Image",
+                        title: "ImgPrompt - Generated Image",
                         text: m.content,
                         url: m.image_url,
                       }).catch(() => {});
@@ -288,10 +288,20 @@ interface ImageChatProps {
   inline?: boolean;
   initialPrompt?: string;
   initialImageUrl?: string;
+  /** When set, generation loads full library prompt server-side */
+  initialLibraryPromptId?: number | null;
+  initialLibrarySlideIndex?: number;
   onPromptConsumed?: () => void;
 }
 
-export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPromptConsumed }: ImageChatProps) {
+export function ImageChat({
+  inline = false,
+  initialPrompt,
+  initialImageUrl,
+  initialLibraryPromptId,
+  initialLibrarySlideIndex = 0,
+  onPromptConsumed,
+}: ImageChatProps) {
   const { user, session, signInWithGoogle, hasRole, profile } = useAuth();
   const { generationState, startGeneration, stopGeneration, getElapsedTime } = useGeneration();
   const isAdmin = hasRole("admin");
@@ -299,6 +309,8 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
   const [fullscreen, setFullscreen] = useState(false);
   const [credits, setCredits] = useState<number | null>(null);
   const [prompt, setPrompt] = useState("");
+  const [libraryPromptId, setLibraryPromptId] = useState<number | null>(null);
+  const [librarySlideIndex, setLibrarySlideIndex] = useState(0);
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   // Use Map for O(1) deduplication and efficient updates
@@ -386,8 +398,15 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
   }, [attachedImage?.preview]);
 
   useEffect(() => {
-    if (!initialPrompt) return;
-    setPrompt(initialPrompt);
+    if (!initialPrompt && initialLibraryPromptId == null) return;
+    if (initialPrompt) setPrompt(initialPrompt);
+    if (initialLibraryPromptId != null) {
+      setLibraryPromptId(initialLibraryPromptId);
+      setLibrarySlideIndex(initialLibrarySlideIndex ?? 0);
+      if (!initialPrompt) {
+        setPrompt("Transform my uploaded photo with this look");
+      }
+    }
     onPromptConsumed?.();
     if (inline) {
       setTimeout(() => {
@@ -397,7 +416,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
     // Auto-resize after setting initial prompt
     setTimeout(autoResizeTextarea, 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialPrompt]);
+  }, [initialPrompt, initialLibraryPromptId, initialLibrarySlideIndex]);
 
   // Preserve scroll position when entering/exiting fullscreen
   useEffect(() => {
@@ -907,7 +926,11 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
         image_base64: imageBase64 ?? undefined,
         model: selectedModel,
         variations: variations && !imageBase64,  // variations not supported with img2img
+        library_prompt_id: libraryPromptId,
+        library_slide_index: librarySlideIndex,
       });
+      // Clear one-shot library look after use
+      setLibraryPromptId(null);
       console.log('[FRONTEND] generateImage success:', res);
       setCredits(res.credits_remaining);
 
@@ -1111,7 +1134,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                       className="w-full rounded-xl border border-border/60 bg-blue-500/10 border-blue-500/20 p-4 flex items-center justify-between hover:bg-blue-500/15 transition-colors"
                     >
                       <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                        ✨ Welcome to VibeIMG AI Chat
+                        Upload your photo. Pick a look.
                       </p>
                       <ChevronDown
                         className={cn(
@@ -1125,13 +1148,13 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                     {welcomeExpanded && (
                       <div className="rounded-xl border border-border/60 bg-blue-500/5 p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
                         <p className="text-xs text-muted-foreground">
-                          Describe any image you'd like to generate. Be specific about style, mood, composition, and details. You can also:
+                          ImgPrompt turns your photo into a proven look. Upload a selfie or product shot, choose a transform from the library, then generate or unlock the full prompt to use in ChatGPT / Midjourney.
                         </p>
                         <ul className="text-xs text-muted-foreground space-y-1 ml-3">
-                          <li>• Upload a reference image for img2img generation</li>
-                          <li>• Use "Refine with AI" to enhance your prompt</li>
-                          <li>• Download, share, or regenerate any image</li>
-                          <li>• Use prompts from our community library</li>
+                          <li>• Upload your photo first for the best results</li>
+                          <li>• Browse curated looks below and tap “Try on my photo”</li>
+                          <li>• Subscribe to unlock full prompts you can copy</li>
+                          <li>• In-app transforms use 1 credit each</li>
                         </ul>
                       </div>
                     )}
@@ -1140,7 +1163,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                     <div className="rounded-xl border border-border/60 bg-muted/30 p-4 space-y-2">
                       <p className="text-sm font-medium flex items-center gap-2">
                         <Lightbulb className="w-4 h-4 text-primary" />
-                        Try a prompt from our library
+                        Try a look from our library
                       </p>
                       <div className="flex flex-col gap-2 w-full">
                         {suggestions.slice(0, 3).map((s, i) => (
@@ -1262,7 +1285,7 @@ export function ImageChat({ inline = false, initialPrompt, initialImageUrl, onPr
                                 onClick={() => {
                                   if (navigator.share) {
                                     navigator.share({
-                                      title: "VibeIMG - Generated Image",
+                                      title: "ImgPrompt - Generated Image",
                                       text: m.content,
                                       url: m.image_url,
                                     }).catch(() => {});

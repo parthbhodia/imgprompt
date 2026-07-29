@@ -14,6 +14,9 @@ export type GenerateRequest = {
   model?: string;
   /** When true, generate 4 variations and return all URLs in image_urls */
   variations?: boolean;
+  /** Server loads full library prompt (keeps copy gated for free users) */
+  library_prompt_id?: number | null;
+  library_slide_index?: number;
 };
 
 export type GenerateResponse = {
@@ -393,12 +396,43 @@ export type SubscriptionStatus = {
   plan: string | null;
   status: string | null;
   credits: number;
+  library_unlocked?: boolean;
 };
 
 export async function getSubscriptionStatus(
   token: string | null
 ): Promise<SubscriptionStatus> {
   return fetchApi<SubscriptionStatus>("/payments/subscription", {
+    method: "GET",
+    token,
+  });
+}
+
+export type LibraryUnlockResponse = {
+  unlocked: boolean;
+  prompts: Array<{
+    id: number;
+    title: string;
+    slug: string;
+    featured: boolean;
+    is_premium: boolean;
+    category: string;
+    platforms: string[];
+    packs: string[];
+    slides: Array<{
+      prompt: string;
+      preview: string;
+      image: string;
+      before_image: string;
+      sort_order: number;
+    }>;
+  }>;
+};
+
+export async function getUnlockedLibrary(
+  token: string | null
+): Promise<LibraryUnlockResponse> {
+  return fetchApi<LibraryUnlockResponse>("/prompts/library", {
     method: "GET",
     token,
   });
@@ -438,6 +472,7 @@ export type PlanInfo = {
   label: string;
   price: string;
   credits: number;
+  features?: string[];
 };
 
 export async function getPlans(): Promise<{ plans: PlanInfo[] }> {

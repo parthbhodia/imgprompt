@@ -24,11 +24,11 @@ const PLAN_UI_CONFIG: Record<string, { icon: typeof Zap; color: string; highligh
     color: "from-blue-500 to-cyan-500",
     highlight: false,
     features: [
-      "AI images per month",
-      "Flux 1.1 Pro quality",
+      "Unlock full photo-transform prompts",
+      "Copy for ChatGPT, Midjourney & more",
+      "in-app transforms / month",
       "Image-to-image editing",
       "AI prompt refinement",
-      "Chat history saved",
     ],
   },
   popular: {
@@ -36,11 +36,11 @@ const PLAN_UI_CONFIG: Record<string, { icon: typeof Zap; color: string; highligh
     color: "from-violet-500 to-purple-600",
     highlight: true,
     features: [
-      "AI images per month",
-      "Flux 1.1 Pro quality",
+      "Unlock full photo-transform prompts",
+      "All curated look packs",
+      "Copy for ChatGPT, Midjourney & more",
+      "in-app transforms / month",
       "Image-to-image editing",
-      "AI prompt refinement",
-      "Chat history saved",
       "Priority support",
     ],
   },
@@ -49,13 +49,13 @@ const PLAN_UI_CONFIG: Record<string, { icon: typeof Zap; color: string; highligh
     color: "from-orange-500 to-rose-500",
     highlight: false,
     features: [
-      "AI images per month",
-      "Flux 1.1 Pro quality",
+      "Unlock full photo-transform prompts",
+      "All curated look packs",
+      "Copy for ChatGPT, Midjourney & more",
+      "in-app transforms / month",
       "Image-to-image editing",
-      "AI prompt refinement",
-      "Chat history saved",
       "Priority support",
-      "Early access to new features",
+      "Early access to new looks",
     ],
   },
 };
@@ -192,10 +192,10 @@ export default function Pricing() {
         {/* Hero */}
         <div className="text-center mb-14">
           <h1 className="text-4xl font-bold tracking-tight mb-4">
-            Simple, transparent pricing
+            Unlock photo-transform prompts
           </h1>
           <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-            Credits refresh every month. Generate stunning images with Flux 1.1 Pro — each image uses 1 credit.
+            Browse looks free. Subscribe to copy full prompts for ChatGPT and Midjourney — plus monthly in-app transform credits on vibeimg.xyz.
           </p>
           {!creditsLoading && (
             <div className="mt-6 inline-flex items-center gap-2 bg-muted rounded-full px-4 py-1.5 text-sm">
@@ -332,7 +332,8 @@ export default function Pricing() {
                     <span className="text-muted-foreground text-sm ml-1">/month</span>
                   </div>
                   <p className="text-sm text-muted-foreground mb-8">
-                    <span className="font-semibold text-foreground">{plan.credits} credits</span> refreshed monthly
+                    Library unlock +{" "}
+                    <span className="font-semibold text-foreground">{plan.credits} transform credits</span> / month
                   </p>
 
                   {/* CTA */}
@@ -348,15 +349,17 @@ export default function Pricing() {
                     {isLoading ? (
                       <Loader2 className="w-4 h-4 animate-spin mr-2" />
                     ) : null}
-                    {isCurrent ? "Current plan" : isLoading ? "Redirecting…" : "Get started"}
+                    {isCurrent ? "Current plan" : isLoading ? "Redirecting…" : "Unlock prompts"}
                   </Button>
 
                   {/* Features */}
                   <ul className="space-y-3 mt-auto">
-                    {ui.features.map((f) => (
+                    {(plan.features?.length ? plan.features : ui.features.map((f) =>
+                      f.includes("in-app transforms") ? `${plan.credits} ${f}` : f
+                    )).map((f) => (
                       <li key={f} className="flex items-start gap-2.5 text-sm">
                         <Check className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
-                        <span>{plan.credits} {f}</span>
+                        <span>{f}</span>
                       </li>
                     ))}
                   </ul>
@@ -369,7 +372,7 @@ export default function Pricing() {
         {/* FAQ / notes */}
         <div className="mt-16 text-center space-y-3">
           <p className="text-sm text-muted-foreground">
-            Credits reset on your billing date each month. Unused credits do not roll over.
+            Prompt unlock stays active while subscribed. Transform credits reset on your billing date; unused credits do not roll over.
           </p>
           <p className="text-sm text-muted-foreground">
             Cancel anytime from the billing portal — no long-term commitment.
